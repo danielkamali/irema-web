@@ -1,0 +1,99 @@
+/* ── CompanyCard v13 — Trustpilot-style ── */
+
+.company-card-link { text-decoration: none; display: block; }
+
+.company-card {
+  display: flex; flex-direction: column; gap: 0;
+  border-radius: 14px; border: 1px solid var(--border);
+  background: var(--surface); overflow: hidden;
+  transition: box-shadow 0.18s, transform 0.18s, border-color 0.18s;
+  height: 100%; cursor: pointer;
+  min-height: 220px;
+}
+.company-card:hover {
+  box-shadow: 0 8px 28px rgba(0,0,0,0.1);
+  transform: translateY(-3px);
+  border-color: var(--brand-light);
+}
+
+/* Banner/cover area */
+.company-card-banner {
+  height: 110px; position: relative; overflow: hidden;
+  background: linear-gradient(135deg, #1a4535 0%, #2d8f6f 100%);
+  background-size: cover; background-position: center;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.company-card-banner-placeholder {
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, #1a4535 0%, #2d8f6f 60%, #e8b800 100%);
+}
+.company-card-initial {
+  width: 52px; height: 52px; border-radius: 12px;
+  background: rgba(255,255,255,0.2); border: 2px solid rgba(255,255,255,0.4);
+  color: white; font-size: 1.4rem; font-weight: 800;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-display); backdrop-filter: blur(4px);
+}
+.company-card-logo-badge {
+  position: absolute; bottom: -16px; left: 16px;
+  width: 44px; height: 44px; border-radius: 10px;
+  background: var(--surface); border: 2px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+}
+.company-card-logo-badge img { width: 100%; height: 100%; object-fit: contain; padding: 4px; }
+.company-card-logo-initial {
+  color: white; font-size: 1rem; font-weight: 800;
+  background: linear-gradient(135deg, var(--brand), var(--brand-dark));
+  border-color: var(--brand-light);
+}
+
+.company-card-body {
+  padding: 24px 16px 16px; display: flex; flex-direction: column; gap: 6px; flex: 1;
+}
+.company-card-name {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+}
+.company-card-name-text {
+  font-size: 0.96rem; font-weight: 700; color: var(--text-1);
+  font-family: var(--font-display); letter-spacing: -0.01em;
+  display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden;
+}
+.badge-verified {
+  background: var(--brand-xlight); color: var(--brand);
+  font-size: 0.65rem; font-weight: 700; padding: 2px 6px; border-radius: 20px;
+  flex-shrink: 0; border: 1px solid var(--brand-light);
+}
+.company-card-website {
+  font-size: 0.75rem; color: var(--text-4);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.company-card-meta { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 2px; }
+.category-chip {
+  font-size: 0.72rem; font-weight: 600; color: var(--text-3);
+  background: var(--bg); border: 1px solid var(--border);
+  padding: 2px 9px; border-radius: 20px;
+}
+.company-card-rating {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 2px;
+}
+.company-card-score-label {
+  font-size: 0.78rem; font-weight: 700;
+}
+.company-card-count {
+  font-size: 0.75rem; color: var(--text-4);
+}
+
+.company-card-arrow {
+  position: absolute; top: 14px; right: 14px;
+  color: var(--text-4); opacity: 0.6;
+}
+.company-card { position: relative; }
+
+/* Dark mode */
+[data-theme="dark"] .company-card { background: var(--surface); border-color: var(--border); }
+[data-theme="dark"] .company-card:hover { border-color: var(--brand); box-shadow: 0 8px 28px rgba(0,0,0,0.3); }
+[data-theme="dark"] .company-card-logo-wrap { background: var(--bg-2); border-color: var(--border); }
+[data-theme="dark"] .company-card-name-text { color: var(--text-1); }

@@ -1,0 +1,326 @@
+/* ══════════════════════════════════════════════
+   User Dashboard v12
+   ══════════════════════════════════════════════ */
+
+.user-dashboard { min-height: 100vh; background: var(--bg); }
+
+/* ── Hero ── */
+.ud-hero {
+  background: linear-gradient(135deg, var(--brand-deep) 0%, var(--brand-dark) 60%, var(--brand) 100%);
+  padding: var(--sp-10) 0 var(--sp-10);
+  position: relative; overflow: hidden;
+}
+.ud-hero::before {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(circle at 70% 50%, rgba(255,255,255,0.07) 0%, transparent 60%);
+}
+.ud-hero-inner {
+  display: flex; align-items: center; gap: var(--sp-7); flex-wrap: wrap;
+  position: relative;
+}
+.ud-avatar-large {
+  width: 80px; height: 80px; border-radius: 50%; flex-shrink: 0;
+  background: rgba(255,255,255,0.2); backdrop-filter: blur(8px);
+  border: 3px solid rgba(255,255,255,0.35);
+  color: white; font-size: 1.6rem; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  letter-spacing: -0.02em; font-family: var(--font-display);
+}
+.ud-hero-info { flex: 1; min-width: 200px; }
+.ud-hero-name {
+  font-family: var(--font-display); font-size: 1.8rem; font-weight: 700;
+  color: white; margin: 0 0 4px; letter-spacing: -0.03em;
+}
+.ud-hero-email { font-size: 0.9rem; color: rgba(255,255,255,0.65); margin-bottom: 4px; }
+.ud-member-since { font-size: 0.78rem; color: rgba(255,255,255,0.5); margin-bottom: 16px; }
+.ud-hero-stats {
+  display: flex; align-items: center; gap: var(--sp-5); flex-wrap: wrap;
+}
+.ud-hero-stat { text-align: left; }
+.ud-hero-stat-num { font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; color: white; line-height: 1; }
+.ud-hero-stat-label { font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: rgba(255,255,255,0.55); margin-top: 3px; }
+.ud-stat-divider { width: 1px; height: 32px; background: rgba(255,255,255,0.2); }
+.ud-hero-actions { margin-left: auto; }
+
+/* ── Tabs ── */
+.ud-tabs { display: flex; gap: 0; margin: var(--sp-8) 0 var(--sp-6); border-bottom: 2px solid var(--border); }
+.ud-tab {
+  padding: var(--sp-3) var(--sp-5); font-size: 0.9rem; font-weight: 600; color: var(--text-3);
+  border: none; background: none; cursor: pointer; border-bottom: 2px solid transparent;
+  margin-bottom: -2px; font-family: var(--font-body); transition: all var(--t-fast);
+}
+.ud-tab.active { color: var(--brand); border-bottom-color: var(--brand); }
+.ud-tab:hover { color: var(--text-1); }
+
+/* ── Empty state ── */
+.ud-empty { text-align: center; padding: var(--sp-16) var(--sp-8); max-width: 480px; margin: 0 auto; }
+.ud-empty-icon { font-size: 3rem; margin-bottom: var(--sp-4); }
+.ud-empty h3 { font-family: var(--font-display); font-size: 1.3rem; color: var(--text-1); margin-bottom: var(--sp-2); }
+.ud-empty p { color: var(--text-3); margin-bottom: var(--sp-6); }
+
+/* ── Reviews list ── */
+.ud-reviews { display: flex; flex-direction: column; gap: 0; padding-bottom: var(--sp-16); }
+
+/* Company grouping */
+.ud-company-group {
+  margin-bottom: var(--sp-8); border: 1px solid var(--border);
+  border-radius: var(--r-xl); overflow: hidden; box-shadow: var(--shadow-xs);
+}
+.ud-company-group-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: var(--sp-4) var(--sp-5); background: var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+.ud-company-link {
+  font-family: var(--font-display); font-size: 1rem; font-weight: 700;
+  color: var(--text-1); text-decoration: none;
+}
+.ud-company-link:hover { color: var(--brand); }
+.ud-review-count { font-size: 0.75rem; font-weight: 600; color: var(--text-4); background: var(--bg-2); padding: 3px 10px; border-radius: 20px; }
+
+/* Individual review card */
+.ud-review-card {
+  padding: var(--sp-5) var(--sp-5); background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  transition: background var(--t-fast);
+}
+.ud-review-card:last-child { border-bottom: none; }
+.ud-review-card:hover { background: var(--bg); }
+.ud-review-header {
+  display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--sp-3);
+}
+.ud-review-rating-row { display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap; }
+.ud-review-date { font-size: 0.78rem; color: var(--text-4); }
+.ud-delete-btn {
+  width: 30px; height: 30px; border-radius: var(--r-sm); border: 1px solid var(--border);
+  background: transparent; color: var(--text-4); cursor: pointer; display: flex;
+  align-items: center; justify-content: center; transition: all var(--t-fast); flex-shrink: 0;
+}
+.ud-delete-btn:hover { background: #fee2e2; color: #ef4444; border-color: rgba(239,68,68,0.3); }
+.ud-review-body { font-size: 0.9rem; color: var(--text-2); line-height: 1.65; margin: 0 0 var(--sp-3); }
+
+/* Review photos */
+.ud-review-photos { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: var(--sp-3); }
+.ud-review-photo { width: 72px; height: 72px; border-radius: var(--r-sm); overflow: hidden; border: 1px solid var(--border); }
+.ud-review-photo img { width: 100%; height: 100%; object-fit: cover; }
+
+/* Replies */
+.ud-replies { margin-bottom: var(--sp-3); display: flex; flex-direction: column; gap: var(--sp-2); }
+.ud-reply { padding: var(--sp-3) var(--sp-4); border-radius: var(--r-md); }
+.ud-reply-user { background: var(--bg-2); }
+.ud-reply-biz { background: var(--brand-xlight); border-left: 3px solid var(--brand); }
+.ud-reply-who { font-size: 0.72rem; font-weight: 700; color: var(--brand); display: block; margin-bottom: 4px; }
+.ud-reply p { font-size: 0.85rem; color: var(--text-2); margin: 0; }
+
+.ud-review-footer { display: flex; align-items: center; justify-content: flex-end; }
+.ud-view-biz-link { font-size: 0.8rem; color: var(--brand); font-weight: 600; text-decoration: none; }
+.ud-view-biz-link:hover { text-decoration: underline; }
+
+/* ── Delete confirm modal ── */
+.ud-modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 1000;
+  display: flex; align-items: center; justify-content: center; padding: 20px;
+  backdrop-filter: blur(4px);
+}
+.ud-confirm-modal {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r-xl); padding: var(--sp-8); max-width: 380px; width: 100%;
+  box-shadow: var(--shadow-xl); animation: fadeInUp 0.2s ease;
+}
+.ud-confirm-modal h3 { font-family: var(--font-display); font-size: 1.15rem; color: var(--text-1); margin: 0 0 var(--sp-2); }
+.ud-confirm-modal p { font-size: 0.88rem; color: var(--text-3); margin: 0 0 var(--sp-6); line-height: 1.5; }
+.ud-confirm-actions { display: flex; gap: var(--sp-3); justify-content: flex-end; }
+
+/* ── Dark mode ── */
+[data-theme="dark"] .ud-hero { background: linear-gradient(135deg, #091509 0%, #0a1a10 60%, #0f2014 100%); }
+[data-theme="dark"] .ud-company-group { background: var(--surface); border-color: var(--border); }
+[data-theme="dark"] .ud-company-group-header { background: var(--bg-2); border-color: var(--border); }
+[data-theme="dark"] .ud-review-card { background: var(--surface); }
+[data-theme="dark"] .ud-review-card:hover { background: var(--bg-2); }
+[data-theme="dark"] .ud-review-body { color: var(--text-2); }
+[data-theme="dark"] .ud-company-link { color: var(--text-1); }
+[data-theme="dark"] .ud-confirm-modal { background: var(--surface); border-color: var(--border); }
+
+@keyframes fadeInUp { from { opacity:0; transform: translateY(12px); } to { opacity:1; transform: none; } }
+
+/* Profile photo upload */
+.ud-avatar-wrap { position: relative; display: inline-block; flex-shrink: 0; margin-right: 8px; }
+.ud-avatar-photo { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid rgba(255,255,255,0.3); }
+.ud-photo-upload-btn {
+  position: absolute; bottom: -2px; right: -2px;
+  background: #2d8f6f; color: white; border-radius: 50%;
+  width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+  font-size: 1.1rem; font-weight: 700; cursor: pointer; border: 3px solid white;
+  transition: background 0.15s, transform 0.15s;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+}
+.ud-photo-upload-btn:hover { background: #1f6b52; transform: scale(1.1); }
+
+/* ── v19: Company-first drill-down ── */
+.ud-section-header { margin: 32px 0 16px; }
+.ud-section-title {
+  font-size: 1.25rem; font-weight: 700; color: var(--text-1, #111827);
+  display: flex; align-items: center; gap: 10px; margin: 0 0 4px;
+}
+.ud-section-count {
+  background: var(--brand, #2d8f6f); color: white;
+  font-size: 0.75rem; font-weight: 700; padding: 2px 8px;
+  border-radius: 999px;
+}
+.ud-section-sub { font-size: 0.83rem; color: var(--text-4, #9ca3af); margin: 0; }
+
+.ud-company-list { display: flex; flex-direction: column; gap: 12px; margin-bottom: 40px; }
+
+.ud-company-row {
+  background: var(--surface); border-radius: 14px;
+  border: 1px solid var(--border, #e5e7eb);
+  overflow: hidden; transition: box-shadow 0.2s;
+}
+.ud-company-row:hover { box-shadow: 0 2px 12px rgba(0,0,0,0.07); }
+
+.ud-company-row-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 20px; cursor: pointer; gap: 12px;
+  transition: background 0.15s;
+}
+.ud-company-row-header:hover { background: #f9fafb; }
+
+.ud-company-row-left { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; }
+
+.ud-company-avatar-sm {
+  width: 42px; height: 42px; border-radius: 10px;
+  background: linear-gradient(135deg, #2d8f6f, #1f6b52);
+  color: white; font-weight: 700; font-size: 1.1rem;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+
+.ud-company-row-info { min-width: 0; }
+.ud-company-row-name { font-weight: 600; font-size: 0.95rem; color: var(--text-1, #111827); }
+.ud-company-row-meta { display: flex; align-items: center; gap: 4px; margin-top: 3px; flex-wrap: wrap; }
+
+.ud-biz-reply-badge {
+  font-size: 0.7rem; font-weight: 600; color: #2d8f6f;
+  background: #e8f5f0; padding: 2px 7px; border-radius: 99px; margin-left: 4px;
+}
+
+.ud-company-preview {
+  font-size: 0.78rem; color: var(--text-4, #9ca3af); font-style: italic;
+  max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+.ud-company-row-reviews {
+  border-top: 1px solid var(--border, #e5e7eb);
+  padding: 12px 16px 16px;
+  display: flex; flex-direction: column; gap: 12px;
+}
+
+/* Reply trigger button */
+.ud-reply-trigger-btn {
+  background: none; border: 1px solid var(--border, #e5e7eb);
+  border-radius: 8px; padding: 5px 12px; font-size: 0.8rem;
+  color: var(--text-3, #6b7280); cursor: pointer; transition: all 0.15s;
+}
+.ud-reply-trigger-btn:hover { border-color: #2d8f6f; color: #2d8f6f; background: #e8f5f0; }
+
+/* Reply compose */
+.ud-reply-compose { margin-top: 10px; }
+.ud-reply-textarea {
+  width: 100%; border: 1px solid var(--border, #e5e7eb); border-radius: 8px;
+  padding: 10px 12px; font-size: 0.85rem; resize: vertical; font-family: inherit;
+  outline: none; transition: border-color 0.15s;
+}
+.ud-reply-textarea:focus { border-color: #2d8f6f; box-shadow: 0 0 0 3px rgba(45,143,111,0.1); }
+
+.ud-reply-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 8px; }
+
+.ud-reply-time { font-size: 0.68rem; color: #9ca3af; display: block; margin-top: 3px; }
+
+/* Me replies */
+.ud-reply-me {
+  background: #f0f9f6; border-left: 3px solid #2d8f6f;
+  padding: 8px 12px; border-radius: 0 8px 8px 0; margin-top: 6px;
+}
+.ud-reply-me .ud-reply-who { color: #2d8f6f; font-size: 0.75rem; font-weight: 700; }
+
+.ud-review-footer {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-top: 10px; padding-top: 10px; border-top: 1px solid #f3f4f6; gap: 8px;
+}
+
+/* ── Dark mode comprehensive fixes (v28) ── */
+[data-theme="dark"] .ud-review-header { border-color: var(--border); }
+[data-theme="dark"] .ud-review-rating-row span { color: var(--text-4); }
+[data-theme="dark"] .ud-review-footer { border-color: var(--border); }
+[data-theme="dark"] .ud-reply { background: var(--bg-3); border-color: var(--border); }
+[data-theme="dark"] .ud-reply-who { color: var(--text-3); }
+[data-theme="dark"] .ud-reply p { color: var(--text-2); }
+[data-theme="dark"] .ud-company-row { border-color: var(--border); }
+[data-theme="dark"] .ud-company-row-name { color: var(--text-1); }
+[data-theme="dark"] .ud-company-row-meta { color: var(--text-4); }
+[data-theme="dark"] .ud-company-preview { color: var(--text-3); }
+[data-theme="dark"] .ud-stat-divider { background: rgba(255,255,255,0.15); }
+[data-theme="dark"] .ud-section-title { color: var(--text-1); }
+[data-theme="dark"] .ud-section-header { border-color: var(--border); }
+[data-theme="dark"] .ud-empty { background: var(--surface); border-color: var(--border); color: var(--text-3); }
+[data-theme="dark"] .ud-reply-box { background: var(--bg-2); border-color: var(--border); }
+[data-theme="dark"] .ud-reply-textarea { background: var(--surface); border-color: var(--border); color: var(--text-1); }
+[data-theme="dark"] .ud-reply-textarea::placeholder { color: var(--text-4); }
+[data-theme="dark"] .ud-photo-upload-btn { background: rgba(0,0,0,0.5); color: white; }
+[data-theme="dark"] .ud-member-since { color: rgba(255,255,255,0.45); }
+[data-theme="dark"] .ud-hero-name { color: white; }
+[data-theme="dark"] .ud-hero-email { color: rgba(255,255,255,0.65); }
+[data-theme="dark"] .ud-section { background: var(--bg); }
+
+/* ── UserDashboard Mobile (v28) ── */
+@media (max-width: 640px) {
+  .ud-hero-inner { flex-direction: column; gap: 16px; text-align: center; }
+  .ud-hero-actions { margin-left: 0; width: 100%; display: flex; gap: 8px; flex-direction: column; }
+  .ud-hero-stats { justify-content: center; }
+  .ud-company-row { padding: 12px 14px; }
+  .ud-review-card { padding: 14px; }
+  .ud-review-photos { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ── UserDashboard extra mobile (v36) ── */
+@media (max-width: 480px) {
+  .ud-hero { padding: 80px 16px 24px; }
+  .ud-hero-inner { flex-direction: column; gap: 14px; }
+  .ud-hero-stats { gap: 12px; flex-wrap: wrap; }
+  .ud-hero-actions { flex-direction: column; gap: 8px; width: 100%; }
+  .ud-hero-actions button { width: 100%; }
+}
+@media (max-width: 360px) {
+  .ud-hero { padding: 72px 12px 20px; }
+  .ud-hero-name { font-size: 1.4rem; }
+  .ud-section { padding: 16px 12px; }
+}
+
+/* ── UserDashboard dark mode completeness (v46) ── */
+[data-theme="dark"] .ud-page { background: var(--bg); }
+[data-theme="dark"] .ud-section { background: var(--bg); }
+[data-theme="dark"] .ud-section-header { border-color: var(--border); }
+[data-theme="dark"] .ud-reviews-grid .ud-review-card { background: var(--surface); border-color: var(--border); }
+[data-theme="dark"] .ud-review-card-header { border-color: var(--border); }
+[data-theme="dark"] .ud-review-title { color: var(--text-1); }
+[data-theme="dark"] .ud-review-date { color: var(--text-4); }
+[data-theme="dark"] .ud-review-text { color: var(--text-2); }
+[data-theme="dark"] .ud-review-footer { background: var(--bg-2); border-color: var(--border); }
+[data-theme="dark"] .ud-company-badge { background: var(--bg-3); color: var(--text-3); }
+[data-theme="dark"] .ud-view-btn { color: var(--brand); }
+[data-theme="dark"] .ud-delete-btn { color: var(--danger); }
+[data-theme="dark"] .ud-hero-name { color: white; }
+[data-theme="dark"] .ud-hero-email { color: rgba(255,255,255,0.75); }
+[data-theme="dark"] .ud-hero-stat-num { color: white; }
+[data-theme="dark"] .ud-hero-stat-label { color: rgba(255,255,255,0.6); }
+[data-theme="dark"] .ud-hero-actions .btn-outline-white {
+  border-color: rgba(255,255,255,0.5); color: white;
+}
+[data-theme="dark"] .ud-hero-actions .btn-outline-white:hover {
+  background: rgba(255,255,255,0.1);
+}
+[data-theme="dark"] .ud-edit-profile-card { background: var(--surface); border-color: var(--border); }
+[data-theme="dark"] .ud-edit-profile-card h3 { color: var(--text-1); }
+[data-theme="dark"] .ud-edit-profile-card label { color: var(--text-3); }
+[data-theme="dark"] .ud-photo-upload-btn { background: #2d8f6f; border-color: white; }
+[data-theme="dark"] .ud-empty-state { color: var(--text-3); }
+[data-theme="dark"] .ud-empty-state h3 { color: var(--text-2); }

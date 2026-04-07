@@ -1,0 +1,109 @@
+/* ── AdminIntegrations v9 ── */
+.ap-integ-header-stats { display: flex; gap: var(--sp-4); }
+.ap-integ-stat {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg);
+  padding: var(--sp-3) var(--sp-5); text-align: center;
+}
+.ap-integ-stat strong { display: block; font-family: var(--font-display); font-size: 1.4rem; color: var(--text-1); }
+.ap-integ-stat span { font-size: 0.72rem; color: var(--text-4); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+[data-theme="dark"] .ap-integ-stat { background: var(--surface); border-color: var(--border); }
+
+.ap-integ-cats { display: flex; gap: var(--sp-2); flex-wrap: wrap; margin-bottom: var(--sp-6); }
+.ap-integ-cat-btn {
+  padding: 6px 16px; border-radius: var(--r-full); border: 1px solid var(--border);
+  background: transparent; font-size: 0.82rem; font-weight: 600; color: var(--text-3);
+  cursor: pointer; transition: all var(--t-fast); font-family: var(--font-body);
+}
+.ap-integ-cat-btn:hover { background: var(--bg-2); color: var(--text-1); }
+.ap-integ-cat-btn.active { background: var(--brand); color: white; border-color: var(--brand); }
+[data-theme="dark"] .ap-integ-cat-btn { border-color: var(--border); color: var(--text-3); }
+[data-theme="dark"] .ap-integ-cat-btn:hover { background: var(--bg-3); color: var(--text-1); }
+
+.ap-integ-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: var(--sp-5);
+}
+.ap-integ-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-xl);
+  padding: var(--sp-5); transition: box-shadow var(--t-base), transform var(--t-base);
+  box-shadow: var(--shadow-xs);
+}
+.ap-integ-card:hover { box-shadow: var(--shadow-sm); transform: translateY(-2px); }
+.ap-integ-card.connected { border-color: var(--brand-light); }
+[data-theme="dark"] .ap-integ-card { background: var(--surface); border-color: var(--border); }
+[data-theme="dark"] .ap-integ-card.connected { border-color: var(--brand); }
+
+.ap-integ-card-top { display: flex; align-items: flex-start; gap: var(--sp-3); margin-bottom: var(--sp-4); }
+.ap-integ-icon {
+  width: 48px; height: 48px; border-radius: var(--r-lg); flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+}
+.ap-integ-info { flex: 1; min-width: 0; }
+.ap-integ-name { font-weight: 700; font-size: 0.95rem; color: var(--text-1); margin-bottom: 4px; }
+.ap-integ-desc { font-size: 0.82rem; color: var(--text-3); line-height: 1.6; margin-bottom: var(--sp-4); }
+[data-theme="dark"] .ap-integ-desc { color: var(--text-3); }
+
+.ap-integ-status-row { display: flex; align-items: center; gap: 6px; margin-bottom: var(--sp-4); }
+.ap-integ-status-dot {
+  width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+}
+.ap-integ-status-dot.active { background: var(--brand); box-shadow: 0 0 0 3px var(--brand-xlight); }
+.ap-integ-status-dot.inactive { background: var(--text-4); }
+.ap-integ-status-text { font-size: 0.78rem; font-weight: 700; color: var(--text-2); }
+.ap-integ-connected-date { font-size: 0.72rem; color: var(--text-4); }
+
+.ap-integ-actions { display: flex; gap: var(--sp-2); flex-wrap: wrap; }
+
+/* Subscriptions KPIs */
+.ap-subs-kpis {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: var(--sp-4);
+  margin-bottom: var(--sp-6);
+}
+.ap-sub-kpi {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-xl);
+  padding: var(--sp-5); text-align: center; box-shadow: var(--shadow-xs);
+}
+[data-theme="dark"] .ap-sub-kpi { background: var(--surface); border-color: var(--border); }
+.ap-sub-kpi.green { border-top: 3px solid var(--brand); }
+.ap-sub-kpi.blue  { border-top: 3px solid #3b82f6; }
+.ap-sub-kpi.yellow{ border-top: 3px solid #f59e0b; }
+.ap-sub-kpi.purple{ border-top: 3px solid #8b5cf6; }
+.ap-sub-kpi-val { display: block; font-family: var(--font-display); font-size: 1.6rem; font-weight: 700; color: var(--text-1); }
+.ap-sub-kpi-label { display: block; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-4); margin-top: 4px; }
+[data-theme="dark"] .ap-sub-kpi-val { color: var(--text-1); }
+
+/* Plans row */
+.ap-plans-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: var(--sp-4); margin-bottom: var(--sp-6); }
+.ap-plan-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-xl);
+  padding: var(--sp-5); box-shadow: var(--shadow-xs);
+}
+[data-theme="dark"] .ap-plan-card { background: var(--surface); border-color: var(--border); }
+.ap-plan-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--sp-2); }
+.ap-plan-name { font-weight: 800; font-size: 0.9rem; color: var(--text-1); }
+.ap-plan-price { font-family: var(--font-display); font-size: 1.1rem; font-weight: 700; color: var(--brand); }
+.ap-plan-price small { font-size: 0.65rem; color: var(--text-4); }
+.ap-plan-count { font-size: 0.78rem; color: var(--text-4); margin-bottom: var(--sp-3); }
+.ap-plan-features { list-style: none; padding: 0; margin: 0; }
+.ap-plan-features li { font-size: 0.78rem; color: var(--text-3); padding: 3px 0; }
+
+/* Admin stats bar */
+.ap-admin-stats-bar { display: flex; gap: var(--sp-3); flex-wrap: wrap; margin-bottom: var(--sp-6); }
+.ap-admin-stat-pill {
+  display: flex; align-items: center; gap: 8px; padding: 6px 16px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-full);
+  font-size: 0.82rem; font-weight: 600; color: var(--text-3);
+}
+.ap-admin-stat-pill span { font-family: var(--font-display); font-size: 1.1rem; font-weight: 700; color: var(--text-1); }
+.ap-admin-stat-pill.green { border-color: var(--brand-light); color: var(--brand); }
+.ap-admin-stat-pill.green span { color: var(--brand); }
+.ap-admin-stat-pill.yellow { border-color: #fde68a; color: #d97706; }
+.ap-admin-stat-pill.yellow span { color: #d97706; }
+[data-theme="dark"] .ap-admin-stat-pill { background: var(--surface); border-color: var(--border); }
+
+/* Subscription plan cards - prevent flash */
+.ap-plan-card {
+  min-height: 160px;
+  display: flex;
+  flex-direction: column;
+}
+.ap-plan-features li { min-height: 1.2em; }

@@ -1,0 +1,29 @@
+.qrscan-page { padding: var(--sp-10) 0 var(--sp-20); }
+.container-sm { max-width: 560px; }
+.qrscan-header { text-align: center; margin-bottom: var(--sp-8); }
+.qrscan-header h1 { font-family: var(--font-display); font-size: 1.8rem; font-weight: 800; color: var(--ink-2); margin-bottom: var(--sp-3); }
+.qrscan-header p { color: var(--muted); }
+.qrscan-card { padding: var(--sp-8); text-align: center; }
+.qrscan-start {}
+.qrscan-icon { font-size: 4rem; margin-bottom: var(--sp-4); }
+.qrscan-start h3 { font-family: var(--font-display); font-size: 1.2rem; font-weight: 700; color: var(--ink-2); margin-bottom: var(--sp-3); }
+.qrscan-start p { color: var(--muted); margin-bottom: var(--sp-6); }
+.qrscan-viewport { position: relative; }
+.qrscan-video { width: 100%; border-radius: var(--r-lg); max-height: 380px; object-fit: cover; display: block; }
+.qrscan-overlay { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.qrscan-frame { width: 200px; height: 200px; position: relative; }
+.qrf-corner { position: absolute; width: 24px; height: 24px; border-color: var(--teal); border-style: solid; }
+.qrf-corner.tl { top: 0; left: 0; border-width: 3px 0 0 3px; }
+.qrf-corner.tr { top: 0; right: 0; border-width: 3px 3px 0 0; }
+.qrf-corner.bl { bottom: 0; left: 0; border-width: 0 0 3px 3px; }
+.qrf-corner.br { bottom: 0; right: 0; border-width: 0 3px 3px 0; }
+.qrscan-hint { color: white; font-size: 0.82rem; font-weight: 500; margin-top: var(--sp-4); background: rgba(0,0,0,0.5); padding: 4px 12px; border-radius: var(--r-full); }
+.qrscan-stop { position: absolute; top: 12px; right: 12px; }
+.qrscan-result { margin-top: var(--sp-5); }
+.qrscan-instructions { margin-top: var(--sp-8); padding: var(--sp-6); background: white; border: 1px solid var(--border); border-radius: var(--r-lg); }
+.qrscan-instructions h3 { font-family: var(--font-display); font-size: 1rem; font-weight: 700; color: var(--ink-2); margin-bottom: var(--sp-5); }
+.qrscan-steps { display: flex; flex-direction: column; gap: var(--sp-5); }
+.qrscan-step { display: flex; align-items: flex-start; gap: var(--sp-4); text-align: left; }
+.step-num { width: 32px; height: 32px; border-radius: var(--r-full); background: var(--teal); color: white; font-size: 0.85rem; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.qrscan-step strong { font-size: 0.9rem; font-weight: 700; color: var(--ink-2); display: block; margin-bottom: 4px; }
+.qrscan-step p { font-size: 0.82rem; color: var(--muted); margin: 0; }
