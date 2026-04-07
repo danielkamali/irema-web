@@ -1,5 +1,6 @@
 {
   "projects": {
-    "default": "irema-41070"
+    "default": "irema-41070",
+    "production": "irema-production"
   }
 }
