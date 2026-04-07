@@ -26,6 +26,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools
+
       - name: Create .env.staging file
         run: |
           cat > .env.staging >> .env
@@ -64,6 +67,9 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools
 
       - name: Create .env.production file
         run: |
