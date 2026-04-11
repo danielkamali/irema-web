@@ -209,7 +209,7 @@ export default function CompanyPage() {
           'x-api-key': import.meta.env.VITE_ANTHROPIC_API_KEY || '',
         },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514', max_tokens: 300,
+          model: 'claude-3-5-sonnet-20241022', max_tokens: 300,
           messages: [{ role: 'user', content: `Translate this review to ${i18n.language === 'rw' ? 'Kinyarwanda' : i18n.language === 'fr' ? 'French' : i18n.language === 'sw' ? 'Swahili' : 'English'}. Return ONLY the translation, no explanation:\n\n"${text}"` }]
         })
       });
