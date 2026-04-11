@@ -11,6 +11,8 @@ import { sanitizeUrl } from '../utils/security';
 import './CompanyPage.css';
 import StoriesSection from '../components/StoriesSection';
 
+const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || '';
+
 const AVATAR_COLORS = ['#2d8f6f','#0ea5e9','#8b5cf6','#f59e0b','#ef4444','#14b8a6','#ec4899'];
 function avatarColor(name) { return AVATAR_COLORS[(name?.charCodeAt(0)||0) % AVATAR_COLORS.length]; }
 
@@ -389,12 +391,12 @@ export default function CompanyPage() {
                   <div className="biz-info-label">{t('company.address')||'Address'}</div>
                   <div className="biz-info-value">{company.address}</div>
                   <a
-                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent((company.address||'') + ' ' + (company.city||'') + ' Rwanda')}`}
+                    href={`https://www.mapbox.com/directions/?location=${encodeURIComponent((company.address||'') + ' ' + (company.city||'') + ' Rwanda')}&access_token=${MAPBOX_TOKEN}`}
                     target="_blank" rel="noopener noreferrer"
                     style={{fontSize:'0.74rem',color:'var(--brand)',fontWeight:600,display:'inline-flex',alignItems:'center',gap:4,marginTop:4,textDecoration:'none'}}
                   >
                     <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-                    View on Google Maps
+                    Get Directions
                   </a>
                 </div>
               </div>
@@ -402,14 +404,19 @@ export default function CompanyPage() {
             {/* Embedded mini map */}
             {company.address && (
               <div style={{marginTop:8,borderRadius:10,overflow:'hidden',border:'1px solid var(--border)'}}>
-                <iframe
-                  title="Business location"
-                  width="100%" height="160"
-                  style={{border:0,display:'block'}}
-                  loading="lazy"
-                  referrerPolicy="no-referrer-when-downgrade"
-                  src={`https://www.google.com/maps/embed/v1/place?key=${import.meta.env.VITE_GOOGLE_MAPS_KEY||''}&q=${encodeURIComponent((company.address||'') + ' ' + (company.city||company.district||'') + ' Rwanda')}&zoom=15`}
-                />
+                <a 
+                  href={`https://www.mapbox.com/mDirections/?place=${encodeURIComponent((company.address||'') + (company.city ? ', ' + company.city : '') + ', Rwanda')}&access_token=${MAPBOX_TOKEN}`}
+                  target="_blank" rel="noopener noreferrer"
+                  style={{position:'relative',display:'block',height:'160px',background:'linear-gradient(135deg,#e8e8e8 0%,#d0d0d0 100%)',overflow:'hidden',textDecoration:'none'}}
+                >
+                  <div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column',gap:8}}>
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="1.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                    <span style={{fontSize:13,fontWeight:600,color:'#444'}}>View on Map</span>
+                  </div>
+                  <div style={{position:'absolute',bottom:0,left:0,right:0,background:'rgba(255,255,255,0.9)',padding:'8px 12px',fontSize:11,color:'#666',textAlign:'center',borderTop:'1px solid #ddd'}}>
+                    {company.address}{company.city ? `, ${company.city}` : ''}
+                  </div>
+                </a>
               </div>
             )}
             {company.phone && (
