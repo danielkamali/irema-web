@@ -17,12 +17,10 @@ jobs:
           cache: 'npm'
       - run: npm ci
       - run: npm run build
-      - uses: w9jds/firebase-action@v2
-        with:
-          args: deploy --project irema-41070 --only hosting
+      - run: npm install -g firebase-tools
+      - run: firebase deploy --project irema-41070 --only hosting
         env:
           FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
-          VITE_MAPBOX_TOKEN: ${{ secrets.VITE_MAPBOX_TOKEN }}
 
   production:
     needs: staging
@@ -36,9 +34,7 @@ jobs:
           cache: 'npm'
       - run: npm ci
       - run: npm run build
-      - uses: w9jds/firebase-action@v2
-        with:
-          args: deploy --project irema-production --only hosting
+      - run: npm install -g firebase-tools
+      - run: firebase deploy --project irema-production --only hosting
         env:
           FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
-          VITE_MAPBOX_TOKEN: ${{ secrets.VITE_MAPBOX_TOKEN }}
