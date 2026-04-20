@@ -1,14 +1,19 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import { browserLocalPersistence, setPersistence } from 'firebase/auth';
 import { useModalStore } from '../store/modalStore';
 import { useAuthStore } from '../store/authStore';
 import {
   auth, db, doc, setDoc, getDoc, serverTimestamp,
   signInWithEmailAndPassword, createUserWithEmailAndPassword,
-  signInWithPopup, googleProvider, updateProfile, sendPasswordResetEmail,
+  signInWithRedirect, googleProvider, updateProfile, sendPasswordResetEmail,
   collection, query, where, getDocs, addDoc, updateDoc, runTransaction,
   storage, storageRef, uploadBytes, getDownloadURL
 } from '../firebase/config';
+import { signInWithPopup } from 'firebase/auth';
+import { ensureUniqueSlug } from '../utils/slug';
+import { resolveAuthFlow } from './AuthRedirectHandler';
+import { useNavigate } from 'react-router-dom';
 
 // ── Review upload constants ──────────────────────────────────────────────────
 const MAX_REVIEW_PHOTOS  = 4;           // max photos per review
@@ -27,6 +32,7 @@ import './AuthModal.css';
 
 export default function AuthModal() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const { activeModal, modalData, openModal, closeModal } = useModalStore();
   const { user } = useAuthStore();
   const [email, setEmail] = useState('');
@@ -123,29 +129,57 @@ export default function AuthModal() {
     if (!termsAccepted && !isLogin) { setError('Please accept the Terms & Conditions to continue.'); return; }
     setLoading(true); setError('');
     try {
-      const result = await signInWithPopup(auth, googleProvider);
-      const uid = result.user.uid;
-      // Block admin accounts from user portal
-      const adminSnap = await getDoc(doc(db, 'admin_users', uid)).catch(() => null);
-      if (adminSnap?.exists() && adminSnap.data()?.isActive !== false) {
-        await auth.signOut();
-        setError('Admin accounts must use the Admin Portal at /admin/login');
-        setLoading(false); return;
+      // Try popup first (opens in new window like other apps)
+      try {
+        await setPersistence(auth, browserLocalPersistence);
+        const result = await signInWithPopup(auth, googleProvider);
+        const uid = result.user.uid;
+
+        // Check if user is admin (block from user portal)
+        const adminSnap = await getDoc(doc(db, 'admin_users', uid)).catch(() => null);
+        if (adminSnap?.exists() && adminSnap.data()?.isActive !== false) {
+          await auth.signOut();
+          setError('Admin accounts must use the Admin Portal at /admin/login');
+          setLoading(false);
+          return;
+        }
+
+        // Check if user is business owner (redirect to business dashboard)
+        const bizSnap = await getDocs(query(collection(db, 'companies'), where('adminUserId', '==', uid))).catch(() => ({ empty: true }));
+        if (!bizSnap.empty) {
+          await auth.signOut();
+          setError('This account is registered as a business. Please login at the Business Portal.');
+          setLoading(false);
+          return;
+        }
+
+        // Regular user - create profile if doesn't exist
+        const userRef = doc(db, 'users', uid);
+        const userSnap = await getDoc(userRef);
+        if (!userSnap.exists()) {
+          await setDoc(userRef, {
+            displayName: result.user.displayName,
+            email: result.user.email,
+            photoURL: result.user.photoURL,
+            role: 'user',
+            createdAt: serverTimestamp(),
+          });
+        }
+        closeModal();
+        return;
+      } catch (popupErr) {
+        // If popup fails (COOP blocking, user blocked popups, etc), fall back to redirect
+        if (popupErr?.code !== 'auth/cancelled-popup-request') {
+          console.warn('Popup sign-in failed, falling back to redirect:', popupErr?.message);
+          sessionStorage.setItem('irema_auth_intent', 'user');
+          localStorage.setItem('irema_auth_intent', 'user');
+          await signInWithRedirect(auth, googleProvider);
+        }
+        return;
       }
-      // Block business-only accounts from user portal
-      const bizSnap = await getDocs(query(collection(db, 'companies'), where('adminUserId', '==', uid))).catch(() => ({ empty: true }));
-      if (!bizSnap.empty) {
-        await auth.signOut();
-        setBizWarning(true);
-        setLoading(false); return;
-      }
-      const userRef = doc(db, 'users', uid);
-      const snap = await getDoc(userRef);
-      if (!snap.exists()) {
-        await setDoc(userRef, { displayName: result.user.displayName, email: result.user.email, photoURL: result.user.photoURL, role: 'user', createdAt: serverTimestamp() });
-      }
-      closeModal();
-    } catch (e) { setError(e.message); } finally { setLoading(false); }
+    } catch (e) {
+      setError(e?.message || 'Google sign-in failed');
+    } finally { setLoading(false); }
   }
 
   async function handleForgotPassword(e) {
@@ -177,6 +211,7 @@ export default function AuthModal() {
   async function handleEmailLogin(e) {
     e.preventDefault(); setLoading(true); setError('');
     try {
+      await setPersistence(auth, browserLocalPersistence);
       const cred = await signInWithEmailAndPassword(auth, email, password);
       const uid = cred.user.uid;
       // Block admin accounts from user portal
@@ -204,6 +239,7 @@ export default function AuthModal() {
     if (!termsAccepted) { setError('Please accept the Terms & Conditions to continue.'); return; }
     setLoading(true); setError('');
     try {
+      await setPersistence(auth, browserLocalPersistence);
       const result = await createUserWithEmailAndPassword(auth, email, password);
       const uid = result.user.uid;
       const displayName = email.split('@')[0];
@@ -263,16 +299,36 @@ export default function AuthModal() {
 
   async function uploadReviewImages(reviewId) {
     if (!selectedImages.length) return [];
+    if (!user?.uid) {
+      console.warn('uploadReviewImages: no authed user, skipping');
+      return [];
+    }
     const urls = [];
+    const failures = [];
     for (const file of selectedImages) {
       try {
-        const ext = file.name.split('.').pop() || 'jpg';
-        const path = `review-photos/${reviewId}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+        // Sanitize extension so paths stay URL-safe
+        const rawExt = (file.name.split('.').pop() || 'jpg').toLowerCase();
+        const ext = rawExt.replace(/[^a-z0-9]/g, '').slice(0, 5) || 'jpg';
+        // User-keyed path — no Firestore-get race on storage.rules because
+        // the rule only needs `request.auth.uid == userId`. Review id is
+        // embedded in the filename so we can still trace uploads back.
+        const rand = Math.random().toString(36).slice(2);
+        const path = `review-photos/users/${user.uid}/${reviewId}_${Date.now()}_${rand}.${ext}`;
         const ref = storageRef(storage, path);
         const snap = await uploadBytes(ref, file, { contentType: file.type || 'image/jpeg' });
         const url = await getDownloadURL(snap.ref);
         urls.push(url);
-      } catch (e) { console.error('Image upload failed:', e); }
+      } catch (e) {
+        console.error('Image upload failed:', e);
+        failures.push(e?.message || String(e));
+      }
+    }
+    // Image upload failures are NON-FATAL: we still want the review itself
+    // to save even if every photo fails (network hiccup, CORS, etc.). The
+    // submit handler can show a soft notice when some images were dropped.
+    if (failures.length) {
+      console.warn(`Review image upload: ${failures.length} failed, ${urls.length} succeeded`, failures);
     }
     return urls;
   }
@@ -283,8 +339,12 @@ export default function AuthModal() {
     if (!newBizForm.name.trim() || !newBizForm.category) { setError('Name and category required'); return; }
     setAddingBiz(true); setError('');
     try {
+      // Reserve a unique slug up-front so /business/<slug> works the moment
+      // the doc lands — no "slug backfill on first visit" race.
+      const slug = await ensureUniqueSlug(newBizForm.name);
       const ref = await addDoc(collection(db, 'companies'), {
         name: newBizForm.name, companyName: newBizForm.name,
+        slug,
         category: newBizForm.category, country: 'RW',
         address: newBizForm.address || '',
         city: newBizForm.city || '',
@@ -292,7 +352,7 @@ export default function AuthModal() {
         status: 'unverified', createdAt: serverTimestamp(),
         addedBy: user?.uid || 'anonymous',
       });
-      const created = { id: ref.id, name: newBizForm.name, companyName: newBizForm.name, category: newBizForm.category };
+      const created = { id: ref.id, slug, name: newBizForm.name, companyName: newBizForm.name, category: newBizForm.category };
       setSelectedCompany(created);
       setShowAddBiz(false);
       setReviewStep(2);
@@ -311,9 +371,9 @@ export default function AuthModal() {
       if (starEl) { starEl.style.animation = 'shake 0.4s ease'; setTimeout(()=>{ starEl.style.animation=''; }, 400); }
       return; 
     }
-    if (!comment.trim() || comment.trim().length < 10) { 
-      setError('Please write at least 10 characters in your review.'); 
-      return; 
+    if (!comment.trim() || comment.trim().length < 5) {
+      setError('Please write at least 5 characters in your review.');
+      return;
     }
     setLoading(true); setError('');
     try {

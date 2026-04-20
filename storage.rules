@@ -2,38 +2,90 @@ rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
 
-    // Business logos — only the company owner may write
+    // ── Shared helpers ────────────────────────────────────────────────
+    function isSignedIn() { return request.auth != null; }
+    function underSizeMB(mb) {
+      return request.resource.size <= mb * 1024 * 1024;
+    }
+    function isImage() {
+      return request.resource.contentType != null
+        && request.resource.contentType.matches('image/.*');
+    }
+    function isImageOrVideo() {
+      return request.resource.contentType != null
+        && (request.resource.contentType.matches('image/.*')
+            || request.resource.contentType.matches('video/.*'));
+    }
+
+    // ── Business logos ───────────────────────────────────────────────
+    // The company owner (adminUserId) or the original creator (addedBy)
+    // may upload. addedBy is included so a newly-added business can have
+    // its logo set before the claim flow assigns adminUserId.
     match /logos/{companyId}/{fileName} {
       allow read: if true;
-      allow write: if request.auth != null
-        && firestore.get(/databases/(default)/documents/companies/$(companyId)).data.adminUserId
-           == request.auth.uid;
+      allow write: if isSignedIn()
+        && underSizeMB(5) && isImage()
+        && firestore.exists(/databases/(default)/documents/companies/$(companyId))
+        && (
+          firestore.get(/databases/(default)/documents/companies/$(companyId)).data.adminUserId == request.auth.uid
+          || firestore.get(/databases/(default)/documents/companies/$(companyId)).data.addedBy == request.auth.uid
+        );
     }
 
-    // Business gallery photos — only the company owner may write
+    // ── Business gallery / cover / background photos ─────────────────
     match /business-photos/{companyId}/{fileName} {
       allow read: if true;
-      allow write: if request.auth != null
-        && firestore.get(/databases/(default)/documents/companies/$(companyId)).data.adminUserId
-           == request.auth.uid;
+      allow write: if isSignedIn()
+        && underSizeMB(10) && isImage()
+        && firestore.exists(/databases/(default)/documents/companies/$(companyId))
+        && (
+          firestore.get(/databases/(default)/documents/companies/$(companyId)).data.adminUserId == request.auth.uid
+          || firestore.get(/databases/(default)/documents/companies/$(companyId)).data.addedBy == request.auth.uid
+        );
     }
 
-    // Review photos — only the review author may write; max 10 MB per file
+    // ── Review photos: user-keyed path (preferred) ───────────────────
+    // Keying on userId avoids the eventual-consistency race where the
+    // review doc was just created and Storage rules can't yet read it.
+    // The uploader must be signed in AND own the folder.
+    match /review-photos/users/{userId}/{fileName} {
+      allow read: if true;
+      allow write: if isSignedIn()
+        && request.auth.uid == userId
+        && underSizeMB(10) && isImage();
+    }
+
+    // ── Review photos: legacy review-id path ─────────────────────────
+    // Kept for backwards compatibility with existing review docs whose
+    // images live under /review-photos/{reviewId}/... New uploads go
+    // through the user-keyed path above.
     match /review-photos/{reviewId}/{fileName} {
       allow read: if true;
-      allow write: if request.auth != null
-        && request.resource.size <= 10 * 1024 * 1024
-        && firestore.get(/databases/(default)/documents/reviews/$(reviewId)).data.userId
-           == request.auth.uid;
+      allow write: if isSignedIn()
+        && underSizeMB(10) && isImage()
+        && firestore.exists(/databases/(default)/documents/reviews/$(reviewId))
+        && firestore.get(/databases/(default)/documents/reviews/$(reviewId)).data.userId == request.auth.uid;
     }
 
-    // Profile images — only the account owner may write
+    // ── Profile pictures ─────────────────────────────────────────────
     match /profiles/{userId}/{fileName} {
       allow read: if true;
-      allow write: if request.auth != null && request.auth.uid == userId;
+      allow write: if isSignedIn()
+        && request.auth.uid == userId
+        && underSizeMB(5) && isImage();
     }
 
-    // Deny all other writes by default
+    // ── Company stories (short video/image clips) ────────────────────
+    // Previously had no rule so writes fell through to default-deny.
+    // Now any signed-in user can upload up to 50 MB; moderation happens
+    // via the company_stories Firestore doc's `status` field.
+    match /company-stories/{fileName} {
+      allow read: if true;
+      allow write: if isSignedIn()
+        && underSizeMB(50) && isImageOrVideo();
+    }
+
+    // ── Default deny ─────────────────────────────────────────────────
     match /{allPaths=**} {
       allow read: if true;
       allow write: if false;

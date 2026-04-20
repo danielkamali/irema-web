@@ -9,7 +9,9 @@ import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import LoadingSpinner from './components/LoadingSpinner';
 import AuthModal from './components/AuthModal';
+import AuthRedirectHandler from './components/AuthRedirectHandler';
 import LiveChat from './components/LiveChat';
+import EnvBanner from './components/EnvBanner';
 
 const HomePage = lazy(() => import('./pages/HomePage'));
 const SearchResults = lazy(() => import('./pages/SearchResults'));
@@ -96,11 +98,17 @@ export default function App() {
 
   return (
     <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      {/* Resolve any pending signInWithRedirect result at app mount */}
+      <AuthRedirectHandler />
       <Suspense fallback={<LoadingSpinner fullPage />}>
         <Routes>
           {/* Public routes */}
           <Route path="/" element={<PublicLayout><HomePage /></PublicLayout>} />
           <Route path="/search" element={<PublicLayout><SearchResults /></PublicLayout>} />
+          {/* Canonical URL: /business/<slug>. The old /company/:id route stays
+              around as a fallback so legacy links, QR codes and notifications
+              still resolve — CompanyPage canonicalises the URL once loaded. */}
+          <Route path="/business/:slug" element={<PublicLayout><CompanyPage /></PublicLayout>} />
           <Route path="/company/:id" element={<PublicLayout><CompanyPage /></PublicLayout>} />
           <Route path="/businesses" element={<BusinessesPage />} />
           <Route path="/top-rated" element={<PublicLayout><TopRatedPage /></PublicLayout>} />
@@ -142,6 +150,7 @@ export default function App() {
         </Routes>
       </Suspense>
       <LiveChat />
+      <EnvBanner />
     </BrowserRouter>
   );
 }

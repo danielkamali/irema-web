@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import QRCode from 'qrcode';
-import { db, auth, storage, collection, query, where, getDocs, doc, getDoc, updateDoc, setDoc, addDoc, serverTimestamp, onAuthStateChanged, googleProvider, signInWithPopup, increment } from '../firebase/config';
+import { db, auth, storage, collection, query, where, getDocs, doc, getDoc, updateDoc, setDoc, addDoc, deleteDoc, serverTimestamp, onAuthStateChanged, googleProvider, increment } from '../firebase/config';
 import { useModalStore } from '../store/modalStore';
 import StarRating from '../components/StarRating';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { getCategoryLabel, formatRelativeTime, getRatingColor, getRatingLabel, getInitials } from '../utils/helpers';
 import { sanitizeUrl } from '../utils/security';
+import { slugify, ensureUniqueSlug, findCompanyBySlug, companyPath } from '../utils/slug';
 import './CompanyPage.css';
 import StoriesSection from '../components/StoriesSection';
 
@@ -17,7 +18,14 @@ const AVATAR_COLORS = ['#2d8f6f','#0ea5e9','#8b5cf6','#f59e0b','#ef4444','#14b8a
 function avatarColor(name) { return AVATAR_COLORS[(name?.charCodeAt(0)||0) % AVATAR_COLORS.length]; }
 
 export default function CompanyPage() {
-  const { id } = useParams();
+  // Two routes feed this page: /business/:slug (canonical) and the legacy
+  // /company/:id. We pick whichever param is present, load the doc, and
+  // canonicalise the URL below.
+  const params = useParams();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const routeSlug = params.slug || null;
+  const routeId   = params.id   || null;
   const { t, i18n } = useTranslation();
   const { openModal } = useModalStore();
   const [company, setCompany] = useState(null);
@@ -36,10 +44,8 @@ export default function CompanyPage() {
   const [lightboxImg, setLightboxImg] = useState(null); // { src, list, idx }
   // Reactions per review
   const [reactions, setReactions] = useState({}); // { reviewId: { helpful:n, thanks:n, love:n } }
-  const [userReacted, setUserReacted] = useState(() => {
-    // Persist per-user reactions in localStorage so they survive page reload
-    try { return JSON.parse(localStorage.getItem('irema_reactions') || '{}'); } catch { return {}; }
-  });
+  // Current logged-in user's reaction for each review (at most one type per review).
+  const [userReactionByReview, setUserReactionByReview] = useState({}); // { reviewId: 'helpful'|'thanks'|'love' }
   // Translation per review
   const [translated, setTranslated] = useState({}); // { reviewId: text }
   const [translating, setTranslating] = useState({});
@@ -65,11 +71,22 @@ export default function CompanyPage() {
       setActiveReview(found);
     }
   }, [reviews]);
-  useEffect(() => { if (id) { loadCompany(); loadReviews(); generateQR(); loadProducts(); } }, [id]);
+  // Load company once we know which param we got (slug or id).
+  useEffect(() => { if (routeSlug || routeId) { loadCompany(); } }, [routeSlug, routeId]);
+  // Generate QR once we have the resolved company (so the code points at the canonical URL)
+  useEffect(() => { if (company?.id) generateQR(); }, [company?.id, company?.slug]);
+
+  // Once company is resolved, load reviews + products keyed off its real id.
+  useEffect(() => {
+    if (!company?.id) return;
+    loadReviews();
+    loadProducts();
+  }, [company?.id]);
 
   async function loadProducts() {
+    if (!company?.id) return;
     try {
-      const snap = await getDocs(query(collection(db, 'products'), where('companyId', '==', id), where('active', '==', true)));
+      const snap = await getDocs(query(collection(db, 'products'), where('companyId', '==', company.id), where('active', '==', true)));
       setProducts(snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a,b) => (a.category||'').localeCompare(b.category||'')));
     } catch {}
   }
@@ -77,22 +94,24 @@ export default function CompanyPage() {
 
   // Real-time: reload reviews when a new review is submitted from the modal
   useEffect(() => {
+    if (!company?.id) return;
+    const cid = company.id;
     function handleNewReview(e) {
-      if (e.detail?.companyId === id) {
-        getDocs(query(collection(db, 'reviews'), where('companyId', '==', id)))
+      if (e.detail?.companyId === cid) {
+        getDocs(query(collection(db, 'reviews'), where('companyId', '==', cid)))
           .then(snap => {
             const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
             data.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
             setReviews(data);
           }).catch(() => {});
-        getDoc(doc(db, 'companies', id))
+        getDoc(doc(db, 'companies', cid))
           .then(d => { if (d.exists()) setCompany(prev => ({ ...prev, ...d.data() })); })
           .catch(() => {});
       }
     }
     window.addEventListener('irema:newReview', handleNewReview);
     return () => window.removeEventListener('irema:newReview', handleNewReview);
-  }, [id]);
+  }, [company?.id]);
 
   // Lock scroll when modal open
   useEffect(() => {
@@ -106,27 +125,66 @@ export default function CompanyPage() {
 
   async function loadCompany() {
     try {
-      const snap = await getDoc(doc(db, 'companies', id));
-      if (snap.exists()) {
-        setCompany({ id: snap.id, ...snap.data() });
-        // Track unique profile view per session
-        const viewKey = `viewed_${id}`;
-        if (!sessionStorage.getItem(viewKey)) {
-          sessionStorage.setItem(viewKey, '1');
-          updateDoc(doc(db, 'companies', id), { viewCount: increment(1) }).catch(() => {});
+      let resolved = null;
+      if (routeSlug) {
+        // Primary path: look up the company by its stored slug.
+        resolved = await findCompanyBySlug(routeSlug);
+      }
+      if (!resolved && routeId) {
+        // Legacy path: /company/:id. Load by id, canonicalise later.
+        const snap = await getDoc(doc(db, 'companies', routeId));
+        if (snap.exists()) resolved = { id: snap.id, ...snap.data() };
+      }
+      if (!resolved) { setLoading(false); return; }
+
+      // Back-fill a slug on the fly for legacy docs that don't have one yet
+      // so the URL rewrite below lands on the canonical /business/<slug> path.
+      // The firestore rule lets any signed-in user set `slug` when it is
+      // missing (owner/admin gate only applies to other fields), so we try
+      // the write for every authenticated visitor — this makes canonicalisation
+      // work on refresh even for users who aren't the business owner. Anon
+      // visits fall through and just stay on /company/:id.
+      if (!resolved.slug) {
+        try {
+          const generated = await ensureUniqueSlug(resolved.companyName || resolved.name || 'business', resolved.id);
+          if (auth?.currentUser) {
+            // swallow errors — if the write is denied, we still canonicalise
+            // the URL in-memory below via `resolved.slug = generated`.
+            await updateDoc(doc(db, 'companies', resolved.id), { slug: generated }).catch(() => {});
+          }
+          resolved = { ...resolved, slug: generated };
+        } catch {}
+      }
+
+      setCompany(resolved);
+
+      // Canonicalise URL: if we arrived via /company/:id or via a different
+      // slug (e.g. after a rename), replace the location with the clean one.
+      if (resolved.slug) {
+        const want = `/business/${resolved.slug}`;
+        if (location.pathname !== want) {
+          navigate({ pathname: want, search: location.search }, { replace: true });
         }
+      }
+
+      // Track unique profile view per session
+      const viewKey = `viewed_${resolved.id}`;
+      if (!sessionStorage.getItem(viewKey)) {
+        sessionStorage.setItem(viewKey, '1');
+        updateDoc(doc(db, 'companies', resolved.id), { viewCount: increment(1) }).catch(() => {});
       }
     } catch (e) { console.error(e); }
     setLoading(false);
   }
 
   async function loadReviews() {
+    if (!company?.id) return;
     try {
-      const snap = await getDocs(query(collection(db, 'reviews'), where('companyId', '==', id)));
+      const snap = await getDocs(query(collection(db, 'reviews'), where('companyId', '==', company.id)));
       const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       setReviews(data);
       const r = {};
-      const ur = { ...userReacted };
+      const ubr = {}; // userReactionByReview
       data.forEach(rv => { r[rv.id] = { helpful: 0, thanks: 0, love: 0 }; });
       try {
         const reviewIds = data.map(rv => rv.id);
@@ -140,17 +198,23 @@ export default function CompanyPage() {
             if (rxd.type === 'helpful') r[rxd.reviewId].helpful = (r[rxd.reviewId].helpful||0) + 1;
             else if (rxd.type === 'thanks') r[rxd.reviewId].thanks = (r[rxd.reviewId].thanks||0) + 1;
             else if (rxd.type === 'love') r[rxd.reviewId].love = (r[rxd.reviewId].love||0) + 1;
-            if (user && rxd.userId === user.uid) ur[`${rxd.userId}_${rxd.reviewId}_${rxd.type}`] = true;
+            // Record the CURRENT signed-in user's reaction per review (one per review)
+            if (user && rxd.userId === user.uid) ubr[rxd.reviewId] = rxd.type;
           });
         }
       } catch {}
       setReactions(r);
-      if (user) setUserReacted(ur);
+      if (user) setUserReactionByReview(ubr);
     } catch (e) { console.error(e); }
   }
 
   async function generateQR() {
-    const url = `${window.location.origin}/company/${id}`;
+    // QR points at the canonical /business/<slug> URL when available, falling
+    // back to /company/<id> on legacy docs that still lack a slug.
+    const key = company?.slug || company?.id || routeSlug || routeId || '';
+    if (!key) return;
+    const prefix = company?.slug || routeSlug ? '/business/' : '/company/';
+    const url = `${window.location.origin}${prefix}${company?.slug || routeSlug || company?.id || routeId}`;
     try {
       const dataUrl = await QRCode.toDataURL(url, { width:256, margin:2, color:{ dark:'#0f1923', light:'#ffffff' } });
       setQrDataUrl(dataUrl);
@@ -183,19 +247,50 @@ export default function CompanyPage() {
 
   async function handleReaction(reviewId, type) {
     if (!user) { openModal('login'); return; }
-    const reactionKey = `${user.uid}_${reviewId}_${type}`;
-    if (userReacted[reactionKey]) return;
+    const rxKey = `${reviewId}_${user.uid}`;
+    const rxRef = doc(db, 'review_reactions', rxKey);
+    const currentType = userReactionByReview[reviewId]; // 'helpful' | 'thanks' | 'love' | undefined
+    const cur = reactions[reviewId] || { helpful: 0, thanks: 0, love: 0 };
+
     try {
-      const rxKey = `${reviewId}_${user.uid}`;
-      await setDoc(doc(db, 'review_reactions', rxKey), {
-        reviewId, userId: user.uid, type, createdAt: serverTimestamp(),
-      });
-      const cur = reactions[reviewId] || {};
-      setReactions(prev => ({ ...prev, [reviewId]: { ...cur, [type]: (cur[type]||0) + 1 } }));
-      const updated = { ...userReacted, [reactionKey]: true };
-      setUserReacted(updated);
-      localStorage.setItem('irema_reactions', JSON.stringify(updated));
-    } catch {}
+      if (currentType === type) {
+        // TOGGLE OFF: user clicked the same reaction they already gave — remove it
+        await deleteDoc(rxRef);
+        setReactions(prev => ({
+          ...prev,
+          [reviewId]: { ...cur, [type]: Math.max(0, (cur[type]||0) - 1) },
+        }));
+        setUserReactionByReview(prev => {
+          const next = { ...prev };
+          delete next[reviewId];
+          return next;
+        });
+      } else if (currentType) {
+        // REPLACE: user previously reacted with a different type — swap it
+        await setDoc(rxRef, {
+          reviewId, userId: user.uid, type, createdAt: serverTimestamp(),
+        });
+        setReactions(prev => ({
+          ...prev,
+          [reviewId]: {
+            ...cur,
+            [currentType]: Math.max(0, (cur[currentType]||0) - 1),
+            [type]: (cur[type]||0) + 1,
+          },
+        }));
+        setUserReactionByReview(prev => ({ ...prev, [reviewId]: type }));
+      } else {
+        // NEW: first-time reaction
+        await setDoc(rxRef, {
+          reviewId, userId: user.uid, type, createdAt: serverTimestamp(),
+        });
+        setReactions(prev => ({
+          ...prev,
+          [reviewId]: { ...cur, [type]: (cur[type]||0) + 1 },
+        }));
+        setUserReactionByReview(prev => ({ ...prev, [reviewId]: type }));
+      }
+    } catch (e) { console.error('reaction failed', e); }
   }
 
   async function translateReview(reviewId, text) {
@@ -367,6 +462,7 @@ export default function CompanyPage() {
                 <ReviewWidget
                   key={review.id} review={review}
                   reactions={reactions[review.id]}
+                  myReaction={userReactionByReview[review.id]}
                   isTranslating={translating[review.id]}
                   translatedText={translated[review.id]}
                   onOpen={() => setActiveReview(review)}
@@ -511,7 +607,7 @@ export default function CompanyPage() {
       {/* ── Company Stories — full width below reviews ── */}
       {company && (
         <StoriesSection
-          companyId={id}
+          companyId={company.id}
           companyName={company.companyName || company.name}
           showUpload={false}
           currentUser={user}
@@ -528,6 +624,7 @@ export default function CompanyPage() {
           onReplySubmit={() => submitReply(activeReview.id, isBusinessOwner)}
           submitting={submittingReply===activeReview.id}
           reactions={reactions[activeReview.id]}
+          myReaction={userReactionByReview[activeReview.id]}
           onReact={type=>handleReaction(activeReview.id,type)}
           translated={translated[activeReview.id]}
           isTranslating={translating[activeReview.id]}
@@ -554,7 +651,7 @@ export default function CompanyPage() {
 }
 
 /* ── Review Widget (Yelp-style card) ── */
-function ReviewWidget({ review, reactions, isTranslating, translatedText, onOpen, onReact, onTranslate, t, lang }) {
+function ReviewWidget({ review, reactions, myReaction, isTranslating, translatedText, onOpen, onReact, onTranslate, t, lang }) {
   const name = review.userName || 'Anonymous';
   const comment = translatedText || review.comment || '';
   const short = comment.length > 120 ? comment.slice(0,120)+'…' : comment;
@@ -582,11 +679,21 @@ function ReviewWidget({ review, reactions, isTranslating, translatedText, onOpen
       )}
       <div className="rw-footer">
         <div className="rw-reactions" onClick={e=>e.stopPropagation()}>
-          <button key="helpful" className="rw-react-btn" onClick={()=>onReact('helpful')}>
+          <button
+            key="helpful"
+            className={`rw-react-btn${myReaction==='helpful'?' rw-react-btn-active':''}`}
+            aria-pressed={myReaction==='helpful'}
+            title={myReaction==='helpful' ? 'Remove reaction' : 'Helpful'}
+            onClick={()=>onReact('helpful')}>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14z"/><path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>
             {(reactions?.helpful||0)||''}
           </button>
-          <button key="love" className="rw-react-btn" onClick={()=>onReact('love')}>
+          <button
+            key="love"
+            className={`rw-react-btn${myReaction==='love'?' rw-react-btn-active':''}`}
+            aria-pressed={myReaction==='love'}
+            title={myReaction==='love' ? 'Remove reaction' : 'Love'}
+            onClick={()=>onReact('love')}>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="#ef4444"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
             {(reactions?.love||0)||''}
           </button>
@@ -604,7 +711,7 @@ function ReviewWidget({ review, reactions, isTranslating, translatedText, onOpen
 }
 
 /* ── Review Modal ── */
-function ReviewModal({ review, user, isBusinessOwner, replyText, onReplyChange, onReplySubmit, submitting, reactions, onReact, translated, isTranslating, onTranslate, onImageClick, onClose, t, lang }) {
+function ReviewModal({ review, user, isBusinessOwner, replyText, onReplyChange, onReplySubmit, submitting, reactions, myReaction, onReact, translated, isTranslating, onTranslate, onImageClick, onClose, t, lang }) {
   const name = review.userName || 'Anonymous';
   const color = avatarColor(name);
   const comment = translated || review.comment || '';
@@ -653,7 +760,13 @@ function ReviewModal({ review, user, isBusinessOwner, replyText, onReplyChange, 
             ['thanks', <svg key="t" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>, 'Thanks', (reactions?.thanks||0)],
             ['love', <svg key="l" width="14" height="14" viewBox="0 0 24 24" fill="#ef4444"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>, 'Love', (reactions?.love||0)],
           ].map(([type,icon,label,count])=>(
-            <button key={type} className="rm-react-btn" onClick={()=>onReact(type)}>
+            <button
+              key={type}
+              className={`rm-react-btn${myReaction===type?' rm-react-btn-active':''}`}
+              aria-pressed={myReaction===type}
+              title={myReaction===type ? 'Click again to remove' : label}
+              onClick={()=>onReact(type)}
+            >
               {icon} {label} {count>0&&<span className="rm-react-count">{count}</span>}
             </button>
           ))}

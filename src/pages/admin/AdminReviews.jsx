@@ -15,7 +15,7 @@ const Stars = ({rating, size=14}) => (
 );
 
 function Toast({msg,type,onClose}) {
-  useEffect(()=>{const t=setTimeout(onClose,3200);return()=>clearTimeout(t);},[]);
+  useEffect(()=>{const t=setTimeout(onClose,3200);return()=>clearTimeout(t);},[onClose]);
   return <div className={`ap-toast ap-toast-${type}`}>{type==='success'?'✓':'✗'} {msg}</div>;
 }
 

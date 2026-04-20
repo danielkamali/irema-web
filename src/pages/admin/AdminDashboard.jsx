@@ -101,6 +101,7 @@ export default function AdminDashboard() {
     const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
     const grid = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.05)';
     const tick = isDark ? '#8fa89e' : '#9ca3af';
+    // Matches AdminAnalytics palette — emerald green primary with soft fill.
     const GREEN = '#2d8f6f', GREEN2 = 'rgba(45,143,111,0.15)';
     const AMBER='#f59e0b', BLUE='#3b82f6';
 

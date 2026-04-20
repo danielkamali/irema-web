@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import StarRating from './StarRating';
 import { getCategoryLabel, getRatingColor, getRatingLabel } from '../utils/helpers';
+import { companyPath } from '../utils/slug';
 import './CompanyCard.css';
 
 export default function CompanyCard({ company }) {
@@ -17,7 +18,7 @@ export default function CompanyCard({ company }) {
   const bannerImg = company.photos?.[0] || null;
 
   return (
-    <Link to={`/company/${company.id}`} className="company-card-link">
+    <Link to={companyPath(company)} className="company-card-link">
       <article className="company-card card card-hover">
         {/* Banner/cover image area */}
         <div className="company-card-banner" style={bannerImg ? { backgroundImage: `url(${bannerImg})` } : {}}>

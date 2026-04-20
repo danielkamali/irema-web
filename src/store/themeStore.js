@@ -1,7 +1,9 @@
 import { create } from 'zustand';
 
-const saved = localStorage.getItem('irema_theme') || 
-  (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+// Default to light mode on first visit regardless of OS preference.
+// Only switch to dark if the user explicitly chose it and we stored that
+// choice in localStorage — otherwise we start light and let them toggle.
+const saved = localStorage.getItem('irema_theme') === 'dark' ? 'dark' : 'light';
 
 export const useThemeStore = create((set) => ({
   theme: saved,

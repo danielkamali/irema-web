@@ -100,6 +100,8 @@
 .rw-reactions { display:flex; gap:4px; }
 .rw-react-btn { background:var(--bg); border:1px solid var(--border); border-radius:20px; padding:3px 9px; font-size:0.72rem; cursor:pointer; font-family:var(--font-body); transition:all 0.12s; display:flex; align-items:center; gap:3px; }
 .rw-react-btn:hover { background:var(--brand-xlight); border-color:var(--brand-light); }
+.rw-react-btn-active { background:var(--brand-xlight); border-color:var(--brand); color:var(--brand); font-weight:700; }
+.rw-react-btn-active:hover { background:var(--brand-light); }
 .rw-reply-count { font-size:0.72rem; color:var(--text-3); }
 
 /* Empty state */
@@ -145,6 +147,8 @@
 .rm-reactions { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; padding-bottom:16px; border-bottom:1px solid var(--border); }
 .rm-react-btn { display:flex; align-items:center; gap:5px; background:var(--bg); border:1px solid var(--border); border-radius:20px; padding:6px 14px; font-size:0.8rem; cursor:pointer; font-family:var(--font-body); transition:all 0.12s; }
 .rm-react-btn:hover { background:var(--brand-xlight); border-color:var(--brand-light); }
+.rm-react-btn-active { background:var(--brand-xlight); border-color:var(--brand); color:var(--brand); font-weight:700; }
+.rm-react-btn-active:hover { background:var(--brand-light); }
 .rm-react-count { background:var(--brand-xlight); color:var(--brand); font-size:0.65rem; font-weight:700; padding:1px 5px; border-radius:10px; }
 .rm-section-label { font-size:0.75rem; font-weight:700; color:var(--text-4); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:10px; }
 .rm-biz-replies { background:var(--brand-xlight); border-radius:12px; padding:14px; margin-bottom:14px; border-left:3px solid var(--brand); }

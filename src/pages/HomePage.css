@@ -48,7 +48,10 @@
 .hero-search-form {
   display: flex; gap: 0; background: var(--surface);
   border: 2px solid var(--border); border-radius: var(--r-full);
-  box-shadow: var(--shadow-md); overflow: hidden;
+  box-shadow: var(--shadow-md);
+  /* overflow is intentionally NOT hidden — the submit button already has
+     its own inset border-radius + margin, and the absolute-positioned
+     suggestions dropdown must be able to render outside the form. */
   max-width: 560px; margin: 0 auto var(--sp-8);
   animation: fadeInUp 0.5s 0.15s var(--ease-out) both;
   transition: border-color var(--t-fast), box-shadow var(--t-fast);

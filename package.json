@@ -5,8 +5,13 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
+    "build": "node -e \"console.error('\\n Do NOT run `npm run build` directly. Use `npm run build:staging` or `npm run build:prod` so the correct Firebase config is baked in.\\n'); process.exit(1)\"",
+    "build:staging": "vite build --mode staging",
+    "build:prod": "vite build --mode production",
+    "preview": "vite preview",
+    "deploy:staging": "npm run build:staging && firebase deploy -P staging --only hosting,firestore:rules,firestore:indexes,storage",
+    "deploy:prod": "npm run build:prod && firebase deploy -P production --only hosting,firestore:rules,firestore:indexes,storage",
+    "deploy:prod:nostorage": "npm run build:prod && firebase deploy -P production --only hosting,firestore:rules,firestore:indexes"
   },
   "dependencies": {
     "firebase": "^10.7.1",

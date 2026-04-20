@@ -1,5 +1,25 @@
-/* ── Admin Layout — Garden Fresh theme ── */
-.al-root { min-height: 100vh; background: var(--bg); display: flex; flex-direction: column; }
+/* ── Admin Layout — Emerald reference theme ── */
+/* Legacy --ad-* tokens were introduced for a black/yellow experiment that
+   has been reverted. We still define them here so any stray reference in
+   the admin tree resolves to the emerald palette without needing to
+   rewrite every rule. */
+.al-root {
+  --ad-accent:       #1ECAB8;
+  --ad-accent-dark:  #16a892;
+  --ad-accent-soft:  #e8fbf8;
+  --ad-accent-glow:  rgba(30, 202, 184, 0.35);
+  --ad-ink:          var(--green, #1ECAB8);
+  --ad-ink-hover:    var(--green-dark, #16a892);
+  --ad-ink-soft:     var(--muted, #4a4a4a);
+  --ad-bg:           var(--bg);
+  --ad-bg-soft:      var(--bg-2);
+  --ad-surface:      var(--surface, #FFFFFF);
+  --ad-border:       var(--border);
+
+  min-height: 100vh;
+  background: var(--bg);
+  display: flex; flex-direction: column;
+}
 
 /* Navbar */
 .al-navbar {
@@ -38,7 +58,7 @@
   transition: all var(--t-fast);
 }
 .al-search::placeholder { color: var(--ghost); }
-.al-search:focus { background: white; border-color: var(--green); box-shadow: 0 0 0 3px var(--teal-glow); }
+.al-search:focus { background: white; border-color: var(--ad-ink); box-shadow: 0 0 0 3px rgba(0,0,0,0.08); }
 .al-navbar-right { display: flex; align-items: center; gap: var(--sp-4); padding: 0 var(--sp-5); }
 .al-notif-btn {
   position: relative; width: 36px; height: 36px; border-radius: var(--r-sm);
@@ -46,7 +66,7 @@
   cursor: pointer; display: flex; align-items: center; justify-content: center;
   transition: all var(--t-fast);
 }
-.al-notif-btn:hover { background: var(--green-xlight); color: var(--green-dark); border-color: var(--green-light); }
+.al-notif-btn:hover { background: var(--ad-accent-soft); color: var(--ad-ink); border-color: var(--ad-accent); }
 .al-notif-badge {
   position: absolute; top: -4px; right: -4px; width: 16px; height: 16px;
   border-radius: var(--r-full); background: var(--danger); color: white;
@@ -61,11 +81,11 @@
   cursor: pointer; transition: all var(--t-fast);
   font-family: var(--font-body);
 }
-.al-user-pill:hover { background: var(--green-xlight); border-color: var(--green-light); }
+.al-user-pill:hover { background: var(--ad-accent-soft); border-color: var(--ad-accent); }
 .al-user-avatar {
   width: 26px; height: 26px; border-radius: var(--r-full);
-  background: linear-gradient(135deg, var(--green), var(--green-dark));
-  color: white; font-size: 0.65rem; font-weight: 700;
+  background: var(--ad-ink);
+  color: #ffffff; font-size: 0.65rem; font-weight: 700;
   display: flex; align-items: center; justify-content: center;
 }
 .al-user-pill > span { font-size: 0.82rem; font-weight: 500; color: var(--ink-2); }
@@ -105,13 +125,29 @@
   color: var(--ghost); margin-bottom: var(--sp-2); padding: 0 var(--sp-2);
 }
 .al-nav-link {
-  display: flex; align-items: center; gap: 10px; padding: 9px 12px;
+  display: flex; align-items: center; gap: 12px; padding: 9px 12px;
   border-radius: var(--r-md); font-size: 0.875rem; font-weight: 500;
   color: var(--muted); text-decoration: none; transition: all var(--t-fast); margin-bottom: 2px;
 }
+/* Fixed icon slot so every label starts at the same x-coordinate */
+.al-nav-link svg {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  display: block;
+  stroke-width: 1.75;
+}
 .al-nav-link:hover { background: var(--bg); color: var(--ink-2); }
-.al-nav-link.active { background: var(--green-xlight); color: var(--green-deeper); font-weight: 600; }
-.al-nav-link.active svg { color: var(--green); }
+/* Active item — emerald gradient pill matching the reference green theme. */
+.al-nav-link.active {
+  background: linear-gradient(135deg, #1ECAB8 0%, #16a892 100%);
+  color: #ffffff;
+  font-weight: 600;
+  box-shadow: 0 6px 18px rgba(30, 202, 184, 0.35);
+  transform: translateY(-1px);
+}
+.al-nav-link.active svg { color: #ffffff; stroke-width: 2.25; }
+.al-nav-link.active:hover { background: linear-gradient(135deg, #16a892 0%, #128278 100%); color: #ffffff; }
 .al-sidebar-footer { margin-top: auto; padding: var(--sp-5) var(--sp-3); border-top: 1px solid var(--border-2); }
 .al-sidebar-logout {
   display: flex; align-items: center; gap: 10px; width: 100%; padding: 9px 12px;
@@ -141,20 +177,34 @@
 [data-theme="dark"] .al-nav-section { border-color: var(--border); }
 [data-theme="dark"] .al-nav-link { color: var(--text-3); }
 [data-theme="dark"] .al-nav-link:hover { background: var(--bg-2); color: var(--text-1); }
-[data-theme="dark"] .al-nav-link.active { background: var(--brand-xlight); color: var(--brand); }
+[data-theme="dark"] .al-nav-link.active {
+  background: linear-gradient(135deg, #1ECAB8 0%, #16a892 100%);
+  color: #ffffff;
+  box-shadow: 0 6px 18px rgba(30, 202, 184, 0.4);
+}
+[data-theme="dark"] .al-nav-link.active svg { color: #ffffff; }
 [data-theme="dark"] .al-sidebar-footer { border-color: var(--border); }
 [data-theme="dark"] .al-main { background: var(--bg); }
 
 /* Language dropdown in admin */
 .al-lang-wrap { position: relative; }
+/* Icon buttons (theme toggle, language, sidebar toggle). In light mode the
+   navbar is solid white, so a faint --bg background + --border hairline was
+   nearly invisible. Use --bg-2 (light grey) plus --border-2 for contrast,
+   and darken the glyph colour so the "EN / FR / RW / SW" pill reads clearly. */
 .al-icon-btn {
   width: 34px; height: 34px; border-radius: var(--r-sm);
-  background: var(--bg, white); border: 1px solid var(--border, #d1d5db); color: var(--text-2, #374151);
+  background: var(--bg-2, #f3f4f6); border: 1px solid var(--border-2, #d1d5db); color: var(--text-1, #1a1a2e);
   cursor: pointer; display: flex; align-items: center; justify-content: center;
   transition: all var(--t-fast); font-size: 0.75rem; font-weight: 700; font-family: var(--font-body);
 }
-.al-icon-btn:hover { background: var(--brand-xlight); color: var(--brand-dark); border-color: var(--brand-light); }
-.al-lang-btn { min-width: 40px; width: auto; padding: 0 10px; color: var(--text-2); font-weight: 700; }
+.al-icon-btn:hover { background: var(--ad-accent-soft); color: var(--ad-ink); border-color: var(--ad-accent); }
+.al-lang-btn {
+  min-width: 44px; width: auto; padding: 0 12px;
+  color: var(--text-1); font-weight: 800; letter-spacing: 0.04em;
+  background: var(--bg-2); border: 1px solid var(--border-2);
+}
+.al-lang-btn:hover { background: var(--ad-accent-soft); color: var(--ad-ink); border-color: var(--ad-accent); }
 .al-lang-dropdown {
   position: absolute; top: calc(100% + 6px); right: 0;
   background: white; border: 1px solid var(--border); border-radius: var(--r-lg);
@@ -203,7 +253,11 @@
 [data-theme="dark"] .al-section-label { color: var(--text-4); }
 [data-theme="dark"] .al-nav-link { color: var(--text-3); }
 [data-theme="dark"] .al-nav-link:hover { background: var(--bg-2); color: var(--text-1); }
-[data-theme="dark"] .al-nav-link.active { background: var(--brand-xlight); color: var(--brand); }
+[data-theme="dark"] .al-nav-link.active {
+  background: var(--ad-accent);
+  color: var(--ad-ink);
+  box-shadow: 0 6px 18px var(--ad-accent-glow);
+}
 [data-theme="dark"] .al-main { background: var(--bg); }
 [data-theme="dark"] .al-search { background: var(--bg-2); color: var(--text-1); border-color: var(--border); }
 [data-theme="dark"] .al-search::placeholder { color: var(--text-4); }
@@ -225,27 +279,54 @@
 [data-theme="dark"] .al-lang-option:hover { background: var(--bg-2); }
 [data-theme="dark"] .al-lang-option.active { color: var(--brand); }
 
-/* ── Admin Mobile (v26) ── */
-
-  .al-nav { flex-direction: row; flex-wrap: wrap; gap: 2px; }
-  .al-nav-section-label { display: none; }
-  .al-nav-link span { display: none; }
-  .al-nav-link { padding: 8px; justify-content: center; width: auto; }
-  .al-content { padding: 16px; }
+/* ── Admin Mobile ── */
+/* Tablet portrait: compact brand, keep search */
+@media (max-width: 768px) {
+  .al-navbar-brand { width: auto; padding: 0 12px; }
+  .al-navbar-center { padding: 0 8px; }
+  .al-navbar-right { padding: 0 10px; gap: 8px; }
+  .al-brand-badge { display: none; } /* save space */
+  .al-user-pill > span { max-width: 80px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 }
+
+/* Phone large: hide the admin search bar, shrink user pill */
+@media (max-width: 640px) {
+  .al-navbar-center { display: none; }
+  .al-user-pill > span { display: none; } /* just avatar + chevron */
+  .al-user-pill { padding: 4px 8px; }
+  .al-brand-text { font-size: 0.95rem; }
+}
+
+/* Phone small (≤480px) */
 @media (max-width: 480px) {
   .al-navbar { padding: 0; }
-  .al-navbar-brand { padding: 0 10px; }
-  .al-navbar-center { display: none; }
-  .al-navbar-right { padding: 0 10px; gap: 6px; }
+  .al-navbar-brand { padding: 0 8px; gap: 6px; }
+  .al-navbar-right { padding: 0 8px; gap: 4px; }
+  .al-icon-btn { width: 32px; height: 32px; }
+  .al-lang-btn { padding: 0 8px; font-size: 0.7rem; }
   .ap-page-header { flex-direction: column; align-items: flex-start; gap: 8px; }
   .ap-table-wrap { overflow-x: auto; }
   .ap-table { min-width: 600px; }
   .ap-plans-row, .ap-subs-kpis { grid-template-columns: 1fr !important; }
+  .al-user-dropdown,
+  .al-lang-dropdown { right: 0; min-width: 180px; max-width: calc(100vw - 16px); }
 }
 
+/* Phone XS (≤360px) — very narrow */
+@media (max-width: 360px) {
+  .al-brand-text { display: none; } /* leave just the logo mark */
+  .al-icon-btn { width: 30px; height: 30px; }
+  .al-navbar-right { gap: 3px; }
+}
 
-  .al-main { padding: 10px; }
+/* Explicit left-alignment guarantee for the sidebar (prevents future regressions) */
+.al-sidebar { align-items: stretch; text-align: left; }
+.al-nav-section { text-align: left; }
+.al-section-label { text-align: left; }
+.al-nav-link {
+  justify-content: flex-start;
+  text-align: left;
+  width: 100%;
 }
 
 /* ═══════════════════════════════════════════════════════

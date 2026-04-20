@@ -26,7 +26,7 @@ function Stars({ rating, size = 14 }) {
 }
 
 function Toast({ msg, type, onClose }) {
-  useEffect(() => { const t = setTimeout(onClose, 3000); return () => clearTimeout(t); }, []);
+  useEffect(() => { const t = setTimeout(onClose, 3000); return () => clearTimeout(t); }, [onClose]);
   return (
     <div style={{
       position:'fixed', bottom:24, right:24, zIndex:9999,
@@ -227,18 +227,44 @@ export default function UserDashboard() {
   async function handlePhotoUpload(e) {
     const file = e.target.files?.[0];
     if (!file || !user) return;
+    // Guard — must be an image and under 5 MB to satisfy storage.rules
+    if (!/^image\//.test(file.type || '')) {
+      showToast('Please choose an image file', 'error');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      showToast('Image too large (max 5 MB)', 'error');
+      return;
+    }
     setPhotoUploading(true);
     try {
-      const path = `profiles/${user.uid}/${Date.now()}_${file.name}`;
-      const snap = await uploadBytes(storageRef(storage, path), file);
+      // Sanitize extension so the storage path stays URL-safe.
+      // Storage.rules uses userId-only for auth, so the filename doesn't
+      // affect security — but spaces/special chars in the URL do cause
+      // UX bugs (broken getDownloadURL in some SDK versions).
+      const rawExt = (file.name.split('.').pop() || 'jpg').toLowerCase();
+      const ext = rawExt.replace(/[^a-z0-9]/g, '').slice(0, 5) || 'jpg';
+      const rand = Math.random().toString(36).slice(2);
+      const path = `profiles/${user.uid}/${Date.now()}_${rand}.${ext}`;
+      const snap = await uploadBytes(
+        storageRef(storage, path), file,
+        { contentType: file.type || 'image/jpeg' }
+      );
       const url = await getDownloadURL(snap.ref);
       await updateProfile(user, { photoURL: url });
       await updateDoc(doc(db, 'users', user.uid), { photoURL: url }).catch(() => {});
+      // Update the authStore in-place so every component picks up the new
+      // photoURL without needing a full page reload (which used to briefly
+      // drop the user back to a signed-out view on slower networks).
+      try {
+        const store = useAuthStore.getState();
+        store.setUser({ ...(store.user || user), photoURL: url });
+        store.setUserProfile({ ...(store.userProfile || {}), photoURL: url });
+      } catch {}
       showToast('Profile photo updated!');
-      setTimeout(() => window.location.reload(), 900);
     } catch(e) {
       console.error('Photo upload:', e);
-      showToast('Upload failed: ' + e.message, 'error');
+      showToast('Upload failed: ' + (e?.message || 'unknown error'), 'error');
     }
     setPhotoUploading(false);
   }

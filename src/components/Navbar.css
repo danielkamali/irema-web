@@ -45,6 +45,75 @@
 }
 .navbar-link:hover { color: var(--text-1); background: var(--bg); }
 
+/* ── Highlighted CTAs (Write Review / For Business) ──
+   Filled emerald-green pills with a soft glow — used for both CTAs so
+   they read as one pair. Text is ALWAYS white (both themes, all states).
+   We use !important on the colour to win against the
+   [data-theme="dark"] .navbar-link:hover rule above. */
+.navbar-link.navbar-cta-primary,
+.navbar-link.navbar-cta-primary:hover,
+.navbar-link.navbar-cta-primary:focus,
+.navbar-link.navbar-cta-primary:active,
+.navbar-link.navbar-cta-primary:visited {
+  color: #ffffff !important;
+}
+.navbar-link.navbar-cta-primary .icon,
+.navbar-link.navbar-cta-primary svg {
+  color: #ffffff;
+  stroke: #ffffff;
+}
+.navbar-link.navbar-cta-primary {
+  background: linear-gradient(135deg, #1ECAB8 0%, #16a892 100%);
+  font-weight: 600;
+  padding: 7px 14px;
+  border-radius: var(--r-full);
+  box-shadow: 0 2px 6px rgba(30, 202, 184, 0.28), 0 0 0 1px rgba(30, 202, 184, 0.15);
+  transition: background var(--t-fast), transform var(--t-fast), box-shadow var(--t-fast);
+}
+.navbar-link.navbar-cta-primary:hover {
+  background: linear-gradient(135deg, #16a892 0%, #128976 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(30, 202, 184, 0.35), 0 0 0 1px rgba(30, 202, 184, 0.25);
+}
+
+/* Secondary style is kept around for any future use (not currently wired
+   up — both nav CTAs use the primary filled pill above). Text stays on-
+   brand in both light and dark mode. */
+.navbar-link.navbar-cta-secondary {
+  color: #1ECAB8 !important;
+  font-weight: 600;
+  padding: 6px 13px;
+  border-radius: var(--r-full);
+  border: 1.5px solid #1ECAB8;
+  background: transparent;
+  transition: background var(--t-fast), color var(--t-fast), transform var(--t-fast);
+}
+.navbar-link.navbar-cta-secondary:hover {
+  background: rgba(30, 202, 184, 0.12);
+  color: #1ECAB8 !important;
+  transform: translateY(-1px);
+}
+
+/* Dark-mode reinforcement — overrides the generic
+   [data-theme="dark"] .navbar-link:hover { color: var(--text-1); } rule
+   so the pill's white text never flips to light-grey on hover. */
+[data-theme="dark"] .navbar-link.navbar-cta-primary,
+[data-theme="dark"] .navbar-link.navbar-cta-primary:hover {
+  color: #ffffff !important;
+  background: linear-gradient(135deg, #1ECAB8 0%, #16a892 100%);
+}
+[data-theme="dark"] .navbar-link.navbar-cta-primary:hover {
+  background: linear-gradient(135deg, #16a892 0%, #128976 100%);
+}
+[data-theme="dark"] .navbar-link.navbar-cta-secondary,
+[data-theme="dark"] .navbar-link.navbar-cta-secondary:hover {
+  color: #1ECAB8 !important;
+  background: transparent;
+}
+[data-theme="dark"] .navbar-link.navbar-cta-secondary:hover {
+  background: rgba(30, 202, 184, 0.18);
+}
+
 /* Language switcher */
 .lang-switcher { position: relative; }
 .lang-btn {
@@ -112,12 +181,6 @@
   color: var(--text-2);
 }
 .mobile-menu-btn:hover { background: var(--bg); }
-
-
-
-  .mobile-menu-btn { display: flex; }
-  .navbar-search { max-width: 200px; }
-}
 
 /* ── Dark mode ── */
 [data-theme="dark"] .navbar { background: rgba(10,26,16,0.98) !important; border-color: var(--border) !important; -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); }
@@ -197,14 +260,6 @@
 /* Fix theme toggle visibility in light mode */
 .navbar-theme-btn { color: var(--text-2) !important; }
 .navbar-theme-btn:hover { color: var(--brand) !important; }
-
-
-  .hero-search-input { font-size: 0.9rem; }
-  .user-btn-name { max-width: 70px; }
-  .lang-btn { padding: 4px 8px; font-size: 0.75rem; }
-  .navbar-notif-dropdown { right: -60px; width: 300px; }
-  .user-dropdown { right: -40px; min-width: 180px; }
-}
 
 
 /* ═══════════════════════════════════════════════════════════

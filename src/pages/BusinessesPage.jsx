@@ -1,13 +1,15 @@
 import Footer from '../components/Footer';
 import React, { useState, useEffect } from 'react';
 import { db, auth, collection, addDoc, serverTimestamp, getDocs, query, where } from '../firebase/config';
-import { signInWithEmailAndPassword, signOut, createUserWithEmailAndPassword, onAuthStateChanged, sendPasswordResetEmail, signInWithPopup, updateProfile } from 'firebase/auth';
+import { signInWithEmailAndPassword, signOut, createUserWithEmailAndPassword, onAuthStateChanged, sendPasswordResetEmail, signInWithRedirect, signInWithPopup, updateProfile, browserLocalPersistence, setPersistence } from 'firebase/auth';
 import { useAuthStore } from '../store/authStore';
 import { googleProvider } from '../firebase/config';
 import { doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
 import { useThemeStore } from '../store/themeStore';
 import { useTranslation } from 'react-i18next';
+import { ensureUniqueSlug } from '../utils/slug';
+import { resolveAuthFlow } from '../components/AuthRedirectHandler';
 import './BusinessesPage.css';
 
 const CATS = [
@@ -72,7 +74,10 @@ export default function BusinessesPage() {
   const [authChecking, setAuthChecking] = useState(true); // true until we know auth state
 
   useEffect(() => {
-    // Load trust stat AND average rating from backend reviews
+    // Load trust stat AND average rating from backend reviews. Failures are
+    // non-fatal (page still renders with the default 89% / 4.8 heroes), but
+    // log in dev so we surface quota / permission issues instead of silently
+    // showing stale numbers.
     getDocs(collection(db, 'reviews')).then(snap => {
       const total = snap.docs.length;
       const ratings = snap.docs.map(d => d.data().rating || 0);
@@ -81,13 +86,41 @@ export default function BusinessesPage() {
         setTrustPct(Math.round((positive / total) * 100));
         setHeroAvg(parseFloat((ratings.reduce((s,r) => s+r, 0) / total).toFixed(1)));
       }
-    }).catch(() => {});
+    }).catch(err => {
+      if (import.meta.env.DEV) console.warn('[BusinessesPage] trust metrics load failed:', err);
+    });
+  }, []);
+
+  // If we just returned from signInWithRedirect with 'biz' intent but no
+  // company yet, AuthRedirectHandler sets this flag so we re-open the
+  // register modal with the Google user's details pre-filled.
+  useEffect(() => {
+    if (sessionStorage.getItem('irema_biz_register') === '1' && auth.currentUser) {
+      sessionStorage.removeItem('irema_biz_register');
+      isRegisteringRef.current = true;
+      const u = auth.currentUser;
+      setRegGoogleUser(u);
+      setRegForm(f => ({
+        ...f,
+        email: u.email || '',
+        firstName: (u.displayName || '').split(' ')[0],
+        lastName: (u.displayName || '').split(' ').slice(1).join(' '),
+        password: '',
+      }));
+      setModal('register');
+    }
   }, []);
 
   useEffect(() => {
     return onAuthStateChanged(auth, async u => {
       // While registration or claim is in progress, never interfere with auth state
       if (isRegisteringRef.current || isClaimingRef.current) {
+        setAuthChecking(false);
+        return;
+      }
+      // Returning from Google redirect with biz intent — stay signed in so
+      // AuthRedirectHandler + the register modal can finish their work.
+      if (sessionStorage.getItem('irema_biz_register') === '1') {
         setAuthChecking(false);
         return;
       }
@@ -99,60 +132,78 @@ export default function BusinessesPage() {
           navigate('/company-dashboard', { replace: true });
           return;
         }
-        // Regular user on /businesses — sign them out
-        await signOut(auth);
-        setUser(null);
-      } catch (e) { setUser(null); }
+        // Regular (non-business) user landed on /businesses — keep them
+        // signed in and let the page render. Previously we'd force signOut
+        // which caused "got logged out" after unrelated writes (profile
+        // upload, review) that triggered a token refresh + re-fire of this
+        // listener. The page itself gates biz-only actions on role anyway.
+        setUser(u);
+      } catch (e) { setUser(u); }
       setAuthChecking(false);
     });
   }, [navigate]);
 
-  // LOGIN
+  // LOGIN — Google sign-in on the business portal uses signInWithRedirect
+  // directly. We previously raced signInWithPopup against a 20s timeout and
+  // fell back to redirect on failure, but Chrome's Cross-Origin-Opener-
+  // Policy now blocks the window.closed poll that Firebase uses to detect
+  // popup close events, which produces repeated console errors of the form
+  // "Cross-Origin-Opener-Policy policy would block the window.closed call"
+  // even when auth succeeds. Going straight to redirect eliminates those
+  // errors and gives a more reliable sign-in across browsers. The result
+  // is picked up on app mount by AuthRedirectHandler (see components/
+  // AuthRedirectHandler.jsx), which then runs the admin / biz-owner role
+  // checks and routes the user to /company-dashboard — or back to
+  // /businesses with the register form pre-filled when no company yet.
   async function handleGoogleBizLogin() {
     setLoginErr(''); setLoginLoading(true);
-    // Set ref BEFORE signInWithPopup — onAuthStateChanged fires as soon as
-    // the popup completes, BEFORE our await resumes. Without this, the handler
-    // sees a user with no company and calls signOut(), causing permission errors.
-    isRegisteringRef.current = true;
     try {
-      const result = await signInWithPopup(auth, googleProvider);
-      const u = result.user;
-      // Block admins from business portal
-      const adminSnap = await getDoc(doc(db, 'admin_users', u.uid)).catch(() => null);
-      if (adminSnap?.exists() && adminSnap.data()?.isActive !== false) {
-        isRegisteringRef.current = false;
-        await signOut(auth);
-        setLoginErr('Admin accounts must use the admin portal (/admin/login).');
+      // Try popup first (opens in new window like other apps)
+      try {
+        await setPersistence(auth, browserLocalPersistence);
+        const result = await signInWithPopup(auth, googleProvider);
+        const uid = result.user.uid;
+
+        // Block admin accounts from business portal
+        const adminSnap = await getDoc(doc(db, 'admin_users', uid)).catch(() => null);
+        if (adminSnap?.exists() && adminSnap.data()?.isActive !== false) {
+          await signOut(auth);
+          setLoginErr('Admin accounts must use the admin portal at /admin/login');
+          setLoginLoading(false);
+          return;
+        }
+
+        // Check if user has a company
+        const snap = await getDocs(query(collection(db, 'companies'), where('adminUserId', '==', uid)));
+        if (!snap.empty) {
+          navigate('/company-dashboard');
+          return;
+        }
+
+        // No company found - show registration prompt
+        setRegGoogleUser(result.user);
+        setModal('register');
         setLoginLoading(false);
         return;
-      }
-      // Check if they already have a business
-      const bizSnap = await getDocs(query(collection(db, 'companies'), where('adminUserId', '==', u.uid)));
-      if (!bizSnap.empty) {
-        isRegisteringRef.current = false;
-        navigate('/company-dashboard');
-      } else {
-        // User is signed in and ref is already true — open the register modal
-        setRegGoogleUser(u);
-        setRegForm(f => ({
-          ...f,
-          email: u.email || '',
-          firstName: (u.displayName || '').split(' ')[0],
-          lastName: (u.displayName || '').split(' ').slice(1).join(' '),
-          password: '',
-        }));
-        setModal('register');
+      } catch (popupErr) {
+        // If popup fails (COOP blocking, user blocked popups, etc), fall back to redirect
+        if (popupErr?.code !== 'auth/cancelled-popup-request') {
+          console.warn('Popup sign-in failed, falling back to redirect:', popupErr?.message);
+          sessionStorage.setItem('irema_auth_intent', 'biz');
+          localStorage.setItem('irema_auth_intent', 'biz');
+          await signInWithRedirect(auth, googleProvider);
+        }
+        return;
       }
     } catch (err) {
-      isRegisteringRef.current = false;
-      setLoginErr(err.code === 'auth/popup-closed-by-user' ? '' : (err.message || 'Google sign-in failed.'));
-    }
-    setLoginLoading(false);
+      setLoginErr(err?.message || 'Google sign-in failed.');
+    } finally { setLoginLoading(false); }
   }
 
   async function handleLogin(e) {
     e.preventDefault(); setLoginErr(''); setLoginLoading(true);
     try {
+      await setPersistence(auth, browserLocalPersistence);
       const cred = await signInWithEmailAndPassword(auth, loginForm.email, loginForm.password);
       // Block admin accounts from business portal
       const adminSnap = await getDoc(doc(db, 'admin_users', cred.user.uid)).catch(() => null);
@@ -205,6 +256,7 @@ export default function BusinessesPage() {
           return;
         }
       } else {
+        await setPersistence(auth, browserLocalPersistence);
         const cred = await createUserWithEmailAndPassword(auth, regForm.email, regForm.password);
         uid = cred.user.uid;
         userEmail = regForm.email;
@@ -222,8 +274,11 @@ export default function BusinessesPage() {
       }, { merge: true });
 
       const fullAddress = [regForm.address, regForm.city, regForm.district].filter(Boolean).join(', ');
+      // Reserve a URL slug so /business/<slug> resolves as soon as the doc lands.
+      const slug = await ensureUniqueSlug(regForm.companyName);
       const compRef = await addDoc(collection(db,'companies'), {
         name: regForm.companyName, companyName: regForm.companyName,
+        slug,
         category: regForm.category, website: regForm.website||'',
         country: regForm.country, phoneNumber: regForm.phoneNumber||'',
         employees: regForm.employees, workEmail: userEmail, email: userEmail,
@@ -280,6 +335,7 @@ export default function BusinessesPage() {
       let uid, userEmail = claimForm.email;
 
       // Try to create account, fall back to sign in if email exists
+      await setPersistence(auth, browserLocalPersistence);
       try {
         const cred = await createUserWithEmailAndPassword(auth, claimForm.email, claimForm.password);
         uid = cred.user.uid;
@@ -347,10 +403,15 @@ export default function BusinessesPage() {
       {/* Navbar */}
       <header className="bp-navbar">
         <div className="bp-navbar-inner">
-          <a href="/" className="bp-logo">
-            <BizLogo />
-            <span>Irema <span className="bp-logo-for">for Business</span></span>
-          </a>
+          {/* Logo links home on its own. "for Business" is a non-clickable page title so
+              users aren't confused into thinking the tagline is the return-home link. */}
+          <div className="bp-logo-wrap">
+            <a href="/" className="bp-logo" aria-label="Irema home">
+              <BizLogo />
+              <span className="bp-logo-text">Irema</span>
+            </a>
+            <span className="bp-logo-for" aria-hidden="true">for Business</span>
+          </div>
           {/* Desktop nav — hidden on mobile */}
           <nav className="bp-nav-links bp-nav-desktop">
             <a className="bp-nav-link" href="#features">{t('biz.nav_features')}</a>
@@ -368,12 +429,13 @@ export default function BusinessesPage() {
                 : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
               }
             </button>
-            {/* Desktop auth buttons */}
+            {/* Desktop auth buttons. The onAuthStateChanged listener above
+                redirects business owners to /company-dashboard immediately,
+                so anyone who ends up rendering this page is either signed-
+                out or a regular consumer — in both cases they need to Log in
+                (as a business) rather than be shown "Go to Dashboard". */}
             <div className="bp-nav-desktop" style={{display:'flex',gap:8,alignItems:'center'}}>
-              {globalUser
-                ? <button className="bp-login-link" onClick={()=>navigate('/company-dashboard')}>Go to Dashboard</button>
-                : <button className="bp-login-link" onClick={()=>setModal('login')}>{t('biz.log_in')}</button>
-              }
+              <button className="bp-login-link" onClick={()=>setModal('login')}>{t('biz.log_in')}</button>
               <button className="bp-claim-btn" onClick={()=>setModal('claim')}>{t('biz.claim_your_biz')}</button>
               <button className="bp-cta-btn" onClick={()=>setModal('register')}>{t('biz.start_free')}</button>
             </div>
@@ -394,10 +456,7 @@ export default function BusinessesPage() {
             <a className="bp-mobile-item" href="#features" onClick={()=>setBizMobileOpen(false)}>Features</a>
             <a className="bp-mobile-item" href="#pricing" onClick={()=>setBizMobileOpen(false)}>Pricing</a>
             <div style={{height:1,background:'#e5e7eb',margin:'4px 0'}}/>
-            {globalUser
-              ? <button className="bp-mobile-item" onClick={()=>{navigate('/company-dashboard');setBizMobileOpen(false);}}>Go to Dashboard</button>
-              : <button className="bp-mobile-item" onClick={()=>{setModal('login');setBizMobileOpen(false);}}>Log in</button>
-            }
+            <button className="bp-mobile-item" onClick={()=>{setModal('login');setBizMobileOpen(false);}}>Log in</button>
             <button className="bp-mobile-item" onClick={()=>{setModal('claim');setBizMobileOpen(false);}}>Claim your business</button>
             <button className="bp-mobile-item bp-mobile-cta" onClick={()=>{setModal('register');setBizMobileOpen(false);}}>List Your Business Free →</button>
           </div>

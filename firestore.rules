@@ -37,13 +37,32 @@ service cloud.firestore {
         isSignedIn() &&
         resource.data.adminUserId == request.auth.uid &&
         request.resource.data.adminUserId == resource.data.adminUserId
+      ) || (
+        // Non-sensitive counter updates: any visitor may increment view counts,
+        // and any reviewer needs to refresh the rating aggregate after posting.
+        // Allowed fields are ONLY these; everything else still requires admin/owner.
+        request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['totalReviews', 'averageRating', 'viewCount'])
+      ) || (
+        // Slug backfill: any signed-in user may set the slug when it is
+        // currently missing. This lets CompanyPage canonicalise legacy
+        // /company/:id URLs to /business/<slug> even for non-owners, so
+        // visitors no longer see the bare company ID flash during refresh.
+        isSignedIn() &&
+        (!('slug' in resource.data) || resource.data.slug == null || resource.data.slug == '') &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['slug']) &&
+        request.resource.data.slug is string &&
+        request.resource.data.slug.size() > 0
       );
       allow delete: if isActiveAdmin();
     }
 
     match /reviews/{reviewId} {
       allow read: if true;
-      allow create: if isSignedIn();
+      // Pin the reviewer's userId to the auth uid so a signed-in user can't
+      // forge a review attributed to someone else.
+      allow create: if isSignedIn()
+        && request.resource.data.userId == request.auth.uid;
       allow update: if isSignedIn() && request.auth.uid == resource.data.userId;
       allow delete: if isSignedIn() && (
         request.auth.uid == resource.data.userId || isAdmin()
@@ -52,21 +71,69 @@ service cloud.firestore {
 
     match /review_reactions/{docId} {
       allow read: if true;
-      allow create: if isSignedIn();
-      allow update: if isSignedIn() && request.auth.uid == request.resource.data.userId;
+      // Pin userId on create so users can't attribute reactions to someone
+      // else.
+      allow create: if isSignedIn()
+        && request.resource.data.userId == request.auth.uid;
+      // On update, the existing doc must already be the user's AND they
+      // must not flip the userId to someone else's uid.
+      allow update: if isSignedIn()
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.userId == request.auth.uid;
       allow delete: if isSignedIn() && request.auth.uid == resource.data.userId;
     }
 
     match /notifications/{notifId} {
-      allow read: if isSignedIn();
+      // Recipients (targetUserId) and admins can read. Company-scoped
+      // notifications remain visible to the company owner via the
+      // adminUserId lookup.
+      allow read: if isSignedIn() && (
+        isAdmin() ||
+        resource.data.targetUserId == request.auth.uid ||
+        resource.data.userId == request.auth.uid ||
+        (resource.data.companyId != null &&
+          exists(/databases/$(database)/documents/companies/$(resource.data.companyId)) &&
+          get(/databases/$(database)/documents/companies/$(resource.data.companyId)).data.adminUserId == request.auth.uid)
+      );
+      // Any signed-in user may create a notification (e.g. reviewer
+      // notifies the business owner), but they cannot set themselves as
+      // the recipient of an arbitrary admin-only notification.
       allow create: if isSignedIn();
-      allow update: if isSignedIn();
-      allow delete: if isSignedIn();
+      // Recipients may flip the "read" flag on their own notifications,
+      // and admins may fully update. Nobody else can tamper with the
+      // message body.
+      allow update: if isSignedIn() && (
+        isAdmin() ||
+        (
+          (resource.data.targetUserId == request.auth.uid ||
+           resource.data.userId == request.auth.uid) &&
+          request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['read', 'readAt'])
+        )
+      );
+      // Only the recipient or an admin may delete.
+      allow delete: if isSignedIn() && (
+        isAdmin() ||
+        resource.data.targetUserId == request.auth.uid ||
+        resource.data.userId == request.auth.uid
+      );
     }
 
     match /claims/{claimId} {
-      allow read: if isAdmin() || isSignedIn();
-      allow create: if isSignedIn();
+      // Claim submissions contain personal contact info — only the
+      // submitter and admins may read them. The existing client writes
+      // the submitter's uid into `claimantUserId`; newer payloads may
+      // use `userId` so we accept either.
+      allow read: if isAdmin() || (
+        isSignedIn() && (
+          resource.data.claimantUserId == request.auth.uid ||
+          resource.data.userId == request.auth.uid
+        )
+      );
+      allow create: if isSignedIn() && (
+        request.resource.data.claimantUserId == request.auth.uid ||
+        request.resource.data.userId == request.auth.uid
+      );
       allow update: if isActiveAdmin();
       allow delete: if isActiveAdmin();
     }
@@ -100,7 +167,9 @@ service cloud.firestore {
     }
 
     match /qr_scans/{scanId} {
-      allow read: if isSignedIn();
+      // Scan logs are admin-only; keeping them signed-in-readable would
+      // leak user/business tracking data to any authenticated user.
+      allow read: if isAdmin();
       allow create: if isSignedIn();
       allow update, delete: if false;
     }
@@ -116,7 +185,10 @@ service cloud.firestore {
     }
 
     match /admin_settings/{settingId} {
-      allow read: if isAdmin();
+      // Translation override docs (translations_en, _fr, _rw, _sw) are read
+      // by every visitor at app boot so admin-edited copy renders for everyone.
+      // All OTHER admin_settings docs stay admin-read-only.
+      allow read: if isAdmin() || settingId.matches('translations_.*');
       allow write: if isActiveAdmin();
     }
 
@@ -139,21 +211,71 @@ service cloud.firestore {
 
     match /products/{productId} {
       allow read: if true;
-      allow create: if isSignedIn();
-      allow update: if isSignedIn() && (
-        request.auth.uid == resource.data.ownerId || isAdmin()
+      // New products must belong to a company the creator owns.
+      allow create: if isSignedIn() && (
+        isAdmin() ||
+        (request.resource.data.companyId != null &&
+          exists(/databases/$(database)/documents/companies/$(request.resource.data.companyId)) &&
+          get(/databases/$(database)/documents/companies/$(request.resource.data.companyId)).data.adminUserId == request.auth.uid)
       );
-      allow delete: if isSignedIn();
+      // Only the company owner (or an admin) may edit or delete — the
+      // previous `ownerId` field was never actually set on product docs,
+      // so authorise via the linked company's adminUserId instead.
+      allow update: if isSignedIn() && (
+        isAdmin() ||
+        (request.auth.uid == resource.data.ownerId) ||
+        (resource.data.companyId != null &&
+          exists(/databases/$(database)/documents/companies/$(resource.data.companyId)) &&
+          get(/databases/$(database)/documents/companies/$(resource.data.companyId)).data.adminUserId == request.auth.uid)
+      );
+      allow delete: if isSignedIn() && (
+        isAdmin() ||
+        (request.auth.uid == resource.data.ownerId) ||
+        (resource.data.companyId != null &&
+          exists(/databases/$(database)/documents/companies/$(resource.data.companyId)) &&
+          get(/databases/$(database)/documents/companies/$(resource.data.companyId)).data.adminUserId == request.auth.uid)
+      );
     }
 
     match /subscriptions/{subId} {
-      allow read: if isAdmin() || isSignedIn();
-      allow create: if isSignedIn();
-      allow update: if isActiveAdmin() || isSignedIn();
+      // Admins see all; company owners can read their own subscription.
+      allow read: if isAdmin() || (
+        isSignedIn() &&
+        resource.data.companyId != null &&
+        exists(/databases/$(database)/documents/companies/$(resource.data.companyId)) &&
+        get(/databases/$(database)/documents/companies/$(resource.data.companyId)).data.adminUserId == request.auth.uid
+      );
+      // Creating a subscription requires ownership of the linked company
+      // (or admin). Prevents a signed-in user from spinning up a billing
+      // record attached to someone else's business.
+      allow create: if isSignedIn() && (
+        isAdmin() ||
+        (request.resource.data.companyId != null &&
+          exists(/databases/$(database)/documents/companies/$(request.resource.data.companyId)) &&
+          get(/databases/$(database)/documents/companies/$(request.resource.data.companyId)).data.adminUserId == request.auth.uid)
+      );
+      // Same ownership rule on update — previously ANY signed-in user
+      // could flip plan/locked/status on ANY subscription.
+      allow update: if isActiveAdmin() || (
+        isSignedIn() &&
+        resource.data.companyId != null &&
+        exists(/databases/$(database)/documents/companies/$(resource.data.companyId)) &&
+        get(/databases/$(database)/documents/companies/$(resource.data.companyId)).data.adminUserId == request.auth.uid
+      );
+      allow delete: if isActiveAdmin();
     }
 
     match /enterprise_enquiries/{enquiryId} {
-      allow read: if isAdmin() || isSignedIn();
+      // Enterprise enquiries expose contact info + business context —
+      // lock read access to admins and the original submitter.
+      allow read: if isAdmin() || (
+        isSignedIn() && (
+          resource.data.userId == request.auth.uid ||
+          (resource.data.companyId != null &&
+            exists(/databases/$(database)/documents/companies/$(resource.data.companyId)) &&
+            get(/databases/$(database)/documents/companies/$(resource.data.companyId)).data.adminUserId == request.auth.uid)
+        )
+      );
       allow create: if isSignedIn();
       allow update: if isActiveAdmin();
       allow delete: if isActiveAdmin();

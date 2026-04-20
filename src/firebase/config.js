@@ -8,6 +8,8 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   GoogleAuthProvider,
   signOut,
   onAuthStateChanged,
@@ -44,6 +46,7 @@ import {
   getDownloadURL,
   deleteObject,
 } from 'firebase/storage';
+import { getFunctions, httpsCallable } from 'firebase/functions';
 
 // All config must be supplied via environment variables.
 // Copy .env.example to .env.local and fill in your values.
@@ -80,15 +83,18 @@ const db = getFirestore(app);
 
 const storage = getStorage(app);
 
+const functions = getFunctions(app, 'us-central1');
+
 const googleProvider = new GoogleAuthProvider();
 googleProvider.addScope('profile');
 googleProvider.addScope('email');
 
 export {
-  app, auth, db, storage, googleProvider,
+  app, auth, db, storage, functions, httpsCallable, googleProvider,
   // Auth
   signInWithEmailAndPassword, createUserWithEmailAndPassword,
-  signInWithPopup, signOut, onAuthStateChanged, updateProfile, sendPasswordResetEmail,
+  signInWithPopup, signInWithRedirect, getRedirectResult,
+  signOut, onAuthStateChanged, updateProfile, sendPasswordResetEmail,
   // Firestore
   collection, doc, getDoc, getDocs, setDoc, addDoc, updateDoc, deleteDoc,
   query, where, orderBy, limit, startAfter, serverTimestamp,

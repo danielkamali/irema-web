@@ -23,8 +23,11 @@
   max-width: 1200px; margin: 0 auto; padding: 0 24px; height: 64px;
   display: flex; align-items: center; justify-content: space-between; gap: 16px;
 }
+.bp-logo-wrap { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .bp-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--text-1); font-family: 'Sora', sans-serif; font-size: 1.05rem; font-weight: 700; }
-.bp-logo-for { color: var(--green); font-weight: 600; }
+.bp-logo-text { color: var(--text-1); }
+/* "for Business" is a page title/tagline — NOT a link, not part of the home-return click target */
+.bp-logo-for { color: var(--green); font-weight: 600; font-size: 0.95rem; padding-left: 10px; border-left: 1px solid var(--border,#e5e7eb); line-height: 1; }
 .bp-nav-links { display: flex; gap: 24px; }
 .bp-nav-link { font-size: 0.88rem; font-weight: 600; color: var(--text-3); cursor: pointer; text-decoration: none; transition: color 0.15s; }
 .bp-nav-link:hover { color: var(--text-1); }
@@ -297,6 +300,9 @@
   .bp-hero-inner h1 { font-size: 1.5rem; }
   .bp-hero-label { font-size: 0.65rem; }
   .bp-logo span { font-size: 0.88rem; }
+  /* Hide the "for Business" tagline so the logo-return-home target stays
+     clearly separate from other controls on tight screens. */
+  .bp-logo-for { display: none; }
   .bp-stats-banner { padding: 10px 0; }
   .bp-stats-inner { flex-direction: column; gap: 6px; text-align: center; }
   .bp-sep { display: none; }
@@ -336,7 +342,8 @@
   border-color: #1e3028 !important;
 }
 [data-theme="dark"] .bp-logo { color: #f0f5f2; }
-[data-theme="dark"] .bp-logo-for { color: #3aad88; }
+[data-theme="dark"] .bp-logo-text { color: #f0f5f2; }
+[data-theme="dark"] .bp-logo-for { color: #3aad88; border-color: #1e3028; }
 [data-theme="dark"] .bp-nav-link { color: #8aada0; }
 [data-theme="dark"] .bp-nav-link:hover { color: #f0f5f2; }
 [data-theme="dark"] .bp-login-link { color: #8aada0 !important; background: none !important; }

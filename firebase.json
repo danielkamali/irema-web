@@ -11,6 +11,15 @@
         "source": "**",
         "destination": "/index.html"
       }
+    ],
+    "headers": [
+      {
+        "source": "**",
+        "headers": [
+          { "key": "Cross-Origin-Opener-Policy", "value": "same-origin-allow-popups" },
+          { "key": "Cross-Origin-Embedder-Policy", "value": "unsafe-none" }
+        ]
+      }
     ]
   },
   "firestore": {
@@ -18,7 +27,6 @@
     "indexes": "firestore.indexes.json"
   },
   "storage": {
-    "bucket": "irema-41070.firebasestorage.app",
     "rules": "storage.rules"
   }
 }

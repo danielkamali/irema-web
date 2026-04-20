@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { db, firebaseConfig, getApps, deleteApp } from '../../firebase/config';
 import { collection, getDocs, setDoc, doc, updateDoc, deleteDoc, addDoc, serverTimestamp } from 'firebase/firestore';
 import { initializeApp } from 'firebase/app';
-import { getAuth, createUserWithEmailAndPassword, updateProfile, sendPasswordResetEmail } from 'firebase/auth';
+import { getAuth, createUserWithEmailAndPassword, updateProfile, sendPasswordResetEmail, deleteUser } from 'firebase/auth';
 import { useAuthStore } from '../../store/authStore';
 import AdminLayout from './AdminLayout';
 import './AdminPages.css';
@@ -87,8 +87,30 @@ export default function AdminAdministrators() {
       setAddForm({ email: '', displayName: '', role: 'Moderator', password: '' });
       showToast(`✓ Admin account created for ${addForm.displayName}. Share their credentials to log in at /admin/login.`);
     } catch (e) {
+      // If email already exists in Auth, offer to create admin doc for existing user
       if (e.code === 'auth/email-already-in-use') {
-        showToast('An account with this email already exists. Use a different email.', 'error');
+        const reuseExisting = window.confirm(
+          `An account with email "${addForm.email}" already exists in Authentication.\n\n` +
+          `Do you want to create an admin record for this existing user?\n\n` +
+          `Click OK to create the admin document (user can log in with their existing password).\n` +
+          `Click Cancel to abort.`
+        );
+        if (reuseExisting) {
+          try {
+            // Create admin doc for existing user (but we need the UID - can't get it without signing in)
+            // Instead, direct user to Firebase Console to get UID or reset password
+            const projectId = import.meta.env.VITE_FIREBASE_PROJECT_ID;
+            window.open(
+              `https://console.firebase.google.com/project/${projectId}/authentication/users`,
+              '_blank'
+            );
+            showToast('Please go to Firebase Console, find the user, and copy their UID. Then manually add them as admin or reset their password.', 'info');
+          } catch (err2) {
+            showToast(err2.message, 'error');
+          }
+        }
+        setSaving(false);
+        return;
       } else {
         showToast(e.message, 'error');
       }
@@ -144,20 +166,54 @@ export default function AdminAdministrators() {
   }
 
   async function handleDelete(admin) {
-    // Only allow delete on deactivated admins
-    if (admin.isActive !== false) return;
+    // Enforce the deactivate-first UX: only inactive admins can be permanently deleted.
+    if (admin.isActive !== false) {
+      showToast('Deactivate the admin before deleting.', 'error');
+      return;
+    }
+    
+    const confirmed = window.confirm(
+      `⚠️  WARNING: This will PERMANENTLY delete:\n\n` +
+      `1. Admin record: ${admin.email}\n` +
+      `2. Authentication account (must be done in Firebase Console)\n\n` +
+      `The Authentication account CANNOT be deleted from this app (Firebase limitation).\n\n` +
+      `After clicking OK, you'll be directed to Firebase Console to delete the Auth account, then return here to complete the process.`
+    );
+    
+    if (!confirmed) return;
+    
+    // Open Firebase Console for Auth deletion
+    const projectId = import.meta.env.VITE_FIREBASE_PROJECT_ID;
+    window.open(
+      `https://console.firebase.google.com/project/${projectId}/authentication/users`,
+      '_blank'
+    );
+    
     setSaving(true);
     try {
+      // Delete Firestore document first (this we CAN do)
       await deleteDoc(doc(db, 'admin_users', admin.id));
       await addDoc(collection(db, 'audit_logs'), {
-        action: 'admin_deleted', detail: `Permanently deleted: ${admin.email}`,
-        adminEmail: user?.email, timestamp: serverTimestamp()
+        action: 'admin_deleted',
+        detail: `Deleted admin (Firestore): ${admin.email}`,
+        adminEmail: user?.email,
+        timestamp: serverTimestamp(),
       });
+
       setAdmins(prev => prev.filter(a => a.id !== admin.id));
       setDeleteTarget(null);
-      showToast('admin.admin_deleted');
-    } catch(e) { showToast(e.message, 'error'); }
-    setSaving(false);
+      
+      showToast(
+        `✅ Firestore document deleted.\n\n` +
+        `⚠️  IMPORTANT: You must STILL go to Firebase Console (opened in new tab) and DELETE the Authentication account for: ${admin.email}\n\n` +
+        `Otherwise, the user can still log in with their password!`,
+        'warning'
+      );
+    } catch (e) {
+      showToast(e.message || 'Delete failed.', 'error');
+    } finally {
+      setSaving(false);
+    }
   }
 
   const fmt = ts => {

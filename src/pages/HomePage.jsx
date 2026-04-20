@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
+import ReactDOM from 'react-dom';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { db, collection, query, orderBy, limit, getDocs, where, doc, updateDoc, getDoc } from '../firebase/config';
@@ -9,6 +10,7 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import { getCategoryLabel, formatRelativeTime, getRatingColor } from '../utils/helpers';
 import './HomePage.css';
 import StoriesSection from '../components/StoriesSection';
+import ReviewDetailModal from '../components/ReviewDetailModal';
 
 // SVG icons — cross-platform reliable
 const CAT_ICONS = {
@@ -40,6 +42,11 @@ export default function HomePage() {
   const navigate = useNavigate();
   const { openModal } = useModalStore();
   const [searchQ, setSearchQ] = useState('');
+  const [suggestions, setSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [dropdownRect, setDropdownRect] = useState(null);
+  const suggestionsCache = useRef(null);
+  const heroSearchFormRef = useRef(null);
   const [topCompanies, setTopCompanies] = useState([]);
   const [recentReviews, setRecentReviews] = useState([]);
   const [stats, setStats] = useState({ users: 0, businesses: 0, reviews: 0 });
@@ -113,6 +120,7 @@ export default function HomePage() {
 
   function handleSearch(e) {
     e.preventDefault();
+    setShowSuggestions(false);
     if (searchQ.trim()) {
       navigate(`/search?q=${encodeURIComponent(searchQ.trim())}`);
     } else {
@@ -120,6 +128,55 @@ export default function HomePage() {
       navigate('/search');
     }
   }
+
+  // Live suggestions for the hero search — same pattern as the top navbar.
+  useEffect(() => {
+    const q = searchQ.trim();
+    if (q.length < 2) { setSuggestions([]); setShowSuggestions(false); return; }
+    const timer = setTimeout(async () => {
+      try {
+        if (!suggestionsCache.current) {
+          const snap = await getDocs(collection(db, 'companies'));
+          suggestionsCache.current = snap.docs.map(d => {
+            const data = d.data();
+            return {
+              id: d.id,
+              slug: data.slug || null,
+              name: data.companyName || data.name || '',
+              category: data.category || '',
+              logoUrl: data.logoUrl || null,
+            };
+          });
+        }
+        const needle = q.toLowerCase();
+        const matches = suggestionsCache.current
+          .filter(c => c.name.toLowerCase().includes(needle))
+          .slice(0, 5);
+        setSuggestions(matches);
+        setShowSuggestions(matches.length > 0);
+      } catch {}
+    }, 200);
+    return () => clearTimeout(timer);
+  }, [searchQ]);
+
+  // Track the form's on-screen position so the portal-rendered dropdown
+  // anchors correctly. Re-measure on show, scroll, and resize.
+  useLayoutEffect(() => {
+    if (!showSuggestions) return;
+    function measure() {
+      const el = heroSearchFormRef.current;
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      setDropdownRect({ top: r.bottom + 8, left: r.left, width: r.width });
+    }
+    measure();
+    window.addEventListener('scroll', measure, { passive: true });
+    window.addEventListener('resize', measure);
+    return () => {
+      window.removeEventListener('scroll', measure);
+      window.removeEventListener('resize', measure);
+    };
+  }, [showSuggestions, suggestions.length]);
 
   const fmtNum = n => n >= 1000 ? (n / 1000).toFixed(1).replace('.0', '') + 'K' : n > 0 ? n.toString() : '—';
 
@@ -144,7 +201,7 @@ export default function HomePage() {
             </h1>
             <p className="hero-subtitle">{t('home.hero_subtitle')}</p>
 
-            <form className="hero-search-form" onSubmit={handleSearch}>
+            <form ref={heroSearchFormRef} className="hero-search-form" onSubmit={handleSearch} role="search">
               <div className="hero-search-icon">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
                   <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
@@ -153,10 +210,96 @@ export default function HomePage() {
               <input
                 type="text" className="hero-search-input"
                 placeholder={t('nav.search_placeholder')}
-                value={searchQ} onChange={e => setSearchQ(e.target.value)}
+                value={searchQ}
+                onChange={e => setSearchQ(e.target.value)}
+                onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
+                onBlur={() => setTimeout(() => setShowSuggestions(false), 180)}
+                autoComplete="off"
+                aria-autocomplete="list"
+                aria-expanded={showSuggestions}
               />
               <button type="submit" className="hero-search-btn">{t('common.search')}</button>
             </form>
+
+            {/* Suggestions portal — rendered at document.body so no parent
+                overflow:hidden (on .hero or .hero-search-form) can clip it. */}
+            {showSuggestions && suggestions.length > 0 && dropdownRect && typeof document !== 'undefined' && ReactDOM.createPortal(
+              <div
+                className="hero-search-suggestions"
+                role="listbox"
+                style={{
+                  position: 'fixed',
+                  top: dropdownRect.top,
+                  left: dropdownRect.left,
+                  width: dropdownRect.width,
+                  background: 'var(--surface)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 14,
+                  boxShadow: '0 12px 32px rgba(0,0,0,0.16)',
+                  overflow: 'hidden',
+                  zIndex: 9999,
+                }}
+              >
+                {suggestions.map(s => (
+                  <button
+                    key={s.id}
+                    type="button"
+                    role="option"
+                    onMouseDown={e => e.preventDefault() /* keep input focused so click fires before blur */}
+                    onClick={() => {
+                      navigate(s.slug ? `/business/${s.slug}` : `/company/${s.id}`);
+                      setSearchQ('');
+                      setShowSuggestions(false);
+                    }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 12,
+                      width: '100%',
+                      padding: '12px 16px',
+                      background: 'none',
+                      border: 'none',
+                      borderBottom: '1px solid var(--border-2, rgba(0,0,0,0.06))',
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      fontSize: '0.95rem',
+                      color: 'var(--text-1)',
+                      transition: 'background 0.12s',
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-2, #f3f4f6)'}
+                    onMouseLeave={e => e.currentTarget.style.background = 'none'}
+                  >
+                    {s.logoUrl ? (
+                      <img
+                        src={s.logoUrl}
+                        alt=""
+                        style={{ width: 34, height: 34, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }}
+                      />
+                    ) : (
+                      <div style={{
+                        width: 34, height: 34, borderRadius: 8,
+                        background: 'var(--brand-xlight)', color: 'var(--brand)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontWeight: 700, fontSize: '0.95rem', flexShrink: 0,
+                      }}>
+                        {(s.name[0] || '?').toUpperCase()}
+                      </div>
+                    )}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: 600, color: 'var(--text-1)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {s.name}
+                      </div>
+                      {s.category && (
+                        <div style={{ fontSize: '0.78rem', color: 'var(--text-4)', textTransform: 'capitalize' }}>
+                          {s.category.replace(/_/g, ' ')}
+                        </div>
+                      )}
+                    </div>
+                  </button>
+                ))}
+              </div>,
+              document.body
+            )}
 
             <div className="hero-stats-bar">
               <div className="hero-stat">
@@ -373,13 +516,19 @@ export default function HomePage() {
 
 function ReviewGrid({ reviews }) {
   const [shown, setShown] = React.useState(8);
+  // Track which review the user wants to open in the detail modal. Clicking a
+  // card no longer jumps straight to the business page — it opens this modal,
+  // which contains an explicit "go to business" button.
+  const [activeReview, setActiveReview] = React.useState(null);
   const visible = reviews.slice(0, shown);
   const hasMore = shown < reviews.length;
 
   return (
     <div className="review-grid-wrap">
       <div className="review-grid">
-        {visible.map((rev, i) => <ReviewCard key={rev.id || i} review={rev} />)}
+        {visible.map((rev, i) => (
+          <ReviewCard key={rev.id || i} review={rev} onOpen={() => setActiveReview(rev)} />
+        ))}
       </div>
       <div style={{textAlign:'center', marginTop:32}}>
         {hasMore && (
@@ -397,6 +546,13 @@ function ReviewGrid({ reviews }) {
           </p>
         )}
       </div>
+
+      {activeReview && (
+        <ReviewDetailModal
+          review={activeReview}
+          onClose={() => setActiveReview(null)}
+        />
+      )}
     </div>
   );
 }
@@ -405,7 +561,7 @@ function ReviewPageControls({ reviews }) {
   return null; // Controls are inside ReviewGrid
 }
 
-function ReviewCard({ review }) {
+function ReviewCard({ review, onOpen }) {
   const name = review.companyName || 'Unknown Service';
   const userName = review.userName || 'Anonymous';
   const comment = review.comment || '';
@@ -416,8 +572,16 @@ function ReviewCard({ review }) {
   const color = AVATAR_COLORS[userName.charCodeAt(0) % AVATAR_COLORS.length];
   const firstImage = review.images?.[0];
 
+  // Card is now a button that opens the ReviewDetailModal rather than a
+  // Link that jumps straight to the business page.
   return (
-    <Link to={`/company/${review.companyId}?openReview=${review.id}`} className="review-card-tp">
+    <button
+      type="button"
+      onClick={onOpen}
+      className="review-card-tp"
+      style={{ textAlign: 'left', font: 'inherit', cursor: 'pointer' }}
+      aria-label={`View review by ${userName}`}
+    >
       <div className="rct-header">
         {review.userPhotoURL
           ? <img src={review.userPhotoURL} alt={userName} className="rct-avatar rct-avatar-photo" />
@@ -442,6 +606,6 @@ function ReviewCard({ review }) {
           <div className="rct-company-name">{name}</div>
         </div>
       </div>
-    </Link>
+    </button>
   );
 }

@@ -3,7 +3,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../store/authStore';
-import { auth, signOut, db, collection, query, where, getDocs, updateDoc, doc, onSnapshot } from '../firebase/config';
+import { auth, signOut, db, collection, query, where, getDocs, updateDoc, doc, getDoc, onSnapshot } from '../firebase/config';
 import { getInitials } from '../utils/helpers';
 import { useModalStore } from '../store/modalStore';
 import { useThemeStore } from '../store/themeStore';
@@ -57,7 +57,10 @@ export default function Navbar() {
         if (!suggestionsCache.current) {
           const { getDocs, collection } = await import('firebase/firestore');
           const snap = await getDocs(collection(db, 'companies'));
-          suggestionsCache.current = snap.docs.map(d => ({ id: d.id, name: d.data().companyName || d.data().name || '', category: d.data().category || '' }));
+          suggestionsCache.current = snap.docs.map(d => {
+            const data = d.data();
+            return { id: d.id, slug: data.slug || null, name: data.companyName || data.name || '', category: data.category || '' };
+          });
         }
         const q = searchQ.toLowerCase().trim();
         const matches = suggestionsCache.current
@@ -191,7 +194,7 @@ export default function Navbar() {
                   style={{display:'flex',alignItems:'center',gap:10,width:'100%',padding:'10px 14px',background:'none',border:'none',cursor:'pointer',textAlign:'left',fontSize:'0.88rem',color:'var(--text-1)',transition:'background 0.12s'}}
                   onMouseEnter={e=>e.currentTarget.style.background='var(--bg-2)'}
                   onMouseLeave={e=>e.currentTarget.style.background='none'}
-                  onClick={() => { navigate(`/company/${s.id}`); setSearchQ(''); setShowSuggestions(false); }}>
+                  onClick={() => { navigate(s.slug ? `/business/${s.slug}` : `/company/${s.id}`); setSearchQ(''); setShowSuggestions(false); }}>
                   <div style={{width:28,height:28,borderRadius:6,background:'var(--brand-xlight)',color:'var(--brand)',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:700,fontSize:'0.8rem',flexShrink:0}}>
                     {s.name[0]?.toUpperCase()}
                   </div>
@@ -207,7 +210,7 @@ export default function Navbar() {
 
         {/* Right cluster */}
         <div className="navbar-right">
-          <button className="navbar-link hidden-mobile" onClick={() => openModal('writeReview')}>
+          <button className="navbar-link navbar-cta-primary hidden-mobile" onClick={() => openModal('writeReview')}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
               <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
               <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
@@ -215,7 +218,7 @@ export default function Navbar() {
             {t('nav.write_review')}
           </button>
 
-          <Link to="/businesses" className="navbar-link hidden-mobile">
+          <Link to="/businesses" className="navbar-link navbar-cta-primary hidden-mobile">
             {t('nav.for_businesses')}
           </Link>
 
@@ -292,7 +295,19 @@ export default function Navbar() {
                           } else if(isUserNotif){
                             navigate('/dashboard');
                           } else {
-                            const url=n.reviewId?`/company/${n.companyId}?openReview=${n.reviewId}`:`/company/${n.companyId}`;
+                            // Resolve to the canonical /business/<slug> URL when
+                            // possible so the user never sees the bare company id
+                            // (was: navigating to /company/:id and waiting for
+                            // CompanyPage to canonicalise).
+                            let slug = n.companySlug || null;
+                            if (!slug) {
+                              try {
+                                const snap = await getDoc(doc(db,'companies',n.companyId));
+                                slug = snap.exists() ? (snap.data().slug || null) : null;
+                              } catch {}
+                            }
+                            const base = slug ? `/business/${slug}` : `/company/${n.companyId}`;
+                            const url = n.reviewId ? `${base}?openReview=${n.reviewId}` : base;
                             navigate(url);
                           }
                         }

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { db } from '../../firebase/config';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { useAuthStore } from '../../store/authStore';
+import { loadTranslationOverrides } from '../../i18n';
 import AdminLayout from './AdminLayout';
 import './AdminPages.css';
 import './AdminTranslations.css';
@@ -12,33 +13,38 @@ import swSource from '../../i18n/sw.json';
 import enSource from '../../i18n/en.json';
 
 const LANG_TABS = [
-  { code: 'rw', label: 'Kinyarwanda', flag: '🇷🇼' },
-  { code: 'fr', label: 'Français', flag: '🇫🇷' },
-  { code: 'sw', label: 'Kiswahili', flag: '🇹🇿' },
+  { code: 'en', label: 'English',     flag: 'EN' },
+  { code: 'rw', label: 'Kinyarwanda', flag: 'RW' },
+  { code: 'fr', label: 'Français',    flag: 'FR' },
+  { code: 'sw', label: 'Kiswahili',   flag: 'SW' },
 ];
 
 const SECTIONS = [
-  { key: 'nav',          label: 'Navbar & Navigation',  group: 'user' },
-  { key: 'time',         label: 'Time & Dates',          group: 'user' },
-  { key: 'home',         label: 'Homepage',              group: 'user' },
-  { key: 'categories',   label: 'Categories',            group: 'user' },
-  { key: 'review',       label: 'Reviews',               group: 'user' },
-  { key: 'auth',         label: 'Login / Sign Up',       group: 'user' },
-  { key: 'company',      label: 'Company Page',           group: 'user' },
-  { key: 'profile',      label: 'User Profile',           group: 'user' },
-  { key: 'search',       label: 'Search Results',         group: 'user' },
-  { key: 'biz',          label: 'Business Portal',       group: 'business' },
-  { key: 'cd',           label: 'Company Dashboard',     group: 'business' },
-  { key: 'admin',        label: 'Admin Panel',           group: 'admin' },
-  { key: 'admin_login',  label: 'Admin Login',           group: 'admin' },
-  { key: 'common',       label: 'Common / Shared',       group: 'shared' },
+  { key: 'nav',          label: 'Top navigation bar',         group: 'user' },
+  { key: 'time',         label: 'Dates & time labels',         group: 'user' },
+  { key: 'home',         label: 'Home page (hero, sections)',  group: 'user' },
+  { key: 'categories',   label: 'Business categories',         group: 'user' },
+  { key: 'review',       label: 'Review form & cards',         group: 'user' },
+  { key: 'auth',         label: 'Login & sign-up modal',       group: 'user' },
+  { key: 'company',      label: 'Business detail page',         group: 'user' },
+  { key: 'profile',      label: 'User profile / dashboard',     group: 'user' },
+  { key: 'search',       label: 'Search results page',          group: 'user' },
+  { key: 'biz',          label: 'Business owner portal',       group: 'business' },
+  { key: 'cd',           label: 'Company dashboard',            group: 'business' },
+  { key: 'admin',        label: 'Admin sidebar & dashboard',    group: 'admin' },
+  { key: 'admin_login',  label: 'Admin login page',             group: 'admin' },
+  { key: 'common',       label: 'Buttons, errors, shared text', group: 'shared' },
 ];
 
 function flattenObj(obj, prefix = '') {
-  return Object.entries(obj).reduce((acc, [k, v]) => {
+  return Object.entries(obj || {}).reduce((acc, [k, v]) => {
     const key = prefix ? `${prefix}.${k}` : k;
     if (typeof v === 'object' && v !== null && !Array.isArray(v)) {
+      // Nested object — recurse so child keys get dot-path names.
       Object.assign(acc, flattenObj(v, key));
+    } else {
+      // Leaf value (string, number, boolean, or array) — this is the editable entry.
+      acc[key] = v;
     }
     return acc;
   }, {});
@@ -46,7 +52,7 @@ function flattenObj(obj, prefix = '') {
 
 export default function AdminTranslations() {
   const { user } = useAuthStore();
-  const [activeLang, setActiveLang] = useState('rw');
+  const [activeLang, setActiveLang] = useState('en');
   const [activeSection, setActiveSection] = useState('nav');
   const [edits, setEdits] = useState({});
   const [loading, setLoading] = useState(true);
@@ -62,30 +68,29 @@ export default function AdminTranslations() {
     setTimeout(() => setToast(null), 3000);
   };
 
-  const sourceMap = { rw: rwSource, fr: frSource, sw: swSource };
+  const sourceMap = { en: enSource, rw: rwSource, fr: frSource, sw: swSource };
   const activeSource = sourceMap[activeLang];
 
   useEffect(() => {
     (async () => {
       try {
-        const [rwSnap, frSnap, swSnap] = await Promise.all([
-          getDoc(doc(db, 'admin_settings', 'translations_rw')).catch(() => ({ exists: () => false, data: () => ({}) })),
-          getDoc(doc(db, 'admin_settings', 'translations_fr')).catch(() => ({ exists: () => false, data: () => ({}) })),
-          getDoc(doc(db, 'admin_settings', 'translations_sw')).catch(() => ({ exists: () => false, data: () => ({}) })),
-        ]);
+        const langs = ['en', 'rw', 'fr', 'sw'];
+        const snaps = await Promise.all(
+          langs.map(l =>
+            getDoc(doc(db, 'admin_settings', `translations_${l}`))
+              .catch(() => ({ exists: () => false, data: () => ({}) }))
+          )
+        );
         const allEdits = {};
-        if (rwSnap.exists()) {
-          const data = rwSnap.data();
-          Object.keys(data).forEach(k => { if (!k.startsWith('_')) allEdits[`rw:${k}`] = data[k]; });
-        }
-        if (frSnap.exists()) {
-          const data = frSnap.data();
-          Object.keys(data).forEach(k => { if (!k.startsWith('_')) allEdits[`fr:${k}`] = data[k]; });
-        }
-        if (swSnap.exists()) {
-          const data = swSnap.data();
-          Object.keys(data).forEach(k => { if (!k.startsWith('_')) allEdits[`sw:${k}`] = data[k]; });
-        }
+        langs.forEach((l, idx) => {
+          const snap = snaps[idx];
+          if (snap && snap.exists()) {
+            const data = snap.data();
+            Object.keys(data).forEach(k => {
+              if (!k.startsWith('_')) allEdits[`${l}:${k}`] = data[k];
+            });
+          }
+        });
         setEdits(allEdits);
       } catch (e) { console.error(e); }
       setLoading(false);
@@ -95,7 +100,13 @@ export default function AdminTranslations() {
   function getSectionKeys(sectionKey) {
     const section = activeSource[sectionKey];
     if (!section) return [];
-    const flat = flattenObj(typeof section === 'object' ? section : { [sectionKey]: section }, '');
+    // Prefix with the section name so keys are stored as full dot-paths
+    // (e.g. "nav.write_review") — matching how the app calls t() and how
+    // the Firestore loader unflattens back into i18n resources.
+    const flat = flattenObj(
+      typeof section === 'object' ? section : { [sectionKey]: section },
+      sectionKey
+    );
     return Object.entries(flat);
   }
 
@@ -105,7 +116,7 @@ export default function AdminTranslations() {
       if (!search) return true;
       const editKey = `${activeLang}:${key}`;
       const hasEdit = edits[editKey] !== undefined;
-      const enVal = flattenObj(enSource[activeSection] || {})[key] || '';
+      const enVal = flattenObj(enSource[activeSection] || {}, activeSection)[key] || '';
       const match = k => k.toLowerCase().includes(search.toLowerCase());
       if (match(key)) return true;
       if (match(String(val))) return true;
@@ -119,16 +130,27 @@ export default function AdminTranslations() {
   function handleEdit(key, value) {
     const editKey = `${activeLang}:${key}`;
     setEdits(prev => ({ ...prev, [editKey]: value }));
-    setSavedKeys(prev => { const n = new Set(n); n.delete(editKey); return n; });
+    // Clear the "✓ Saved" badge on this key — it's now dirty again.
+    setSavedKeys(prev => {
+      const next = new Set(prev);
+      next.delete(editKey);
+      return next;
+    });
   }
 
   function resetKey(key) {
     const editKey = `${activeLang}:${key}`;
-    setEdits(prev => { const n = { ...prev }; delete n[editKey]; return n; });
-    setSavedKeys(prev => { const n = new Set(n); delete n[deleteSymbol(key)]; return n; });
+    setEdits(prev => {
+      const next = { ...prev };
+      delete next[editKey];
+      return next;
+    });
+    setSavedKeys(prev => {
+      const next = new Set(prev);
+      next.delete(editKey);
+      return next;
+    });
   }
-
-  function deleteSymbol(k) { return k; }
 
   async function saveSection() {
     setSaving(true);
@@ -149,6 +171,9 @@ export default function AdminTranslations() {
       const newSaved = new Set(savedKeys);
       entries.forEach(([key]) => newSaved.add(`${activeLang}:${key}`));
       setSavedKeys(newSaved);
+      // Pull the just-saved overrides back into the live app so every open tab
+      // (admin + user-facing) updates without a browser reload.
+      await loadTranslationOverrides();
       showToast(`✓ Saved ${Object.keys(sectionEdits).length} keys in "${SECTIONS.find(s => s.key === activeSection)?.label}" (${activeLang.toUpperCase()})`);
     } catch (e) { showToast(e.message, 'error'); }
     setSaving(false);
@@ -169,6 +194,7 @@ export default function AdminTranslations() {
       const newSaved = new Set(savedKeys);
       Object.keys(langEdits).forEach(k => newSaved.add(k));
       setSavedKeys(newSaved);
+      await loadTranslationOverrides();
       showToast(`✓ Saved all ${Object.keys(langEdits).length} edits for ${activeLang.toUpperCase()}`);
     } catch (e) { showToast(e.message, 'error'); }
     setSaving(false);
@@ -212,11 +238,14 @@ export default function AdminTranslations() {
       <div className="ap-page-header">
         <div>
           <h1 className="ap-page-title">Platform Translations</h1>
-          <p style={{ color: 'var(--text-3)', fontSize: '0.82rem', marginTop: 4 }}>
-            Edit all visible text across user, business, and admin pages. Changes apply to the selected language.
+          <p style={{ color: 'var(--text-3)', fontSize: '0.82rem', marginTop: 4, maxWidth: 720 }}>
+            Edit any text that appears on the live site. <strong>Step 1:</strong> pick a language tab.
+            {' '}<strong>Step 2:</strong> pick a section on the left that matches the part of the site you want to change
+            (e.g. "Home page" or "Top navigation bar"). <strong>Step 3:</strong> edit the value next to each phrase
+            and click Save. Tip: use the search box below to find a specific phrase by typing what you see on the site.
           </p>
         </div>
-        <div style={{ display: 'flex', gap: 10 }}>
+        <div className="tx-header-actions">
           <button className="ap-btn ap-btn-ghost" onClick={resetSection} disabled={saving || sectionEdits === 0}>
             Reset Section
           </button>
@@ -258,7 +287,7 @@ export default function AdminTranslations() {
             <div key={group} className="tx-group">
               <div className="tx-group-label">{group.toUpperCase()}</div>
               {sections.map(sec => {
-                const sectionKeys = flattenObj(activeSource[sec.key] || {});
+                const sectionKeys = flattenObj(activeSource[sec.key] || {}, sec.key);
                 const edited = Object.keys(sectionKeys).filter(k => edits[`${activeLang}:${k}`] !== undefined).length;
                 return (
                   <button
@@ -285,7 +314,7 @@ export default function AdminTranslations() {
                 ref={searchRef}
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                placeholder="Search keys or values…"
+                placeholder='Type what you see on the site — e.g. "Top Rated" or "Welcome"'
                 className="tx-search-input"
               />
               {search && (
@@ -317,7 +346,6 @@ export default function AdminTranslations() {
                 const editedValue = edits[editKey];
                 const hasEdit = editedValue !== undefined;
                 const isSaved = savedKeys.has(editKey);
-                const enRef = flattenObj(enSource[activeSection] || {})[key] || '';
 
                 const displayValue = hasEdit ? editedValue : String(sourceValue);
                 const needsTextarea = displayValue.length > 80;
@@ -325,8 +353,29 @@ export default function AdminTranslations() {
 
                 return (
                   <div key={key} className={`tx-entry${hasEdit ? ' tx-entry--edited' : ''}`}>
-                    <div className="tx-entry-header">
-                      <code className="tx-entry-key">{key}</code>
+                    <div className="tx-entry-header" style={{ alignItems: 'flex-start', gap: 12 }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        {/* Big label shows the phrase in the CURRENT language — matches what the admin is editing below */}
+                        <div style={{
+                          fontSize: '0.95rem',
+                          fontWeight: 600,
+                          color: 'var(--ink-2, #1a1a1a)',
+                          lineHeight: 1.35,
+                          wordBreak: 'break-word',
+                        }}>
+                          {displayValue || <em style={{ color: 'var(--text-4)' }}>(empty)</em>}
+                        </div>
+                        {/* Small key badge underneath — for developers who need to know the technical id */}
+                        <code style={{
+                          display: 'inline-block',
+                          marginTop: 4,
+                          fontSize: '0.7rem',
+                          color: 'var(--text-4, #9ca3af)',
+                          background: 'var(--bg, #f9fafb)',
+                          padding: '2px 6px',
+                          borderRadius: 4,
+                        }}>{key}</code>
+                      </div>
                       <div className="tx-entry-actions">
                         {hasEdit && (
                           <button className="tx-btn tx-btn-ghost tx-btn-sm" onClick={() => resetKey(key)} title="Reset to original">
@@ -338,18 +387,6 @@ export default function AdminTranslations() {
                     </div>
 
                     <div className="tx-entry-body">
-                      <div className="tx-entry-ref">
-                        <span className="tx-ref-label">EN ref:</span>
-                        <span className="tx-ref-value">{enRef || <em style={{ color: 'var(--text-4)' }}>not in EN</em>}</span>
-                      </div>
-
-                      {hasEdit && (
-                        <div className="tx-entry-original">
-                          <span className="tx-ref-label">Original:</span>
-                          <span className="tx-ref-value" style={{ fontStyle: 'italic', color: 'var(--text-3)' }}>{String(sourceValue)}</span>
-                        </div>
-                      )}
-
                       {needsTextarea ? (
                         <textarea
                           className="tx-textarea"
