@@ -6,8 +6,6 @@ import { useThemeStore } from '../store/themeStore';
 import { useTranslation } from 'react-i18next';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ChangePasswordModal from '../components/ChangePasswordModal';
-import { LANGUAGES } from '../constants/languages';
-import { getInitials } from '../utils/helpers';
 import './CompanyDashboard.css';
 import StoriesSection from '../components/StoriesSection';
 import ReviewModal from '../components/ReviewModal';
@@ -54,7 +52,7 @@ function RatingBar({ n, count, total }) {
 }
 
 function Toast({ msg, type, onClose }) {
-  useEffect(() => { const t = setTimeout(onClose, 3200); return () => clearTimeout(t); }, [onClose]);
+  useEffect(() => { const t = setTimeout(onClose, 3200); return () => clearTimeout(t); }, []);
   return (
     <div style={{
       position:'fixed', bottom:24, right:24, zIndex:9999,
@@ -68,51 +66,22 @@ function Toast({ msg, type, onClose }) {
   );
 }
 
-/* ── NAV ──
-   Structured into sections so the business dashboard sidebar mirrors the
-   admin layout (MANAGEMENT / MODERATION / BILLING / SYSTEM). Each section
-   renders a small label header and then its items. Conditional sections
-   (Stories, Products) are appended into the right group based on plan/
-   feature flags. `items: []` sections are filtered out in the render. */
+/* ── NAV ── */
 function getNav(t, company) {
-  const stories = company?.enabledFeatures?.company_stories
-    ? [{ id:'stories', labelKey:'cd.stories', label:'Stories', icon:'M15 10l4.553-2.069A1 1 0 0 1 21 8.871V15.13a1 1 0 0 1-1.447.9L15 14M3 8a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8z' }]
-    : [];
-  const products = (company?.enabledFeatures?.product_listings || company?.plan === 'enterprise')
-    ? [{ id:'products', labelKey:'cd.products', label:'Products', icon:'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4' }]
-    : [];
   return [
-    {
-      label: 'OVERVIEW', sectionKey: 'cd.section_overview',
-      items: [
-        { id:'overview',   labelKey:'cd.overview',   label:'Overview',   icon:'M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z M9 22V12h6v10' },
-        { id:'analytics',  labelKey:'cd.analytics',  label:'Analytics',  icon:'M18 20V10 M12 20V4 M6 20v-6' },
-      ],
-    },
-    {
-      label: 'MANAGEMENT', sectionKey: 'cd.section_management',
-      items: [
-        { id:'reviews',  labelKey:'cd.reviews',           label:'Reviews',          icon:'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z' },
-        { id:'profile',  labelKey:'cd.business_profile',  label:'Business Profile', icon:'M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2 M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z' },
-        { id:'qrcode',   labelKey:null,                   label:'QR Code',          icon:'M3 3h7v7H3z M14 3h7v7h-7z M3 14h7v7H3z M14 14h3v3h-3z M20 14h1v1h-1z M17 17h3v3h-3z M20 20h1v1h-1z' },
-        ...stories,
-        ...products,
-      ],
-    },
-    {
-      label: 'MARKETING', sectionKey: 'cd.section_marketing',
-      items: [
-        { id:'competitors', labelKey:'cd.market_insights', label:'Market Insights', icon:'M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5' },
-      ],
-    },
-    {
-      label: 'ACCOUNT', sectionKey: 'cd.section_account',
-      items: [
-        { id:'subscription',  labelKey:'cd.subscription',  label:'Subscription',  icon:'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 0 0 3-3V8a3 3 0 0 0-3-3H6a3 3 0 0 0-3 3v8a3 3 0 0 0 3 3z' },
-        { id:'notifications', labelKey:'cd.notifications', label:'Notifications', icon:'M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9 M13.73 21a2 2 0 0 1-3.46 0' },
-      ],
-    },
-  ].filter(s => s.items.length > 0);
+    { id:'overview',       label:t('cd.overview')||'Overview',        icon:'M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z M9 22V12h6v10' },
+    { id:'reviews',        label:t('cd.reviews')||'Reviews',          icon:'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z' },
+    { id:'analytics',      label:t('cd.analytics')||'Analytics',        icon:'M18 20V10 M12 20V4 M6 20v-6' },
+    { id:'competitors',    label:t('cd.market_insights')||'Market Insights',  icon:'M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5' },
+    { id:'profile',        label:t('cd.business_profile')||'Business Profile', icon:'M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2 M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z' },
+    { id:'subscription',   label:t('cd.subscription')||'Subscription',     icon:'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 0 0 3-3V8a3 3 0 0 0-3-3H6a3 3 0 0 0-3 3v8a3 3 0 0 0 3 3z' },
+    { id:'notifications',  label:t('cd.notifications')||'Notifications',    icon:'M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9 M13.73 21a2 2 0 0 1-3.46 0' },
+    { id:'qrcode',         label:'QR Code',                                   icon:'M3 3h7v7H3z M14 3h7v7h-7z M3 14h7v7H3z M14 14h3v3h-3z M20 14h1v1h-1z M17 17h3v3h-3z M20 20h1v1h-1z' },
+    // Stories nav shown only if feature is enabled by admin
+    ...(company?.enabledFeatures?.company_stories ? [{ id:'stories', label:'Stories', icon:'M15 10l4.553-2.069A1 1 0 0 1 21 8.871V15.13a1 1 0 0 1-1.447.9L15 14M3 8a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8z' }] : []),
+    // Products: available for trial, professional, enterprise — not free
+    ...(company?.enabledFeatures?.product_listings || company?.plan === 'enterprise' ? [{ id:'products', label:'Products', icon:'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4' }] : []),
+  ];
 }
 
 const PLANS = [
@@ -131,10 +100,8 @@ const PLANS = [
 function QRCodeSection({ company, showToast }) {
   const [qrUrl, setQrUrl] = React.useState('');
   const [copied, setCopied] = React.useState(false);
-  // Link directly to review page (with ?review=1 to open review modal).
-  // Prefer the canonical /business/<slug> URL; fall back to id for legacy docs.
-  const urlKey = company?.slug ? `/business/${company.slug}` : `/company/${company?.id}`;
-  const reviewUrl = `${window.location.origin}${urlKey}?review=1`;
+  // Link directly to review page (with ?review=1 to open review modal)
+  const reviewUrl = `${window.location.origin}/company/${company?.id}?review=1`;
   const companyName = company?.companyName || company?.name || 'Business';
 
   React.useEffect(() => {
@@ -407,7 +374,7 @@ export default function CompanyDashboard() {
             .catch(()=>{});
         }
         return; // skip setLoading(false) below — already called above
-      } catch(e){ console.error(e); }
+      } catch(e){ /* log removed */; }
       setLoading(false);
     });
     return unsub;
@@ -539,40 +506,26 @@ export default function CompanyDashboard() {
       }).catch(() => {});
       showToast('Reply sent!');
     } catch(e) {
-      console.error('Reply error:', e);
       showToast(e.message || 'Failed to send reply', 'error');
     }
   }
 
 
-  // Sanitize extension so the storage path is predictable/URL-safe.
-  function safeExt(name) {
-    const raw = (name.split('.').pop() || 'jpg').toLowerCase();
-    return raw.replace(/[^a-z0-9]/g, '').slice(0, 5) || 'jpg';
-  }
-
   async function handleLogoUpload(e) {
     const file = e.target.files?.[0];
     if (!file || !company) return;
-    if (!/^image\//.test(file.type || '')) {
-      showToast('Please choose an image file', 'error'); return;
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      showToast('Logo too large (max 5 MB)', 'error'); return;
-    }
     setLogoUploading(true);
     try {
-      const rand = Math.random().toString(36).slice(2);
-      const path = `logos/${company.id}/${Date.now()}_${rand}.${safeExt(file.name)}`;
+      const ext = file.name.split('.').pop();
+      const path = `logos/${company.id}/${Date.now()}.${ext}`;
       const ref = storageRef(storage, path);
-      const snap = await uploadBytes(ref, file, { contentType: file.type || 'image/jpeg' });
+      const snap = await uploadBytes(ref, file, { contentType: file.type });
       const url = await getDownloadURL(snap.ref);
       await updateDoc(doc(db, 'companies', company.id), { logoUrl: url });
       setCompany(prev => ({ ...prev, logoUrl: url }));
       showToast('Logo updated!');
     } catch (e) {
-      console.error('Logo upload failed:', e);
-      showToast('Logo upload failed: ' + (e?.message || 'unknown error'), 'error');
+      showToast('Logo upload failed: ' + e.message, 'error');
     }
     setLogoUploading(false);
   }
@@ -580,18 +533,14 @@ export default function CompanyDashboard() {
   async function handlePhotoUpload(e) {
     const files = Array.from(e.target.files).slice(0, 8);
     if (!files.length || !company) return;
-    const bad = files.find(f => !/^image\//.test(f.type || ''));
-    if (bad) { showToast('All files must be images', 'error'); return; }
-    const oversize = files.find(f => f.size > 10 * 1024 * 1024);
-    if (oversize) { showToast(`"${oversize.name}" is over 10 MB`, 'error'); return; }
     setPhotosUploading(true);
     try {
       const uploaded = [];
       for (const file of files) {
-        const rand = Math.random().toString(36).slice(2);
-        const path = `business-photos/${company.id}/${Date.now()}_${rand}.${safeExt(file.name)}`;
+        const ext = file.name.split('.').pop();
+        const path = `business-photos/${company.id}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
         const ref = storageRef(storage, path);
-        const snap = await uploadBytes(ref, file, { contentType: file.type || 'image/jpeg' });
+        const snap = await uploadBytes(ref, file, { contentType: file.type });
         const url = await getDownloadURL(snap.ref);
         uploaded.push(url);
       }
@@ -601,8 +550,7 @@ export default function CompanyDashboard() {
       setCompany(prev => ({ ...prev, photos: newPhotos }));
       showToast(`${uploaded.length} photo${uploaded.length>1?'s':''} uploaded!`);
     } catch (e) {
-      console.error('Photo upload failed:', e);
-      showToast('Photo upload failed: ' + (e?.message || 'unknown error'), 'error');
+      showToast('Photo upload failed: ' + e.message, 'error');
     }
     setPhotosUploading(false);
   }
@@ -763,23 +711,18 @@ export default function CompanyDashboard() {
               </div>
             </div>
             <nav className="biz-nav">
-              {getNav(t, company).map(navSection => (
-                <div key={navSection.sectionKey}>
-                  <div className="biz-nav-section-label">{navSection.label}</div>
-                  {navSection.items.map(item => (
-                    <button key={item.id}
-                      className={`biz-nav-link${section===item.id?' active':''}`}
-                      onClick={()=>setSection(item.id)}>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        {item.icon ? item.icon.split(' M').map((d,i)=><path key={i} d={(i>0?'M':'')+d}/>) : null}
-                      </svg>
-                      <span>{item.label}</span>
-                      {item.id==='notifications' && unreadCount>0 && (
-                        <span className="biz-nav-badge">{unreadCount}</span>
-                      )}
-                    </button>
-                  ))}
-                </div>
+              {getNav(t, company).map(item => (
+                <button key={item.id}
+                  className={`biz-nav-link${section===item.id?' active':''}`}
+                  onClick={()=>setSection(item.id)}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    {item.icon.split(' M').map((d,i)=><path key={i} d={(i>0?'M':'')+d}/>)}
+                  </svg>
+                  <span>{item.label}</span>
+                  {item.id==='notifications' && unreadCount>0 && (
+                    <span className="biz-nav-badge">{unreadCount}</span>
+                  )}
+                </button>
               ))}
             </nav>
             <div className="biz-sidebar-footer">
@@ -1044,7 +987,7 @@ export default function CompanyDashboard() {
                               : <span style={{color:'var(--biz-brand)'}}>↑ {(avg-(c.averageRating||0)).toFixed(1)} pts ahead</span>
                             }
                           </div>
-                          <Link to={c.slug ? `/business/${c.slug}` : `/company/${c.id}`} className="biz-comp-link" target="_blank">View on Irema →</Link>
+                          <Link to={`/company/${c.id}`} className="biz-comp-link" target="_blank">View on Irema →</Link>
                         </div>
                       );
                     })}

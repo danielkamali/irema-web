@@ -3,33 +3,40 @@
    ═══════════════════════════════════════════════ */
 @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&family=Nunito+Sans:wght@400;500;600;700&display=swap');
 
-/* Business dashboard palette — inherits the site-wide --brand tokens so it
-   matches the admin emerald theme. Fallback values kept for safety. */
 .biz-root {
-  --biz-brand:     var(--brand, #1ECAB8);
-  --biz-brand-dk:  var(--brand-dark, #16a892);
-  --biz-brand-xl:  var(--brand-xlight, #e6faf6);
-  --biz-brand-lt:  var(--brand-light, #a8ece0);
-  --biz-bg:        var(--bg, #f9fafb);
-  --biz-bg-2:      var(--bg-2, #f3f4f6);
-  --biz-bg-3:      var(--bg-3, #e5e7eb);
-  --biz-surface:   var(--surface, #ffffff);
-  --biz-border:    var(--border, #e5e7eb);
-  --biz-text-1:    var(--text-1, #1a1a2e);
-  --biz-text-2:    var(--text-2, #374151);
-  --biz-text-3:    var(--text-3, #6b7280);
-  --biz-text-4:    var(--text-4, #9ca3af);
+  --biz-brand:     #2d8f6f;
+  --biz-brand-dk:  #1f6b52;
+  --biz-brand-xl:  #eef8f3;
+  --biz-brand-lt:  #c8ead9;
+  --biz-bg:        #f7f6f3;
+  --biz-bg-2:      #eeede9;
+  --biz-bg-3:      #e2e1dc;
+  --biz-surface:   #ffffff;
+  --biz-border:    #e0dfd9;
+  --biz-text-1:    #111816;
+  --biz-text-2:    #2e3d38;
+  --biz-text-3:    #6b7d77;
+  --biz-text-4:    #9aada7;
   --biz-gold:      #e8b800;
   --biz-r-sm: 8px; --biz-r-md: 12px; --biz-r-lg: 16px; --biz-r-xl: 20px;
   --biz-shadow-sm: 0 1px 4px rgba(0,0,0,0.06);
   --biz-shadow-md: 0 4px 16px rgba(0,0,0,0.08);
-  font-family: var(--font-body, 'Nunito Sans', system-ui, sans-serif);
+  font-family: 'Nunito Sans', system-ui, sans-serif;
   background: var(--biz-bg);
   min-height: 100vh;
   color: var(--biz-text-2);
 }
-/* Dark mode now inherits from the global [data-theme="dark"] tokens via the
-   var() chain above — no per-scope overrides needed. */
+.biz-root[data-theme="dark"] {
+  --biz-bg:       #0d1511;
+  --biz-bg-2:     #131c18;
+  --biz-bg-3:     #1a2820;
+  --biz-surface:  #162119;
+  --biz-border:   #243028;
+  --biz-text-1:   #e8f0ed;
+  --biz-text-2:   #b8cdc7;
+  --biz-text-3:   #6e9088;
+  --biz-text-4:   #3e5550;
+}
 
 /* ── Navbar ── */
 .biz-navbar {
@@ -333,7 +340,7 @@
   display: flex; flex-direction: column; position: relative;
 }
 .biz-plan-highlight {
-  border-color: var(--biz-brand); box-shadow: 0 4px 24px var(--brand-glow, rgba(30,202,184,0.18));
+  border-color: var(--biz-brand); box-shadow: 0 4px 24px rgba(45,143,111,0.15);
 }
 .biz-plan-popular {
   position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
@@ -383,12 +390,12 @@
 .biz-profile-logo-img { width: 64px; height: 64px; border-radius: 16px; object-fit: cover; border: 2px solid var(--biz-border); }
 .biz-logo-upload-btn {
   position: absolute; bottom: -6px; right: -6px;
-  background: var(--biz-brand); color: white; border-radius: 50%;
+  background: var(--biz-green); color: white; border-radius: 50%;
   width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;
   font-size: 0.7rem; cursor: pointer; border: 2px solid white;
   transition: background 0.15s; box-shadow: 0 2px 6px rgba(0,0,0,0.2);
 }
-.biz-logo-upload-btn:hover { background: var(--biz-brand-dk); }
+.biz-logo-upload-btn:hover { background: var(--biz-green-dk); }
 
 /* ── Business Dashboard Mobile (v26) ── */
 @media (max-width: 768px) {
