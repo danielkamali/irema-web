@@ -763,18 +763,23 @@ export default function CompanyDashboard() {
               </div>
             </div>
             <nav className="biz-nav">
-              {getNav(t, company).map(item => (
-                <button key={item.id}
-                  className={`biz-nav-link${section===item.id?' active':''}`}
-                  onClick={()=>setSection(item.id)}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    {item.icon ? item.icon.split(' M').map((d,i)=><path key={i} d={(i>0?'M':'')+d}/>) : null}
-                  </svg>
-                  <span>{item.label}</span>
-                  {item.id==='notifications' && unreadCount>0 && (
-                    <span className="biz-nav-badge">{unreadCount}</span>
-                  )}
-                </button>
+              {getNav(t, company).map(navSection => (
+                <div key={navSection.sectionKey}>
+                  <div className="biz-nav-section-label">{navSection.label}</div>
+                  {navSection.items.map(item => (
+                    <button key={item.id}
+                      className={`biz-nav-link${section===item.id?' active':''}`}
+                      onClick={()=>setSection(item.id)}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        {item.icon ? item.icon.split(' M').map((d,i)=><path key={i} d={(i>0?'M':'')+d}/>) : null}
+                      </svg>
+                      <span>{item.label}</span>
+                      {item.id==='notifications' && unreadCount>0 && (
+                        <span className="biz-nav-badge">{unreadCount}</span>
+                      )}
+                    </button>
+                  ))}
+                </div>
               ))}
             </nav>
             <div className="biz-sidebar-footer">
