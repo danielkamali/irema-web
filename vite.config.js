@@ -8,6 +8,13 @@ export default defineConfig({
   preview: { historyApiFallback: true },
   build: {
     chunkSizeWarningLimit: 1000,
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: true,
+        drop_debugger: true,
+      },
+    },
     rollupOptions: {
       output: {
         manualChunks: {
@@ -43,6 +50,4 @@ export default defineConfig({
       },
     },
   },
-  // Force dependency re-optimization on every start
-  optimizeDeps: { force: true },
 })
