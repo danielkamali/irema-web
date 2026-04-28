@@ -332,9 +332,9 @@ export default function AuthModal() {
         // Sanitize extension so paths stay URL-safe
         const rawExt = (file.name.split('.').pop() || 'jpg').toLowerCase();
         const ext = rawExt.replace(/[^a-z0-9]/g, '').slice(0, 5) || 'jpg';
-        // Use review ID as the folder — consistent with working photo upload pattern
+        // Use review ID as the folder — matches storage.rules permission for review-photos/{reviewId}
         const rand = Math.random().toString(36).slice(2);
-        const path = `review-images/${reviewId}/${Date.now()}_${rand}.${ext}`;
+        const path = `review-photos/${reviewId}/${Date.now()}_${rand}.${ext}`;
         const ref = storageRef(storage, path);
         const snap = await uploadBytes(ref, file, { contentType: file.type || 'image/jpeg' });
         const url = await getDownloadURL(snap.ref);
