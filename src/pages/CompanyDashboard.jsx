@@ -480,6 +480,23 @@ export default function CompanyDashboard() {
   async function handleReply(reviewId, replyText) {
     if (!currentUser) { showToast('Not logged in','error'); return; }
     if (!company) { showToast('Company not loaded','error'); return; }
+
+    // Rate limit replies for free tier: 3 per day
+    if (subscription?.status === 'free' || !subscription?.plan || subscription?.plan === 'starter') {
+      const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
+      const todaysReplies = reviews.reduce((count, review) => {
+        const replyCount = (review.replies || []).filter(r =>
+          r.isBusinessReply && r.userId === currentUser.uid && r.timestamp > oneDayAgo
+        ).length;
+        return count + replyCount;
+      }, 0);
+
+      if (todaysReplies >= 3) {
+        showToast('Free tier limit: 3 replies per day. Upgrade to respond to more reviews.', 'error');
+        return;
+      }
+    }
+
     const reply = {
       by: 'business',
       isBusinessReply: true,

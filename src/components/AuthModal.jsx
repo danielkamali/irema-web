@@ -408,25 +408,7 @@ export default function AuthModal() {
         return;
       }
 
-      // Rate limit: one review per company per 24 hours
-      const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
-      const existingSnap = await getDocs(
-        query(collection(db, 'reviews'),
-          where('companyId', '==', selectedCompany.id),
-          where('userId', '==', user.uid))
-      );
-      const recentReview = existingSnap.docs.find(d => {
-        const ts = d.data().createdAt;
-        return ts && ts.toMillis && ts.toMillis() > oneDayAgo;
-      });
-      if (recentReview) {
-        const reviewTime = recentReview.data().createdAt.toMillis();
-        const nextReviewTime = reviewTime + 24 * 60 * 60 * 1000;
-        const hoursLeft = Math.ceil((nextReviewTime - Date.now()) / (60 * 60 * 1000));
-        setError(`You can submit your next review in ${hoursLeft} hour${hoursLeft !== 1 ? 's' : ''}. We appreciate your feedback, but limit reviews to help maintain quality.`);
-        setLoading(false);
-        return;
-      }
+      // Users can review any number of times - no rate limiting
 
       // Create the review with status 'pending' so admins can moderate before it goes live
       const reviewData = {
