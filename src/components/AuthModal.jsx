@@ -194,7 +194,12 @@ export default function AuthModal() {
       return;
     }
     try {
-      await sendPasswordResetEmail(auth, forgotEmail.trim());
+      // Configure email action with proper return URL for better deliverability
+      const actionCodeSettings = {
+        url: `${window.location.origin}/?mode=resetPassword&oobCode=EMAIL_CODE`,
+        handleCodeInApp: false,
+      };
+      await sendPasswordResetEmail(auth, forgotEmail.trim(), actionCodeSettings);
       setForgotSent(true);
     } catch(err) {
       if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-email') {
@@ -210,9 +215,14 @@ export default function AuthModal() {
 
   async function handleEmailLogin(e) {
     e.preventDefault(); setLoading(true); setError('');
+    // Validate form before Firebase call
+    const trimmedEmail = email.trim().toLowerCase();
+    if (!trimmedEmail) { setError('Please enter your email address.'); setLoading(false); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) { setError('Please enter a valid email address.'); setLoading(false); return; }
+    if (!password) { setError('Please enter your password.'); setLoading(false); return; }
     try {
       await setPersistence(auth, browserLocalPersistence);
-      const cred = await signInWithEmailAndPassword(auth, email, password);
+      const cred = await signInWithEmailAndPassword(auth, trimmedEmail, password);
       const uid = cred.user.uid;
       // Block admin accounts from user portal
       const adminSnap = await getDoc(doc(db, 'admin_users', uid)).catch(() => null);
@@ -237,14 +247,26 @@ export default function AuthModal() {
   async function handleEmailSignup(e) {
     e.preventDefault();
     if (!termsAccepted) { setError('Please accept the Terms & Conditions to continue.'); return; }
+    // Validate form before Firebase call
+    const trimmedEmail = email.trim().toLowerCase();
+    if (!trimmedEmail) { setError('Please enter your email address.'); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) { setError('Please enter a valid email address.'); return; }
+    if (!password) { setError('Please enter a password.'); return; }
+    if (password.length < 8) { setError('Password must be at least 8 characters.'); return; }
+    // Require password strength: uppercase, lowercase, number, and symbol
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/;
+    if (!passwordRegex.test(password)) {
+      setError('Password must contain uppercase, lowercase, number, and symbol (@$!%*?&).');
+      return;
+    }
     setLoading(true); setError('');
     try {
       await setPersistence(auth, browserLocalPersistence);
-      const result = await createUserWithEmailAndPassword(auth, email, password);
+      const result = await createUserWithEmailAndPassword(auth, trimmedEmail, password);
       const uid = result.user.uid;
-      const displayName = email.split('@')[0];
+      const displayName = trimmedEmail.split('@')[0];
       await updateProfile(result.user, { displayName });
-      const profileData = { displayName, email, role: 'user', createdAt: serverTimestamp() };
+      const profileData = { displayName, email: trimmedEmail, role: 'user', createdAt: serverTimestamp() };
       await setDoc(doc(db, 'users', uid), profileData);
       // Force immediate profile update in authStore (onAuthStateChanged fires async)
       useAuthStore.getState().setUserProfile(profileData);
@@ -310,11 +332,9 @@ export default function AuthModal() {
         // Sanitize extension so paths stay URL-safe
         const rawExt = (file.name.split('.').pop() || 'jpg').toLowerCase();
         const ext = rawExt.replace(/[^a-z0-9]/g, '').slice(0, 5) || 'jpg';
-        // User-keyed path — no Firestore-get race on storage.rules because
-        // the rule only needs `request.auth.uid == userId`. Review id is
-        // embedded in the filename so we can still trace uploads back.
+        // Use review ID as the folder — consistent with working photo upload pattern
         const rand = Math.random().toString(36).slice(2);
-        const path = `review-photos/users/${user.uid}/${reviewId}_${Date.now()}_${rand}.${ext}`;
+        const path = `review-images/${reviewId}/${Date.now()}_${rand}.${ext}`;
         const ref = storageRef(storage, path);
         const snap = await uploadBytes(ref, file, { contentType: file.type || 'image/jpeg' });
         const url = await getDownloadURL(snap.ref);
@@ -377,6 +397,17 @@ export default function AuthModal() {
     }
     setLoading(true); setError('');
     try {
+      // Check if user is trying to review their own business
+      const userCompanySnap = await getDocs(
+        query(collection(db, 'companies'), where('adminUserId', '==', user.uid))
+      );
+      const userOwnedCompanyIds = userCompanySnap.docs.map(d => d.id);
+      if (userOwnedCompanyIds.includes(selectedCompany.id)) {
+        setError('You cannot review your own business.');
+        setLoading(false);
+        return;
+      }
+
       // Rate limit: one review per company per 24 hours
       const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
       const existingSnap = await getDocs(
@@ -384,12 +415,15 @@ export default function AuthModal() {
           where('companyId', '==', selectedCompany.id),
           where('userId', '==', user.uid))
       );
-      const hasRecentReview = existingSnap.docs.some(d => {
+      const recentReview = existingSnap.docs.find(d => {
         const ts = d.data().createdAt;
         return ts && ts.toMillis && ts.toMillis() > oneDayAgo;
       });
-      if (hasRecentReview) {
-        setError('You have already reviewed this business in the last 24 hours. Please wait before submitting another review.');
+      if (recentReview) {
+        const reviewTime = recentReview.data().createdAt.toMillis();
+        const nextReviewTime = reviewTime + 24 * 60 * 60 * 1000;
+        const hoursLeft = Math.ceil((nextReviewTime - Date.now()) / (60 * 60 * 1000));
+        setError(`You can submit your next review in ${hoursLeft} hour${hoursLeft !== 1 ? 's' : ''}. We appreciate your feedback, but limit reviews to help maintain quality.`);
         setLoading(false);
         return;
       }
@@ -427,7 +461,7 @@ export default function AuthModal() {
       // Notify business owner — targetUserId ensures only the business owner sees this
       if (selectedCompany.adminUserId) {
         await addDoc(collection(db, 'notifications'), {
-          companyId: selectedCompany.id, type: 'new_review',
+          companyId: selectedCompany.id, companySlug: selectedCompany.slug, type: 'new_review',
           targetUserId: selectedCompany.adminUserId, // ← only shown to business owner
           message: `New ${rating}★ review from ${user.displayName||user.email}: "${(comment||'').slice(0,60)}${comment.length>60?'…':''}"`,
           reviewId: reviewRef.id, createdAt: serverTimestamp(), read: false,
@@ -457,8 +491,41 @@ export default function AuthModal() {
               <button className="btn btn-primary" onClick={() => openModal('login')}>{t('nav.login')}</button>
             </div>
           ) : reviewSuccess ? (
-            <div className="alert alert-success" style={{ marginTop: 24, textAlign: 'center' }}>
-              ✅ {t('review.success')}
+            <div style={{ marginTop: 24, textAlign: 'center' }}>
+              <div style={{ fontSize: '2.5rem', marginBottom: 12 }}>✅</div>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-1)', marginBottom: 8 }}>
+                Review submitted successfully!
+              </h3>
+              <p style={{ fontSize: '0.9rem', color: 'var(--text-2)', marginBottom: 6 }}>
+                Thank you for reviewing <strong>{selectedCompany?.companyName || selectedCompany?.name}</strong>
+              </p>
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-3)', marginBottom: 16, lineHeight: 1.5 }}>
+                Your {rating}★ review will be moderated and published within 24 hours. This helps other customers make informed decisions.
+              </p>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button
+                  className="btn btn-ghost"
+                  style={{ flex: 1 }}
+                  onClick={() => {
+                    setReviewSuccess(false);
+                    setReviewStep(1);
+                    setSelectedCompany(null);
+                    setRating(0);
+                    setComment('');
+                    setSelectedImages([]);
+                    setImagePreviews([]);
+                  }}
+                >
+                  Write Another Review
+                </button>
+                <button
+                  className="btn btn-primary"
+                  style={{ flex: 1 }}
+                  onClick={closeModal}
+                >
+                  Done
+                </button>
+              </div>
             </div>
           ) : (
             <>
@@ -625,22 +692,6 @@ export default function AuthModal() {
         </div>
         <h2>{isLogin ? t('auth.login_title') : t('auth.signup_title')}</h2>
         <p className="modal-subtitle">{t('auth.subtitle')}</p>
-        {/* T&C checkbox shown ABOVE google button on signup — must accept before any auth */}
-        {!isLogin && (
-          <div style={{margin:'0 0 12px',padding:'10px 14px',background:'var(--bg)',borderRadius:10,border:'1px solid var(--border)'}}>
-            <div style={{display:'flex',alignItems:'flex-start',gap:10}}>
-              <input type="checkbox" id="terms-check-top" checked={termsAccepted} onChange={e=>setTermsAccepted(e.target.checked)}
-                style={{width:16,height:16,marginTop:2,accentColor:'var(--brand)',cursor:'pointer',flexShrink:0}}/>
-              <label htmlFor="terms-check-top" style={{fontSize:'0.8rem',color:'var(--text-3)',lineHeight:1.5,cursor:'pointer'}}>
-                I agree to Irema's{' '}
-                <button type="button" style={{background:'none',border:'none',color:'var(--brand)',fontWeight:600,cursor:'pointer',padding:0,fontSize:'0.8rem'}}
-                  onClick={()=>setShowTermsModal(true)}>Terms & Conditions</button>
-                {' '}and{' '}
-                <a href="/privacy" target="_blank" style={{color:'var(--brand)',fontWeight:600,fontSize:'0.8rem'}}>Privacy Policy</a>
-              </label>
-            </div>
-          </div>
-        )}
         <button className="google-btn" onClick={handleGoogleAuth}
           disabled={loading || (!isLogin && !termsAccepted)}
           style={{opacity:(!isLogin && !termsAccepted)?0.5:1,cursor:(!isLogin && !termsAccepted)?'not-allowed':'pointer'}}>
@@ -672,6 +723,22 @@ export default function AuthModal() {
             {loading ? t('common.loading') : (isLogin ? t('auth.login_btn') : t('auth.signup_btn'))}
           </button>
         </form>
+        {/* T&C checkbox shown BELOW the form on signup */}
+        {!isLogin && (
+          <div style={{margin:'16px 0 0',padding:'12px 14px',background:'var(--bg)',borderRadius:10,border:'1px solid var(--border)'}}>
+            <div style={{display:'flex',alignItems:'flex-start',gap:10}}>
+              <input type="checkbox" id="terms-check-bottom" checked={termsAccepted} onChange={e=>setTermsAccepted(e.target.checked)}
+                style={{width:16,height:16,marginTop:2,accentColor:'var(--brand)',cursor:'pointer',flexShrink:0}}/>
+              <label htmlFor="terms-check-bottom" style={{fontSize:'0.75rem',color:'var(--text-3)',lineHeight:1.5,cursor:'pointer'}}>
+                I agree to Irema's{' '}
+                <button type="button" style={{background:'none',border:'none',color:'var(--brand)',fontWeight:600,cursor:'pointer',padding:0,fontSize:'0.75rem'}}
+                  onClick={()=>setShowTermsModal(true)}>Terms & Conditions</button>
+                {' '}and{' '}
+                <a href="/privacy" target="_blank" style={{color:'var(--brand)',fontWeight:600,fontSize:'0.75rem'}}>Privacy Policy</a>
+              </label>
+            </div>
+          </div>
+        )}
         <p className="modal-switch">
           {isLogin ? t('auth.no_account') : t('auth.have_account')}{' '}
           <button className="link-btn" onClick={() => openModal(isLogin ? 'signup' : 'login')}>

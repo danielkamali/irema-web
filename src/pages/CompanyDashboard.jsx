@@ -75,6 +75,7 @@ function getNav(t, company) {
     { id:'competitors',    label:t('cd.market_insights')||'Market Insights',  icon:'M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5' },
     { id:'profile',        label:t('cd.business_profile')||'Business Profile', icon:'M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2 M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z' },
     { id:'subscription',   label:t('cd.subscription')||'Subscription',     icon:'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 0 0 3-3V8a3 3 0 0 0-3-3H6a3 3 0 0 0-3 3v8a3 3 0 0 0 3 3z' },
+    { id:'payments',       label:t('cd.payments')||'Payments',            icon:'M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm0 6c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm0-12C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z' },
     { id:'notifications',  label:t('cd.notifications')||'Notifications',    icon:'M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9 M13.73 21a2 2 0 0 1-3.46 0' },
     { id:'qrcode',         label:'QR Code',                                   icon:'M3 3h7v7H3z M14 3h7v7h-7z M3 14h7v7H3z M14 14h3v3h-3z M20 14h1v1h-1z M17 17h3v3h-3z M20 20h1v1h-1z' },
     // Stories nav shown only if feature is enabled by admin
@@ -86,13 +87,13 @@ function getNav(t, company) {
 
 const PLANS = [
   { id:'starter', name:'Starter', price:0, currency:'RWF', period:'month',
-    features:['1 business listing','Up to 50 reviews/month','Basic analytics','Email notifications','Community badge'],
+    features:['1 business listing','Unlimited reviews from customers','Respond to up to 50 reviews','Basic analytics','Email notifications','Community badge'],
     cta:'Get Started Free', highlight:false },
   { id:'professional', name:'Professional', price:25000, currency:'RWF', period:'month',
-    features:['1 business listing','Unlimited reviews','Advanced analytics + charts','Reply to reviews','Priority support','Verified badge','QR code downloads','Competitor insights'],
+    features:['1 business listing','Unlimited reviews','Unlimited responses to reviews','Advanced analytics + charts','Priority support','Verified badge','QR code downloads','Competitor insights'],
     cta:'Start 14-day Trial', highlight:true },
   { id:'enterprise', name:'Enterprise', price:75000, currency:'RWF', period:'month',
-    features:['Up to 5 listings','Unlimited everything','AI sentiment analysis','Dedicated account manager','Custom integrations','White-label widgets','API access','SLA support','Product listings on your page'],
+    features:['Up to 5 listings','Unlimited everything','Unlimited responses','AI sentiment analysis','Dedicated account manager','Custom integrations','White-label widgets','API access','SLA support','Product listings on your page'],
     cta:'Get Enterprise', highlight:false },
 ];
 
@@ -199,7 +200,7 @@ function QRCodeSection({ company, showToast }) {
       setTimeout(() => setCopied(false), 2500);
       showToast && showToast('Review link copied to clipboard!');
     }).catch(() => {
-      showToast && showToast('Copy failed — please copy manually', 'error');
+      showToast && showToast('Copy failed. Please copy manually', 'error');
     });
   }
 
@@ -280,6 +281,7 @@ export default function CompanyDashboard() {
   const [editSaving, setEditSaving] = useState(false);
   const [logoUploading, setLogoUploading] = useState(false);
   const [photosUploading, setPhotosUploading] = useState(false);
+  const [backgroundImageUploading, setBackgroundImageUploading] = useState(false);
   const [sortBy, setSortBy] = useState('newest');
   const [ratingFilter, setRatingFilter] = useState('all');
   const [reviewGroupBy, setReviewGroupBy] = useState('none');
@@ -294,6 +296,12 @@ export default function CompanyDashboard() {
   const [enterpriseSending, setEnterpriseSending] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('mtn');
   const [bizChangePwOpen, setBizChangePwOpen] = useState(false);
+  const [comparisonMetrics, setComparisonMetrics] = useState({
+    avgRating: true,
+    fiveStarCount: true,
+    reviewCount: true,
+    responseRate: true,
+  });
   const chartRefs = useRef({});
   const dropRef = useRef(null);
 
@@ -355,8 +363,10 @@ export default function CompanyDashboard() {
             const daysLeft = Math.max(0, Math.ceil((endDate - new Date()) / (1000*60*60*24)));
             setTrialDaysLeft(daysLeft);
             if (daysLeft === 0 && !sub.locked) {
-              // Auto-lock expired trial
-              updateDoc(doc(db,'subscriptions',sub.id), { status:'expired', locked:true }).catch(()=>{});
+              // Auto-lock expired trial — await database update before UI update
+              await updateDoc(doc(db,'subscriptions',sub.id), { status:'expired', locked:true }).catch((e)=>{
+                console.error('Failed to lock expired trial:', e);
+              });
               setIsLocked(true);
             }
           }
@@ -487,7 +497,7 @@ export default function CompanyDashboard() {
       // Notify the review author that the business has replied
       const reviewDoc = reviews.find(r => r.id === reviewId);
       if (reviewDoc?.userId) {
-        addDoc(collection(db, 'notifications'), {
+        await addDoc(collection(db, 'notifications'), {
           userId: reviewDoc.userId,
           companyId: company.id,
           companyName: company.companyName || company.name,
@@ -496,14 +506,20 @@ export default function CompanyDashboard() {
           reviewId,
           createdAt: serverTimestamp(),
           read: false,
-        }).catch(() => {});
+        }).catch((e) => {
+          console.error('Failed to notify review author:', e);
+          showToast('Note: Could not send notification to review author', 'error');
+        });
       }
       // Also notify the company (for their notifications tab)
-      addDoc(collection(db,'notifications'), {
+      await addDoc(collection(db,'notifications'), {
         companyId: company.id, type: 'reply_sent',
         message: 'You replied to a customer review',
         reviewId, createdAt: serverTimestamp(), read: true,
-      }).catch(() => {});
+      }).catch((e) => {
+        console.error('Failed to create company notification:', e);
+        showToast('Note: Could not create notification', 'error');
+      });
       showToast('Reply sent!');
     } catch(e) {
       showToast(e.message || 'Failed to send reply', 'error');
@@ -564,6 +580,33 @@ export default function CompanyDashboard() {
     } catch (e) { showToast('Failed to remove photo', 'error'); }
   }
 
+  async function handleBackgroundImageUpload(e) {
+    const file = e.target.files?.[0];
+    if (!file || !company) return;
+    setBackgroundImageUploading(true);
+    try {
+      const ext = file.name.split('.').pop();
+      const path = `business-backgrounds/${company.id}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+      const ref = storageRef(storage, path);
+      const snap = await uploadBytes(ref, file, { contentType: file.type });
+      const url = await getDownloadURL(snap.ref);
+      await updateDoc(doc(db, 'companies', company.id), { backgroundImageUrl: url });
+      setCompany(prev => ({ ...prev, backgroundImageUrl: url }));
+      showToast('Background image updated!');
+    } catch (e) {
+      showToast('Background image upload failed: ' + e.message, 'error');
+    }
+    setBackgroundImageUploading(false);
+  }
+
+  async function handleBackgroundImageDelete() {
+    try {
+      await updateDoc(doc(db, 'companies', company.id), { backgroundImageUrl: null });
+      setCompany(prev => ({ ...prev, backgroundImageUrl: null }));
+      showToast('Background image removed');
+    } catch (e) { showToast('Failed to remove background image', 'error'); }
+  }
+
   async function handleEditSave() {
     setEditSaving(true);
     try {
@@ -617,7 +660,7 @@ export default function CompanyDashboard() {
         <div style={{background: trialDaysLeft <= 3 ? '#ef4444' : '#e8b800', color: trialDaysLeft <= 3 ? 'white' : '#1a1200',
           textAlign:'center', padding:'10px 20px', fontSize:'0.85rem', fontWeight:700, position:'sticky', top:0, zIndex:200}}>
           {trialDaysLeft <= 3 ? '🚨' : '⏳'} Professional Trial: <strong>{trialDaysLeft} day{trialDaysLeft!==1?'s':''} remaining</strong>
-          {trialDaysLeft <= 3 ? ' — Upgrade now to keep your features!' : ' — Enjoy your free trial!'}
+          {trialDaysLeft <= 3 ? '. Upgrade now to keep your features!' : '. Enjoy your free trial!'}
           <button onClick={()=>setSection('subscription')}
             style={{marginLeft:12,padding:'3px 12px',borderRadius:99,border:'none',
               background: trialDaysLeft<=3?'white':'#1a1200', color: trialDaysLeft<=3?'#ef4444':'#e8b800',
@@ -740,7 +783,7 @@ export default function CompanyDashboard() {
               <div className="biz-page-header">
                 <div>
                   <h1>{t('cd.welcome_back')||'Welcome back'}</h1>
-                  <p className="biz-page-sub">{companyName} — {t('cd.latest_performance')||"here's your latest performance"}</p>
+                  <p className="biz-page-sub">{companyName}: {t('cd.latest_performance')||"here's your latest performance"}</p>
                 </div>
                 <button className="biz-btn biz-btn-primary" onClick={()=>setSection('profile')}>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
@@ -754,7 +797,7 @@ export default function CompanyDashboard() {
                   { icon:'⭐', label:t('cd.avg_rating')||'Average Rating', val: reviews.length ? avg.toFixed(1) : '—', sub:`${reviews.length} ${t('cd.reviews_total')||'reviews total'}`, color:'gold' },
                   { icon:'💬', label:t('cd.total_reviews')||'Total Reviews', val: reviews.length, sub:`${filteredReviews.length} ${t('cd.this_selection')||'this selection'}`, color:'green' },
                   { icon:'↩️', label:t('cd.response_rate')||'Response Rate', val:`${responseRate}%`, sub:`${responded} ${t('cd.of')||'of'} ${reviews.length} ${t('cd.replied')||'replied'}`, color:'blue' },
-                  { icon:'📊', label:t('cd.profile_views')||'Profile Views', val: company?.viewCount||'—', sub:t('cd.last_30_days')||'Last 30 days', color:'purple' },
+                  { icon:'📊', label:t('cd.profile_views')||'Profile Views', val: company?.viewCount||'0', sub:t('cd.last_30_days')||'Last 30 days', color:'purple' },
                 ].map(k=>(
                   <div key={k.label} className={`biz-kpi-card biz-kpi-${k.color}`}>
                     <div className="biz-kpi-icon">{k.icon}</div>
@@ -895,13 +938,47 @@ export default function CompanyDashboard() {
                     const t=r.createdAt?.seconds?r.createdAt.seconds*1000:0;
                     return Date.now()-t<30*86400000;
                   }).length},
+                  {label:'Positive Reviews', val: reviews.length ? `${Math.round(((rCounts[4]||0)+(rCounts[5]||0))/reviews.length*100)}%` : '—', sub:`${(rCounts[4]||0)+(rCounts[5]||0)} of ${reviews.length}`},
+                  {label:'Avg Review Rating', val: reviews.length ? (reviews.reduce((s,r)=>s+(r.rating||0),0)/reviews.length).toFixed(1) : '—', sub:'Based on all reviews'},
                 ].map(k=>(
                   <div key={k.label} className="biz-analytics-kpi">
                     <div className="biz-analytics-kpi-val">{k.val}</div>
                     <div className="biz-analytics-kpi-label">{k.label}</div>
+                    {k.sub && <div style={{fontSize:'0.7rem',color:'var(--biz-text-3)',marginTop:4}}>{k.sub}</div>}
                   </div>
                 ))}
               </div>
+              {/* Monthly breakdown */}
+              <div className="biz-card" style={{marginTop:20}}>
+                <h3>{t('cd.this_month')||'This Month Performance'}</h3>
+                <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(140px,1fr))',gap:12,marginTop:12}}>
+                  {(() => {
+                    const now = new Date();
+                    const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+                    const thisMonthReviews = reviews.filter(r => {
+                      const t = r.createdAt?.seconds ? r.createdAt.seconds * 1000 : 0;
+                      return t >= thisMonthStart;
+                    });
+                    const thisMonthAvg = thisMonthReviews.length ?
+                      (thisMonthReviews.reduce((s,r) => s + (r.rating||0), 0) / thisMonthReviews.length).toFixed(1) : 0;
+                    const thisMonthCounts = {1:0, 2:0, 3:0, 4:0, 5:0};
+                    thisMonthReviews.forEach(r => { if(r.rating) thisMonthCounts[r.rating]++; });
+
+                    return [
+                      {label:'Reviews this month', val:thisMonthReviews.length},
+                      {label:'Avg rating this month', val:thisMonthReviews.length ? thisMonthAvg + '★' : '—'},
+                      {label:'5★ this month', val:thisMonthCounts[5]},
+                      {label:'1-2★ this month', val:(thisMonthCounts[1]||0)+(thisMonthCounts[2]||0)},
+                    ].map((m,i) => (
+                      <div key={i} style={{padding:'12px',background:'var(--biz-bg-2)',borderRadius:8}}>
+                        <div style={{fontSize:'0.7rem',color:'var(--biz-text-3)',fontWeight:600,marginBottom:4}}>{m.label}</div>
+                        <div style={{fontSize:'1.5rem',fontWeight:700,color:'var(--biz-brand)'}}>{m.val}</div>
+                      </div>
+                    ));
+                  })()}
+                </div>
+              </div>
+
               <div className="biz-charts-grid">
                 <div className="biz-chart-card" style={{gridColumn:'1/-1'}}>
                   <h3>{t('cd.review_trend')||'Review Volume & Rating Trend'}</h3>
@@ -959,7 +1036,27 @@ export default function CompanyDashboard() {
                 </div>
               ) : (
                 <>
-                  <h3 style={{margin:'24px 0 12px',color:'var(--biz-text-1)'}}>Competitors in {company?.category}</h3>
+                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',margin:'24px 0 16px'}}>
+                    <h3 style={{margin:0,color:'var(--biz-text-1)'}}>Competitors in {company?.category}</h3>
+                    <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+                      {[
+                        {key:'avgRating',label:'Rating'},
+                        {key:'fiveStarCount',label:'5★ Reviews'},
+                        {key:'reviewCount',label:'Total Reviews'},
+                        {key:'responseRate',label:'Response Rate'}
+                      ].map(m=>(
+                        <button key={m.key} onClick={()=>setComparisonMetrics(p=>({...p,[m.key]:!p[m.key]}))}
+                          style={{
+                            padding:'6px 12px',fontSize:'0.75rem',borderRadius:6,border:'1px solid var(--border)',
+                            background:comparisonMetrics[m.key]?'var(--brand)':'var(--surface)',
+                            color:comparisonMetrics[m.key]?'white':'var(--text-2)',
+                            cursor:'pointer',transition:'all 0.2s',fontWeight:600
+                          }}>
+                          {comparisonMetrics[m.key]?'✓ ':''}  {m.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                   <div className="biz-competitor-grid">
                     {competitors.map(c=>{
                       const better = (c.averageRating||0) > avg;
@@ -977,11 +1074,36 @@ export default function CompanyDashboard() {
                             }
                           </div>
                           <div className="biz-comp-stats">
-                            <div><Stars rating={c.averageRating||0} size={14}/></div>
-                            <div className="biz-comp-rating">{(c.averageRating||0).toFixed(1)}</div>
+                            {comparisonMetrics.avgRating && (
+                              <>
+                                <div><Stars rating={c.averageRating||0} size={14}/></div>
+                                <div className="biz-comp-rating">{(c.averageRating||0).toFixed(1)}</div>
+                              </>
+                            )}
+                          </div>
+                          {/* Additional metrics */}
+                          <div style={{fontSize:'0.8rem',color:'var(--biz-text-3)',marginTop:10,display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+                            {comparisonMetrics.fiveStarCount && (
+                              <div style={{padding:'6px',background:'var(--biz-bg-2)',borderRadius:6}}>
+                                <div style={{fontSize:'0.7rem',fontWeight:700,textTransform:'uppercase',color:'var(--biz-text-4)',marginBottom:2}}>5★ Reviews</div>
+                                <div style={{fontSize:'0.9rem',fontWeight:600,color:'var(--biz-brand)'}}>{reviews.filter(r=>r.rating===5&&r.companyId===c.id).length}%</div>
+                              </div>
+                            )}
+                            {comparisonMetrics.reviewCount && (
+                              <div style={{padding:'6px',background:'var(--biz-bg-2)',borderRadius:6}}>
+                                <div style={{fontSize:'0.7rem',fontWeight:700,textTransform:'uppercase',color:'var(--biz-text-4)',marginBottom:2}}>Total Reviews</div>
+                                <div style={{fontSize:'0.9rem',fontWeight:600,color:'var(--biz-brand)'}}>{c.totalReviews||0}</div>
+                              </div>
+                            )}
+                            {comparisonMetrics.responseRate && (
+                              <div style={{padding:'6px',background:'var(--biz-bg-2)',borderRadius:6,gridColumn:'1/-1'}}>
+                                <div style={{fontSize:'0.7rem',fontWeight:700,textTransform:'uppercase',color:'var(--biz-text-4)',marginBottom:2}}>Avg Response Rate</div>
+                                <div style={{fontSize:'0.9rem',fontWeight:600,color:'var(--biz-brand)'}}>N/A</div>
+                              </div>
+                            )}
                           </div>
                           {/* Gap indicator */}
-                          <div className="biz-comp-gap">
+                          <div className="biz-comp-gap" style={{marginTop:10}}>
                             {better
                               ? <span style={{color:'#ef4444'}}>↓ {((c.averageRating||0)-avg).toFixed(1)} pts behind</span>
                               : <span style={{color:'var(--biz-brand)'}}>↑ {(avg-(c.averageRating||0)).toFixed(1)} pts ahead</span>
@@ -1136,6 +1258,41 @@ export default function CompanyDashboard() {
                         </div>
                       )}
                     </div>
+
+                    {/* ── Background Image ── */}
+                    <div style={{marginTop:24,paddingTop:20,borderTop:'1px solid var(--biz-border)'}}>
+                      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:12}}>
+                        <h3 style={{margin:0,fontSize:'0.95rem',fontWeight:600,color:'var(--biz-text-1)'}}>
+                          🎨 Background Image
+                          <span style={{fontSize:'0.75rem',fontWeight:400,color:'var(--biz-text-3)',marginLeft:8}}>
+                            — custom header background on your profile page
+                          </span>
+                        </h3>
+                        <label style={{cursor:'pointer'}}>
+                          <span className="biz-btn biz-btn-sm biz-btn-outline" style={{fontSize:'0.78rem'}}>
+                            {backgroundImageUploading ? '⏳ Uploading…' : '📤 Upload'}
+                          </span>
+                          <input type="file" accept="image/*" style={{display:'none'}}
+                            onChange={handleBackgroundImageUpload} disabled={backgroundImageUploading}/>
+                        </label>
+                      </div>
+                      {!company?.backgroundImageUrl ? (
+                        <div style={{padding:'24px',textAlign:'center',background:'var(--biz-bg-2)',borderRadius:10,border:'2px dashed var(--biz-border)'}}>
+                          <div style={{fontSize:'2rem',marginBottom:8}}>🖼️</div>
+                          <p style={{color:'var(--biz-text-3)',fontSize:'0.85rem',margin:0}}>
+                            No background image yet. Upload a high-quality image to customize your profile header.
+                          </p>
+                        </div>
+                      ) : (
+                        <div style={{position:'relative',borderRadius:8,overflow:'hidden',maxWidth:'100%',height:'auto'}}>
+                          <img src={company.backgroundImageUrl} alt="Background" style={{width:'100%',height:'auto',maxHeight:300,objectFit:'cover',display:'block'}}/>
+                          <button onClick={handleBackgroundImageDelete}
+                            style={{position:'absolute',top:8,right:8,background:'rgba(0,0,0,0.6)',color:'white',border:'none',borderRadius:'50%',width:28,height:28,cursor:'pointer',fontSize:16,display:'flex',alignItems:'center',justifyContent:'center'}}>
+                            ✕
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
@@ -1252,6 +1409,40 @@ export default function CompanyDashboard() {
                     </div>
                   ))}
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* ─ PAYMENTS ─ */}
+          {section==='payments' && (
+            <div className="biz-content">
+              <div className="biz-page-header">
+                <h1>{t('cd.payments')||'Payments'}</h1>
+                <p className="biz-page-sub">{t('cd.payments_sub')||'View and manage your payment history and invoices'}</p>
+              </div>
+              <div className="biz-card">
+                <h3>Payment Methods</h3>
+                <p style={{color:'var(--biz-text-2)',marginBottom:16}}>We accept multiple payment methods in Rwanda:</p>
+                <div className="biz-payment-methods">
+                  {[
+                    {name:'MTN MoMo', icon:'📱', detail:'Pay via *182# or MTN app'},
+                    {name:'Airtel Money', icon:'📲', detail:'Pay via *185# or Airtel app'},
+                    {name:'Bank Transfer', icon:'🏦', detail:'BPR, BK, KCB, Equity'},
+                    {name:'Visa/Mastercard', icon:'💳', detail:'International cards accepted'},
+                  ].map(p=>(
+                    <div key={p.name} className="biz-payment-item">
+                      <span>{p.icon}</span>
+                      <div>
+                        <strong>{p.name}</strong>
+                        <p>{p.detail}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="biz-card" style={{marginTop:16}}>
+                <h3>Invoice History</h3>
+                <p style={{color:'var(--biz-text-2)'}}>Your invoices and payment history will appear here. Once you subscribe to a paid plan, all transactions will be tracked automatically.</p>
               </div>
             </div>
           )}
@@ -1437,6 +1628,10 @@ export default function CompanyDashboard() {
 
             <form onSubmit={async e=>{
               e.preventDefault();
+              // Validate form before Firebase call
+              if (!enterpriseForm.contact?.trim()) { showToast('Please enter your contact email.', 'error'); return; }
+              if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(enterpriseForm.contact.trim())) { showToast('Please enter a valid email address.', 'error'); return; }
+              if (!enterpriseForm.phone?.trim()) { showToast('Please enter your phone number for MoMo confirmation.', 'error'); return; }
               setEnterpriseSending(true);
               try {
                 await addDoc(collection(db,'enterprise_enquiries'), {
@@ -1453,7 +1648,9 @@ export default function CompanyDashboard() {
                   type:'enterprise_enquiry', userId:'admin',
                   message:`${company?.companyName||company?.name} enquired about Enterprise plan (${enterpriseForm.billingCycle}).`,
                   companyId: company?.id, createdAt: serverTimestamp(), read: false,
-                }).catch(()=>{});
+                }).catch((e) => {
+                  console.error('Failed to create enterprise enquiry notification:', e);
+                });
                 setEnterpriseModal(false);
                 showToast('✓ Enterprise request submitted! We\'ll activate your account within 24h after payment confirmation.', 'success');
               } catch(err){ showToast(err.message,'error'); }

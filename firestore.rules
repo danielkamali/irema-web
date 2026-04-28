@@ -63,7 +63,14 @@ service cloud.firestore {
       // forge a review attributed to someone else.
       allow create: if isSignedIn()
         && request.resource.data.userId == request.auth.uid;
-      allow update: if isSignedIn() && request.auth.uid == resource.data.userId;
+      allow update: if isSignedIn() && (
+        // Author can edit their own review
+        request.auth.uid == resource.data.userId ||
+        // Company owner can add replies to reviews of their own business
+        (request.resource.data.replies != null &&
+          exists(/databases/$(database)/documents/companies/$(resource.data.companyId)) &&
+          get(/databases/$(database)/documents/companies/$(resource.data.companyId)).data.adminUserId == request.auth.uid)
+      );
       allow delete: if isSignedIn() && (
         request.auth.uid == resource.data.userId || isAdmin()
       );
@@ -279,6 +286,14 @@ service cloud.firestore {
       allow create: if isSignedIn();
       allow update: if isActiveAdmin();
       allow delete: if isActiveAdmin();
+    }
+
+    match /support_chats/{chatId} {
+      // Chat sessions: each user can manage their own chats
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow update: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
     }
   }
 }
