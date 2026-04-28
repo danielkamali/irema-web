@@ -51,6 +51,7 @@ export default function BusinessesPage() {
   const [loginErr, setLoginErr] = useState('');
   const [loginLoading, setLoginLoading] = useState(false);
   const [regForm, setRegForm] = useState({ companyName:'', category:'', firstName:'', lastName:'', email:'', password:'', phoneNumber:'', website:'', country:'RW', employees:'1-10', address:'', city:'', district:'' });
+  const [otherCategoryDetails, setOtherCategoryDetails] = useState('');
   const [regGoogleUser, setRegGoogleUser] = useState(null); // holds Google user when registering via Google
   const [regTermsAccepted, setRegTermsAccepted] = useState(false);
   const [showBizTerms, setShowBizTerms] = useState(false);
@@ -70,24 +71,28 @@ export default function BusinessesPage() {
   const [claimSuccess, setClaimSuccess] = useState(false);
   const [trustPct, setTrustPct] = useState(89); // Computed from backend data
   const [heroAvg, setHeroAvg] = useState(4.8); // Loaded from backend
+  const [businessCount, setBusinessCount] = useState(0); // Loaded from backend
   const [resetSent, setResetSent] = useState(false);
   const [authChecking, setAuthChecking] = useState(true); // true until we know auth state
 
   useEffect(() => {
-    // Load trust stat AND average rating from backend reviews. Failures are
-    // non-fatal (page still renders with the default 89% / 4.8 heroes), but
-    // log in dev so we surface quota / permission issues instead of silently
-    // showing stale numbers.
-    getDocs(collection(db, 'reviews')).then(snap => {
-      const total = snap.docs.length;
-      const ratings = snap.docs.map(d => d.data().rating || 0);
+    // Load trust stat, average rating, and business count from backend
+    Promise.all([
+      getDocs(collection(db, 'reviews')),
+      getDocs(collection(db, 'companies'))
+    ]).then(([reviewSnap, bizSnap]) => {
+      // Calculate review metrics
+      const total = reviewSnap.docs.length;
+      const ratings = reviewSnap.docs.map(d => d.data().rating || 0);
       const positive = ratings.filter(r => r >= 4).length;
       if (total > 0) {
         setTrustPct(Math.round((positive / total) * 100));
         setHeroAvg(parseFloat((ratings.reduce((s,r) => s+r, 0) / total).toFixed(1)));
       }
+      // Get business count
+      setBusinessCount(bizSnap.docs.length);
     }).catch(err => {
-      if (import.meta.env.DEV) console.warn('[BusinessesPage] trust metrics load failed:', err);
+      if (import.meta.env.DEV) console.warn('[BusinessesPage] stats load failed:', err);
     });
   }, []);
 
@@ -228,7 +233,11 @@ export default function BusinessesPage() {
   async function handleForgotPassword() {
     if (!loginForm.email) { setLoginErr('Enter your email first.'); return; }
     try {
-      await sendPasswordResetEmail(auth, loginForm.email);
+      const actionCodeSettings = {
+        url: `${window.location.origin}/businesses/?mode=resetPassword&oobCode=EMAIL_CODE`,
+        handleCodeInApp: false,
+      };
+      await sendPasswordResetEmail(auth, loginForm.email, actionCodeSettings);
       setResetSent(true);
     } catch(e) { setLoginErr(e.message); }
   }
@@ -236,6 +245,18 @@ export default function BusinessesPage() {
   // REGISTER NEW BUSINESS
   async function handleRegister(e) {
     e.preventDefault();
+    // Validate all required fields
+    if (!regForm.firstName?.trim()) { setRegErr('First name is required.'); return; }
+    if (!regForm.lastName?.trim()) { setRegErr('Last name is required.'); return; }
+    if (!regForm.email?.trim()) { setRegErr('Email is required.'); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(regForm.email)) { setRegErr('Enter a valid email address.'); return; }
+    if (!regGoogleUser && !regForm.password) { setRegErr('Password is required.'); return; }
+    if (!regGoogleUser && regForm.password.length < 6) { setRegErr('Password must be at least 6 characters.'); return; }
+    if (!regForm.companyName?.trim()) { setRegErr('Company name is required.'); return; }
+    if (!regForm.category) { setRegErr('Please select a business category.'); return; }
+    if (regForm.category === 'other' && !otherCategoryDetails?.trim()) { setRegErr('Please specify your business category in the "Other" field.'); return; }
+    if (!regForm.phoneNumber?.trim()) { setRegErr('Phone number is required.'); return; }
+    if (!regForm.address?.trim()) { setRegErr('Address is required.'); return; }
     if (!regTermsAccepted) { setRegErr('Please accept the Terms & Conditions to continue.'); return; }
     setRegErr(''); setRegLoading(true);
     isRegisteringRef.current = true; // keep blocking any signOut during the entire write sequence
@@ -279,7 +300,9 @@ export default function BusinessesPage() {
       const compRef = await addDoc(collection(db,'companies'), {
         name: regForm.companyName, companyName: regForm.companyName,
         slug,
-        category: regForm.category, website: regForm.website||'',
+        category: regForm.category,
+        ...(regForm.category === 'other' && { otherCategoryDetails: otherCategoryDetails.trim() }),
+        website: regForm.website||'',
         country: regForm.country, phoneNumber: regForm.phoneNumber||'',
         employees: regForm.employees, workEmail: userEmail, email: userEmail,
         address: fullAddress, city: regForm.city||'', district: regForm.district||'',
@@ -331,6 +354,12 @@ export default function BusinessesPage() {
     e.preventDefault(); setClaimErr(''); setClaimLoading(true);
     isClaimingRef.current = true; // block auth signOut during claim
     if (!claimSelected) { setClaimErr('Please select a business first.'); setClaimLoading(false); return; }
+    if (!claimForm.firstName?.trim()) { setClaimErr('First name is required.'); setClaimLoading(false); return; }
+    if (!claimForm.lastName?.trim()) { setClaimErr('Last name is required.'); setClaimLoading(false); return; }
+    if (!claimForm.email?.trim()) { setClaimErr('Email is required.'); setClaimLoading(false); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(claimForm.email)) { setClaimErr('Enter a valid email address.'); setClaimLoading(false); return; }
+    if (!claimForm.password) { setClaimErr('Password is required.'); setClaimLoading(false); return; }
+    if (claimForm.password.length < 6) { setClaimErr('Password must be at least 6 characters.'); setClaimLoading(false); return; }
     try {
       let uid, userEmail = claimForm.email;
 
@@ -343,7 +372,8 @@ export default function BusinessesPage() {
         await setDoc(doc(db,'users',uid), {
           uid, email: claimForm.email,
           displayName: `${claimForm.firstName} ${claimForm.lastName}`,
-          role: 'company_admin', createdAt: serverTimestamp()
+          role: 'company_admin', createdAt: serverTimestamp(),
+          pendingClaimId: null, // Will be set after claim is created
         });
       } catch(authErr) {
         if (authErr.code === 'auth/email-already-in-use') {
@@ -361,7 +391,7 @@ export default function BusinessesPage() {
       }
 
       // Submit claim request for admin review (whether claimed or not)
-      await addDoc(collection(db,'claims'), {
+      const claimRef = await addDoc(collection(db,'claims'), {
         companyId: claimSelected.id,
         companyName: claimSelected.name||claimSelected.companyName,
         claimantUserId: uid,
@@ -372,6 +402,11 @@ export default function BusinessesPage() {
         alreadyClaimed: !!claimSelected.adminUserId,
         status: 'pending',
         createdAt: serverTimestamp(),
+      });
+
+      // Link the claim ID to the user so we can clean up if claim is rejected
+      await updateDoc(doc(db,'users',uid), { pendingClaimId: claimRef.id }).catch(e=>{
+        console.error('Failed to link claim to user:', e);
       });
 
       // Always require admin approval — never auto-assign
@@ -489,7 +524,7 @@ export default function BusinessesPage() {
           {/* Social proof strip */}
           <div className="bp-hero-proof">
             <div className="bp-proof-stars">{'★★★★★'}</div>
-            <span>{t('biz.trusted_count')}</span>
+            <span>{businessCount > 0 ? `Trusted by ${businessCount}+ Rwandan businesses` : t('biz.trusted_count')}</span>
           </div>
         </div>
         <div className="bp-hero-visual">
@@ -677,7 +712,10 @@ export default function BusinessesPage() {
                     <option value="">{t('biz.select_cat')}</option>
                     {CATS.map(c=><option key={c.v} value={c.v}>{c.l}</option>)}
                   </select>
-                  <input className="bp-input" type="email" placeholder="Work email *" required value={regForm.email} onChange={setReg('email')} readOnly={!!regGoogleUser}/>
+                  {regForm.category === 'other' && (
+                    <input className="bp-input" placeholder="Please describe your business type *" required value={otherCategoryDetails} onChange={e=>setOtherCategoryDetails(e.target.value)} style={{gridColumn:'1/-1', background:'var(--surface-accent, #f0f8f5)', borderColor:'var(--brand-xlight)'}}/>
+                  )}
+                  <input className="bp-input" type="email" placeholder={regGoogleUser ? "Email (from Google account)" : "Work email *"} required value={regForm.email} onChange={setReg('email')} readOnly={!!regGoogleUser}/>
                   {/* Password only needed for email signup, not Google */}
                     {!regGoogleUser && (
                       <div style={{position:'relative',gridColumn:'1/-1'}}>

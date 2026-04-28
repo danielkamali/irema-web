@@ -1,7 +1,7 @@
 import { useThemeStore } from './store/themeStore';
 // irema-v20 — Production Ready
 import React, { Suspense, lazy, useEffect, useState } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useAuthInit } from './hooks/useAuth';
 import { useAuthStore } from './store/authStore';
 import { db, doc, getDoc, collection, query, where, getDocs } from './firebase/config';
@@ -33,14 +33,18 @@ const AdminAudit = lazy(() => import('./pages/admin/AdminAudit'));
 const AdminAnalytics = lazy(() => import('./pages/admin/AdminAnalytics'));
 const AdminAdministrators = lazy(() => import('./pages/admin/AdminAdministrators'));
 const AdminSubscriptions = lazy(() => import('./pages/admin/AdminSubscriptions'));
+const AdminBlog = lazy(() => import('./pages/admin/AdminBlog'));
 const AdminStories = lazy(() => import('./pages/admin/AdminStories'));
 const AdminIntegrations = lazy(() => import('./pages/admin/AdminIntegrations'));
 const AdminFeatures = lazy(() => import('./pages/admin/AdminFeatures'));
+const AdminNewsletter = lazy(() => import('./pages/admin/AdminNewsletter'));
+const AdminSupport = lazy(() => import('./pages/admin/AdminSupport'));
 const AdminEnterprise = lazy(() => import('./pages/admin/AdminEnterprise'));
 const AdminTranslations = lazy(() => import('./pages/admin/AdminTranslations'));
 const QRScanPage = lazy(() => import('./pages/QRScanPage'));
 const BlogPage = lazy(() => import('./pages/BlogPage'));
 const NewsletterPage = lazy(() => import('./pages/NewsletterPage'));
+const PaymentsPage = lazy(() => import('./pages/PaymentsPage'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 const TermsPage = lazy(() => import('./pages/TermsPage'));
 const PrivacyPage = lazy(() => import('./pages/PrivacyPage'));
@@ -91,6 +95,15 @@ function AdminLayout({ children }) {
   return <>{children}</>;
 }
 
+// Scroll to top on route change
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+  return null;
+}
+
 export default function App() {
   // Subscribe to theme store — ensures React re-renders all components on theme toggle
   useThemeStore(s => s.theme);
@@ -98,6 +111,8 @@ export default function App() {
 
   return (
     <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      {/* Scroll to top on route change */}
+      <ScrollToTop />
       {/* Resolve any pending signInWithRedirect result at app mount */}
       <AuthRedirectHandler />
       <Suspense fallback={<LoadingSpinner fullPage />}>
@@ -115,6 +130,7 @@ export default function App() {
           <Route path="/scan" element={<PublicLayout><QRScanPage /></PublicLayout>} />
           <Route path="/blog" element={<PublicLayout><BlogPage /></PublicLayout>} />
           <Route path="/newsletter" element={<PublicLayout><NewsletterPage /></PublicLayout>} />
+          <Route path="/payments" element={<ProtectedRoute><PaymentsPage /></ProtectedRoute>} />
 
           {/* Protected user routes */}
           <Route path="/dashboard" element={
@@ -136,7 +152,10 @@ export default function App() {
           <Route path="/admin/analytics" element={<ProtectedRoute requireAdmin><AdminAnalytics /></ProtectedRoute>} />
           <Route path="/admin/administrators" element={<ProtectedRoute requireAdmin><AdminAdministrators /></ProtectedRoute>} />
           <Route path="/admin/subscriptions" element={<ProtectedRoute requireAdmin><AdminSubscriptions /></ProtectedRoute>} />
+          <Route path="/admin/blog" element={<ProtectedRoute requireAdmin><AdminBlog /></ProtectedRoute>} />
           <Route path="/admin/stories" element={<ProtectedRoute requireAdmin><AdminStories /></ProtectedRoute>} />
+          <Route path="/admin/newsletter" element={<ProtectedRoute requireAdmin><AdminNewsletter /></ProtectedRoute>} />
+          <Route path="/admin/support" element={<ProtectedRoute requireAdmin><AdminSupport /></ProtectedRoute>} />
           <Route path="/admin/integrations" element={<ProtectedRoute requireAdmin><AdminIntegrations /></ProtectedRoute>} />
           <Route path="/admin/features" element={<ProtectedRoute requireAdmin><AdminFeatures /></ProtectedRoute>} />
           <Route path="/admin/enterprise" element={<ProtectedRoute requireAdmin><AdminEnterprise /></ProtectedRoute>} />

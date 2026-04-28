@@ -3,7 +3,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../store/authStore';
-import { auth, signOut, db, collection, query, where, getDocs, updateDoc, doc, getDoc, onSnapshot } from '../firebase/config';
+import { auth, signOut, db, collection, query, where, getDocs, updateDoc, doc, getDoc, onSnapshot, orderBy, limit } from '../firebase/config';
 import { getInitials } from '../utils/helpers';
 import { useModalStore } from '../store/modalStore';
 import { useThemeStore } from '../store/themeStore';
@@ -123,6 +123,7 @@ export default function Navbar() {
   const { theme, toggle: toggleTheme } = useThemeStore();
   const [unreadNotifs, setUnreadNotifs] = useState(0);
   const [notifOpen, setNotifOpen] = useState(false);
+  const [notifUnsubscribe, setNotifUnsubscribe] = useState(null);
   const [notifs, setNotifs] = useState([]);
   const notifRef = useRef(null);
 
@@ -135,19 +136,29 @@ export default function Navbar() {
     return unsub;
   }, [user, userProfile]);
 
-  // Load notifications when bell clicked
-  async function loadNotifs() {
-    if (!user) return;
-    try {
-      const q = query(collection(db,'notifications'), where('targetUserId','==',user.uid));
-      const snap = await getDocs(q);
+  // Load notifications with real-time updates when dropdown opens
+  function loadNotifs() {
+    if (!user) return () => {};
+    const q = query(collection(db,'notifications'), where('targetUserId','==',user.uid), orderBy('createdAt','desc'), limit(20));
+    const unsub = onSnapshot(q, snap => {
       const data = snap.docs.map(d=>({id:d.id,...d.data()}));
-      data.sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
-      setNotifs(data.slice(0,15));
-      // Mark all as read
-      snap.docs.filter(d=>!d.data().read).forEach(d=>updateDoc(doc(db,'notifications',d.id),{read:true}).catch(()=>{}));
-      setUnreadNotifs(0);
-    } catch {}
+      setNotifs(data);
+      // Mark unread as read
+      const unreadDocs = snap.docs.filter(d => !d.data().read);
+      if (unreadDocs.length > 0) {
+        Promise.all(
+          unreadDocs.map(d =>
+            updateDoc(doc(db,'notifications',d.id),{read:true}).catch(e=>{
+              console.error('Failed to mark notification as read:', e);
+            })
+          )
+        );
+        setUnreadNotifs(0);
+      }
+    }, err => {
+      console.error('Failed to load notifications:', err);
+    });
+    return unsub;
   }
 
   useEffect(() => {
@@ -261,7 +272,17 @@ export default function Navbar() {
           {/* Notification bell — regular users only */}
           {user && userProfile?.role !== 'company_admin' && (
             <div className="navbar-notif-wrap" ref={notifRef} style={{position:'relative'}}>
-              <button className="navbar-notif-btn" onClick={()=>{setNotifOpen(v=>!v);if(!notifOpen)loadNotifs();}} aria-label="Notifications">
+              <button className="navbar-notif-btn" onClick={()=>{
+                if (!notifOpen) {
+                  setNotifOpen(true);
+                  const unsub = loadNotifs();
+                  // Return unsubscribe to clean up listener when dropdown closes
+                  setNotifUnsubscribe(() => unsub);
+                } else {
+                  setNotifOpen(false);
+                  if (notifUnsubscribe) notifUnsubscribe();
+                }
+              }} aria-label="Notifications">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
                 {unreadNotifs > 0 && <span className="navbar-notif-badge">{unreadNotifs > 9 ? '9+' : unreadNotifs}</span>}
               </button>

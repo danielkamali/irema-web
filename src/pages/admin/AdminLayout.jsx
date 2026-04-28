@@ -38,6 +38,14 @@ const NAV = [
     ]
   },
   {
+    label: 'CONTENT', sectionKey: 'section_content',
+    links: [
+      { to: '/admin/blog', icon: 'M12 6.253v13m0-13C6.5 6.253 2 10.753 2 16.5S6.5 26.75 12 26.75s10-4.5 10-10.25S17.5 6.252 12 6.253zm0 5.801h3.008c.476 0 .862.38.862.845v.7c0 .466-.386.846-.862.846H12c-.476 0-.862-.38-.862-.846v-.7c0-.465.386-.845.862-.845z', label: 'Blog', labelKey: 'blog' },
+      { to: '/admin/newsletter', icon: 'M3 8l7.89 5.26a2 2 0 0 0 2.22 0L21 8M5 19h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2z', label: 'Newsletter', labelKey: 'newsletter' },
+      { to: '/admin/support', icon: 'M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z', label: 'Support', labelKey: 'support' },
+    ]
+  },
+  {
     label: 'BILLING', sectionKey: 'section_billing',
     links: [
       { to: '/admin/subscriptions', icon: 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 0 0 3-3V8a3 3 0 0 0-3-3H6a3 3 0 0 0-3 3v8a3 3 0 0 0 3 3z', label: 'Subscriptions', labelKey: 'subscriptions' },

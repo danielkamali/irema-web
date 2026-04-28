@@ -430,6 +430,8 @@
   .biz-content { padding: 16px; }
   .biz-page-header { flex-direction: column; gap: 12px; align-items: flex-start; }
   .biz-stat-cards { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .biz-analytics-kpis { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
+  .biz-analytics-kpi-val { font-size: 1.3rem; }
 }
 @media (max-width: 480px) {
   .biz-stat-cards { grid-template-columns: 1fr 1fr; }

@@ -1,0 +1,21 @@
+/* PaymentsPage styles */
+
+.container {
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 0 16px;
+  }
+
+  [style*="gridTemplateColumns"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  [style*="transform: scale(1.05)"] {
+    transform: scale(1) !important;
+  }
+}

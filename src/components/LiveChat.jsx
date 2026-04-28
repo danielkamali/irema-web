@@ -1,40 +1,329 @@
-import { useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { useAuthStore } from '../store/authStore';
+import { db, collection, addDoc, query, where, getDocs, serverTimestamp, updateDoc, doc } from '../firebase/config';
 
-/**
- * LiveChat — integrates Tawk.to free live chat widget.
- * Replace TAWK_PROPERTY_ID and TAWK_WIDGET_ID with values from
- * your Tawk.to dashboard at https://tawk.to (free, no credit card).
- *
- * Setup steps:
- * 1. Go to tawk.to → Sign up free
- * 2. Create a property for "Irema"
- * 3. Copy your Property ID and Widget ID from Administration → Channels → Chat Widget
- * 4. Replace the placeholders below
- */
-const TAWK_PROPERTY_ID = 'YOUR_PROPERTY_ID';  // e.g. '64abc123def456789012345'
-const TAWK_WIDGET_ID   = 'YOUR_WIDGET_ID';    // e.g. '1hbcdefgh'
+const API_ENDPOINT = 'https://api.anthropic.com/v1/messages';
+const API_KEY = import.meta.env.VITE_CLAUDE_API_KEY;
 
 export default function LiveChat() {
+  const { user } = useAuthStore();
+  const [isOpen, setIsOpen] = useState(false);
+  const [messages, setMessages] = useState([]);
+  const [inputValue, setInputValue] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [sessionId, setSessionId] = useState(null);
+  const messagesEndRef = useRef(null);
+
+  // Initialize or load existing chat session
   useEffect(() => {
-    // Don't load if placeholder IDs are still set
-    if (TAWK_PROPERTY_ID === 'YOUR_PROPERTY_ID') return;
+    loadOrCreateSession();
+  }, [user]);
 
-    window.Tawk_API = window.Tawk_API || {};
-    window.Tawk_LoadStart = new Date();
+  // Auto-scroll to latest message
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
-    const s = document.createElement('script');
-    s.async = true;
-    s.src = `https://embed.tawk.to/${TAWK_PROPERTY_ID}/${TAWK_WIDGET_ID}`;
-    s.charset = 'UTF-8';
-    s.setAttribute('crossorigin', '*');
-    document.head.appendChild(s);
+  async function loadOrCreateSession() {
+    if (!user) return;
+    try {
+      const q = query(
+        collection(db, 'support_chats'),
+        where('userId', '==', user.uid)
+      );
+      const snap = await getDocs(q);
+      if (!snap.empty) {
+        const chat = snap.docs[snap.docs.length - 1].data();
+        setSessionId(snap.docs[snap.docs.length - 1].id);
+        setMessages(chat.messages || []);
+      } else {
+        // Create new session
+        const docRef = await addDoc(collection(db, 'support_chats'), {
+          userId: user.uid,
+          userEmail: user.email,
+          messages: [],
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+          status: 'open'
+        });
+        setSessionId(docRef.id);
+        setMessages([]);
+      }
+    } catch (e) {
+      console.error('Failed to load chat session:', e);
+    }
+  }
 
-    return () => {
-      // Clean up on unmount
-      if (window.Tawk_API?.hideWidget) window.Tawk_API.hideWidget();
-      document.head.removeChild(s);
-    };
-  }, []);
+  async function handleSendMessage(e) {
+    e.preventDefault();
+    if (!inputValue.trim() || loading) return;
 
-  return null; // no visible render — widget injects itself
+    const userMessage = { role: 'user', content: inputValue, timestamp: new Date().toISOString() };
+    setMessages(prev => [...prev, userMessage]);
+    setInputValue('');
+    setLoading(true);
+
+    try {
+      // Call Claude API
+      const response = await fetch(API_ENDPOINT, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': API_KEY,
+          'anthropic-version': '2023-06-01'
+        },
+        body: JSON.stringify({
+          model: 'claude-3-5-sonnet-20241022',
+          max_tokens: 1024,
+          system: `You are a helpful support agent for Irema, a Rwandan business review platform.
+Help users with questions about:
+- How to post reviews and ratings
+- Managing their business profile
+- Understanding subscription plans
+- Technical issues and troubleshooting
+- General platform features
+
+Be concise, friendly, and professional. If you can't help, suggest contacting support@irema.rw or tell them an admin will follow up.`,
+          messages: messages.map(m => ({
+            role: m.role,
+            content: m.content
+          }))
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const assistantMessage = {
+        role: 'assistant',
+        content: data.content[0].text,
+        timestamp: new Date().toISOString()
+      };
+
+      const updatedMessages = [...messages, assistantMessage];
+      setMessages(updatedMessages);
+
+      // Save to Firestore
+      if (sessionId) {
+        await updateDoc(doc(db, 'support_chats', sessionId), {
+          messages: updatedMessages,
+          updatedAt: serverTimestamp()
+        });
+      }
+    } catch (error) {
+      console.error('Failed to get response:', error);
+
+      let errorContent = 'Sorry, I encountered an error. ';
+      if (error.message?.includes('network') || error.message?.includes('fetch')) {
+        errorContent += 'Please check your internet connection and try again.';
+      } else if (error.message?.includes('401') || error.message?.includes('403')) {
+        errorContent += 'There was an authentication issue. Please refresh the page and try again.';
+      } else if (error.message?.includes('timeout')) {
+        errorContent += 'The request took too long. Please try again with a shorter message.';
+      } else {
+        errorContent += 'Please try again or contact support@irema.rw for assistance.';
+      }
+
+      const errorMessage = {
+        role: 'assistant',
+        content: errorContent,
+        timestamp: new Date().toISOString()
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  if (!user || !API_KEY) return null;
+
+  return (
+    <>
+      {/* Floating Chat Button */}
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        style={{
+          position: 'fixed',
+          bottom: 24,
+          right: 24,
+          width: 64,
+          height: 64,
+          borderRadius: '50%',
+          background: 'linear-gradient(135deg, #2d8f6f 0%, #1f6b52 100%)',
+          color: 'white',
+          border: '3px solid white',
+          cursor: 'pointer',
+          fontSize: '1.8rem',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          boxShadow: '0 6px 20px rgba(45, 143, 111, 0.4)',
+          zIndex: 999,
+          transition: 'all 0.3s ease',
+          transform: isOpen ? 'scale(0.95)' : 'scale(1)',
+          hover: 'transform: scale(1.1)'
+        }}
+        title="Support Agent - Chat with us!"
+        onMouseEnter={(e) => e.target.style.transform = 'scale(1.1)'}
+        onMouseLeave={(e) => e.target.style.transform = isOpen ? 'scale(0.95)' : 'scale(1)'}
+      >
+        🤖
+      </button>
+
+      {/* Chat Panel */}
+      {isOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            bottom: 100,
+            right: 24,
+            width: 360,
+            maxWidth: '90vw',
+            height: 500,
+            borderRadius: 12,
+            background: 'var(--surface)',
+            border: '1px solid var(--border)',
+            boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+            display: 'flex',
+            flexDirection: 'column',
+            zIndex: 999
+          }}
+        >
+          {/* Header */}
+          <div
+            style={{
+              padding: 16,
+              borderBottom: '1px solid var(--border)',
+              background: 'var(--brand)',
+              color: 'white',
+              borderRadius: '12px 12px 0 0',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center'
+            }}
+          >
+            <h3 style={{ margin: 0, fontSize: '1rem' }}>Support Agent</h3>
+            <button
+              onClick={() => setIsOpen(false)}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: 'white',
+                cursor: 'pointer',
+                fontSize: '1.2rem'
+              }}
+            >
+              ✕
+            </button>
+          </div>
+
+          {/* Messages */}
+          <div
+            style={{
+              flex: 1,
+              overflowY: 'auto',
+              padding: 16,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 12
+            }}
+          >
+            {messages.length === 0 && (
+              <div
+                style={{
+                  textAlign: 'center',
+                  color: 'var(--text-3)',
+                  marginTop: 16
+                }}
+              >
+                <p>Welcome! How can I help you today?</p>
+              </div>
+            )}
+            {messages.map((msg, idx) => (
+              <div
+                key={idx}
+                style={{
+                  display: 'flex',
+                  justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start'
+                }}
+              >
+                <div
+                  style={{
+                    maxWidth: '80%',
+                    padding: '10px 14px',
+                    borderRadius: 10,
+                    background:
+                      msg.role === 'user'
+                        ? 'var(--brand)'
+                        : 'var(--bg)',
+                    color: msg.role === 'user' ? 'white' : 'var(--text-1)',
+                    fontSize: '0.9rem',
+                    wordWrap: 'break-word'
+                  }}
+                >
+                  {msg.content}
+                </div>
+              </div>
+            ))}
+            {loading && (
+              <div style={{ textAlign: 'center', color: 'var(--text-3)' }}>
+                <span style={{ fontSize: '0.8rem' }}>Agent is typing...</span>
+              </div>
+            )}
+            <div ref={messagesEndRef} />
+          </div>
+
+          {/* Input */}
+          <form
+            onSubmit={handleSendMessage}
+            style={{
+              display: 'flex',
+              gap: 8,
+              padding: 12,
+              borderTop: '1px solid var(--border)',
+              background: 'var(--surface)'
+            }}
+          >
+            <input
+              type="text"
+              value={inputValue}
+              onChange={e => setInputValue(e.target.value)}
+              placeholder="Type a message..."
+              disabled={loading}
+              style={{
+                flex: 1,
+                padding: '8px 12px',
+                border: '1px solid var(--border)',
+                borderRadius: 6,
+                fontFamily: 'inherit',
+                fontSize: '0.9rem',
+                background: 'var(--bg)',
+                color: 'var(--text-1)'
+              }}
+            />
+            <button
+              type="submit"
+              disabled={loading || !inputValue.trim()}
+              style={{
+                padding: '8px 14px',
+                background: 'var(--brand)',
+                color: 'white',
+                border: 'none',
+                borderRadius: 6,
+                cursor: 'pointer',
+                fontSize: '0.9rem',
+                fontWeight: 600,
+                opacity: loading || !inputValue.trim() ? 0.5 : 1,
+                transition: 'opacity 0.2s'
+              }}
+            >
+              Send
+            </button>
+          </form>
+        </div>
+      )}
+    </>
+  );
 }

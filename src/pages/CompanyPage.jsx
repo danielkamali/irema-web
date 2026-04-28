@@ -332,9 +332,11 @@ export default function CompanyPage() {
   const name = company.companyName || company.name;
   const ratingColor = getRatingColor(avgRating);
   const ratingLabel = getRatingLabel(avgRating, i18n.language);
+  // Business banner can be a dedicated background image, or fall back to photo gallery
   // Business banner images come from the owner's uploaded photos (company.photos[])
   // Review images are shown only on individual review cards, not the banner
   const heroImages = (company?.photos||[]).filter(Boolean).slice(0,5);
+  const hasBackgroundImage = !!company?.backgroundImageUrl;
 
   return (
     <div className="company-page">
@@ -342,7 +344,9 @@ export default function CompanyPage() {
       <div className="company-hero-header">
         {/* Photo banner */}
         <div className="company-photo-banner">
-          {heroImages.length > 0 ? (
+          {hasBackgroundImage ? (
+            <img src={company.backgroundImageUrl} alt={name} className="company-banner-main" />
+          ) : heroImages.length > 0 ? (
             <>
               <img src={heroImages[0]} alt={name} className="company-banner-main" />
               {heroImages.slice(1,4).map((src, i) => (
@@ -391,19 +395,17 @@ export default function CompanyPage() {
                 </div>
               </div>
               <div className="company-action-col">
+                {isBusinessOwner && (
+                  <button className="btn btn-outline company-write-btn"
+                    onClick={() => window.location.href = '/company-dashboard'}
+                    style={{marginRight:8}}>
+                    📊 {t('cd.overview')||'Dashboard'}
+                  </button>
+                )}
                 <button className="btn btn-primary company-write-btn"
                   onClick={() => user ? openModal('writeReview',{company}) : openModal('login')}>
                   ✍️ {t('company.write_review')}
                 </button>
-                <button className="btn btn-outline btn-sm company-qr-btn" onClick={() => setShowQr(!showQr)}>
-                  📷 QR Code
-                </button>
-                {showQr && qrDataUrl && (
-                  <div className="qr-popup">
-                    <img src={qrDataUrl} alt="QR" />
-                    <button className="btn btn-primary btn-sm" onClick={downloadQR}>{t('company.download_qr')}</button>
-                  </div>
-                )}
               </div>
             </div>
           </div>

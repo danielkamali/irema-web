@@ -460,13 +460,19 @@ export default function AuthModal() {
 
       // Notify business owner — targetUserId ensures only the business owner sees this
       if (selectedCompany.adminUserId) {
-        await addDoc(collection(db, 'notifications'), {
-          companyId: selectedCompany.id, companySlug: selectedCompany.slug, type: 'new_review',
-          targetUserId: selectedCompany.adminUserId, // ← only shown to business owner
+        const notifData = {
+          companyId: selectedCompany.id,
+          type: 'new_review',
+          targetUserId: selectedCompany.adminUserId,
           message: `New ${rating}★ review from ${user.displayName||user.email}: "${(comment||'').slice(0,60)}${comment.length>60?'…':''}"`,
-          reviewId: reviewRef.id, createdAt: serverTimestamp(), read: false,
-          userId: user.uid, userName: user.displayName || user.email,
-        }).catch(() => {});
+          reviewId: reviewRef.id,
+          createdAt: serverTimestamp(),
+          read: false,
+          userId: user.uid,
+          userName: user.displayName || user.email,
+        };
+        if (selectedCompany.slug) notifData.companySlug = selectedCompany.slug;
+        await addDoc(collection(db, 'notifications'), notifData).catch(() => {});
       }
       setReviewSuccess(true);
       // Dispatch event so CompanyPage can add the new review to the list in real-time

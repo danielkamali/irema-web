@@ -141,7 +141,11 @@ export default function AdminAdministrators() {
     if (!resetPwTarget) return;
     setResetPwSaving(true);
     try {
-      await sendPasswordResetEmail(getAuth(), resetPwTarget.email);
+      const actionCodeSettings = {
+        url: `${window.location.origin}/admin/login?mode=resetPassword&oobCode=EMAIL_CODE`,
+        handleCodeInApp: false,
+      };
+      await sendPasswordResetEmail(getAuth(), resetPwTarget.email, actionCodeSettings);
       await addDoc(collection(db, 'audit_logs'), {
         action: 'admin_password_reset_sent',
         detail: `Password reset email sent to: ${resetPwTarget.email}`,
