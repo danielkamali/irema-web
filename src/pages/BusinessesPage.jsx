@@ -311,6 +311,23 @@ export default function BusinessesPage() {
         status: 'pending', createdAt: serverTimestamp()
       });
 
+      // Initialize 14-day free trial for analytics
+      const trialEndsDate = new Date();
+      trialEndsDate.setDate(trialEndsDate.getDate() + 14);
+
+      await addDoc(collection(db,'subscriptions'), {
+        companyId: compRef.id,
+        businessName: regForm.companyName,
+        adminEmail: userEmail,
+        plan: 'starter',
+        status: 'trial',
+        analyticsAccessLevel: 'free',
+        analyticsTrialStartedAt: serverTimestamp(),
+        analyticsTrialEndsAt: Timestamp.fromDate(trialEndsDate),
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      }).catch(err => console.error('Failed to create trial subscription:', err));
+
       // Welcome notification
       await addDoc(collection(db,'notifications'), {
         companyId: compRef.id, type:'welcome',

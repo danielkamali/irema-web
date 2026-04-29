@@ -84,3 +84,16 @@ exports.deleteAdminUser = onCall(
     return { success: true, uid: targetUid, email: target.email || null };
   }
 );
+
+// Import and export analytics metrics functions
+const analyticsMetrics = require('./calculateAnalyticsMetrics');
+exports.calculateAnalyticsMetrics = analyticsMetrics.calculateAnalyticsMetrics;
+exports.calculateAnalyticsMetricsManual = analyticsMetrics.calculateAnalyticsMetricsManual;
+
+// Import and export Claude API proxy function
+const claudeAPI = require('./callClaudeAPI');
+exports.callClaudeAPI = claudeAPI.callClaudeAPI;
+
+// Import and export newsletter sending function
+const newsletter = require('./sendNewsletter');
+exports.sendNewsletter = newsletter.sendNewsletter;

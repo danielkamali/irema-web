@@ -21,6 +21,9 @@ export default function AdminNewsletter() {
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [bulkUpdating, setBulkUpdating] = useState(false);
   const [statusFilter, setStatusFilter] = useState('all'); // all, subscribed, unsubscribed
+  const [draftSubject, setDraftSubject] = useState('');
+  const [draftContent, setDraftContent] = useState('');
+  const [isSending, setIsSending] = useState(false);
   const pageSize = 10;
 
   const filteredSubscribers = useMemo(() => {
@@ -171,6 +174,45 @@ export default function AdminNewsletter() {
       showToast('Subscriber deleted successfully');
     } catch (e) {
       showToast(`Error deleting subscriber: ${e.message}`, 'error');
+    }
+  }
+
+  async function handleSendNewsletter() {
+    if (!draftSubject.trim() || !draftContent.trim()) {
+      showToast('Subject and content are required', 'error');
+      return;
+    }
+
+    const subscribedCount = subscribers.filter(s => !s.unsubscribed).length;
+    if (subscribedCount === 0) {
+      showToast('No active subscribers to send to', 'error');
+      return;
+    }
+
+    if (!window.confirm(`Send newsletter to ${subscribedCount} subscribers? This cannot be undone.`)) {
+      return;
+    }
+
+    setIsSending(true);
+    try {
+      const { httpsCallable } = await import('firebase/functions');
+      const { functions } = await import('../../firebase/config');
+
+      const sendNewsletter = httpsCallable(functions, 'sendNewsletter');
+      const result = await sendNewsletter({
+        subject: draftSubject,
+        content: draftContent,
+        contentHtml: draftContent
+      });
+
+      showToast(result.data.message, 'success');
+      setDraftSubject('');
+      setDraftContent('');
+    } catch (error) {
+      console.error('Newsletter send error:', error);
+      showToast('Failed to send newsletter: ' + error.message, 'error');
+    } finally {
+      setIsSending(false);
     }
   }
 
@@ -444,6 +486,108 @@ export default function AdminNewsletter() {
                   <div style={{ fontSize: '0.85rem', color: 'var(--text-3)', marginBottom: 4 }}>Unsubscribed</div>
                   <div style={{ fontSize: '1.8rem', fontWeight: 700, color: '#c00' }}>{unsubscribedCount}</div>
                 </div>
+              </div>
+
+              {/* Send Newsletter Section */}
+              <div style={{
+                background: 'var(--surface)',
+                border: '1px solid var(--border)',
+                borderRadius: 8,
+                padding: 20,
+                marginBottom: 20
+              }}>
+                <h3 style={{ margin: '0 0 16px 0', fontSize: '1.1rem', color: 'var(--text-1)' }}>
+                  📧 Send Newsletter
+                </h3>
+                <div style={{ marginBottom: 16 }}>
+                  <label style={{ display: 'block', marginBottom: 8, fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-1)' }}>
+                    Subject Line
+                  </label>
+                  <input
+                    type="text"
+                    value={draftSubject}
+                    onChange={(e) => setDraftSubject(e.target.value)}
+                    placeholder="Newsletter subject..."
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      border: '1px solid var(--border)',
+                      borderRadius: 8,
+                      fontSize: '0.95rem',
+                      fontFamily: 'inherit',
+                      background: 'var(--bg)',
+                      color: 'var(--text-1)',
+                      outline: 'none',
+                      transition: 'border-color 0.2s'
+                    }}
+                    disabled={isSending}
+                  />
+                </div>
+
+                <div style={{ marginBottom: 16 }}>
+                  <label style={{ display: 'block', marginBottom: 8, fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-1)' }}>
+                    Email Content
+                  </label>
+                  <textarea
+                    value={draftContent}
+                    onChange={(e) => setDraftContent(e.target.value)}
+                    placeholder="Write your newsletter content..."
+                    rows={6}
+                    style={{
+                      width: '100%',
+                      padding: '12px',
+                      border: '1px solid var(--border)',
+                      borderRadius: 8,
+                      fontSize: '0.95rem',
+                      fontFamily: 'inherit',
+                      background: 'var(--bg)',
+                      color: 'var(--text-1)',
+                      resize: 'vertical',
+                      outline: 'none',
+                      transition: 'border-color 0.2s'
+                    }}
+                    disabled={isSending}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                  <button
+                    onClick={handleSendNewsletter}
+                    disabled={isSending || !draftSubject.trim() || !draftContent.trim()}
+                    style={{
+                      background: 'var(--brand)',
+                      color: 'white',
+                      padding: '12px 24px',
+                      border: 'none',
+                      borderRadius: 8,
+                      cursor: isSending ? 'not-allowed' : 'pointer',
+                      fontWeight: 600,
+                      fontSize: '1rem',
+                      opacity: isSending ? 0.6 : 1,
+                      transition: 'all 0.2s',
+                      fontFamily: 'inherit'
+                    }}
+                  >
+                    {isSending ? '⏳ Sending...' : `📧 Send to ${subscribedCount} subscriber${subscribedCount !== 1 ? 's' : ''}`}
+                  </button>
+                  {subscribedCount === 0 && (
+                    <span style={{ fontSize: '0.85rem', color: '#c00' }}>
+                      ⚠️ No active subscribers
+                    </span>
+                  )}
+                </div>
+
+                {process.env.NODE_ENV === 'development' && (
+                  <p style={{
+                    marginTop: 12,
+                    fontSize: '0.85rem',
+                    color: 'var(--text-3)',
+                    fontStyle: 'italic',
+                    margin: '12px 0 0 0'
+                  }}>
+                    ℹ️ Note: Email service integration required to actually send emails. Configure SENDGRID_API_KEY in Cloud Function environment variables.
+                  </p>
+                )}
               </div>
 
               <table className="ap-table">

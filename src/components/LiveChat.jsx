@@ -1,9 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAuthStore } from '../store/authStore';
-import { db, collection, addDoc, query, where, getDocs, serverTimestamp, updateDoc, doc } from '../firebase/config';
-
-const API_ENDPOINT = 'https://api.anthropic.com/v1/messages';
-const API_KEY = import.meta.env.VITE_CLAUDE_API_KEY;
+import { db, collection, addDoc, query, where, getDocs, serverTimestamp, updateDoc, doc, functions } from '../firebase/config';
+import { httpsCallable } from 'firebase/functions';
 
 export default function LiveChat() {
   const { user } = useAuthStore();
@@ -64,53 +62,32 @@ export default function LiveChat() {
     setLoading(true);
 
     try {
-      // Call Claude API
-      const response = await fetch(API_ENDPOINT, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': API_KEY,
-          'anthropic-version': '2023-06-01'
-        },
-        body: JSON.stringify({
-          model: 'claude-3-5-sonnet-20241022',
-          max_tokens: 1024,
-          system: `You are a helpful support agent for Irema, a Rwandan business review platform.
-Help users with questions about:
-- How to post reviews and ratings
-- Managing their business profile
-- Understanding subscription plans
-- Technical issues and troubleshooting
-- General platform features
-
-Be concise, friendly, and professional. If you can't help, suggest contacting support@irema.rw or tell them an admin will follow up.`,
-          messages: messages.map(m => ({
-            role: m.role,
-            content: m.content
-          }))
-        })
+      // Call Claude API via secure Cloud Function
+      const callClaudeAPI = httpsCallable(functions, 'callClaudeAPI');
+      const result = await callClaudeAPI({
+        mode: 'chat',
+        message: inputValue,
+        sessionId: sessionId
       });
 
-      if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
-      }
-
-      const data = await response.json();
       const assistantMessage = {
         role: 'assistant',
-        content: data.content[0].text,
+        content: result.data.message,
         timestamp: new Date().toISOString()
       };
 
-      const updatedMessages = [...messages, assistantMessage];
-      setMessages(updatedMessages);
+      setMessages(prev => [...prev, assistantMessage]);
 
-      // Save to Firestore
+      // Messages are already saved by Cloud Function, but update local state
       if (sessionId) {
-        await updateDoc(doc(db, 'support_chats', sessionId), {
-          messages: updatedMessages,
-          updatedAt: serverTimestamp()
-        });
+        const chatSnap = await getDocs(query(
+          collection(db, 'support_chats'),
+          where('userId', '==', user.uid)
+        ));
+        if (!chatSnap.empty) {
+          const chat = chatSnap.docs[chatSnap.docs.length - 1].data();
+          setMessages(chat.messages || []);
+        }
       }
     } catch (error) {
       console.error('Failed to get response:', error);
@@ -118,12 +95,14 @@ Be concise, friendly, and professional. If you can't help, suggest contacting su
       let errorContent = 'Sorry, I encountered an error. ';
       if (error.message?.includes('network') || error.message?.includes('fetch')) {
         errorContent += 'Please check your internet connection and try again.';
-      } else if (error.message?.includes('401') || error.message?.includes('403')) {
-        errorContent += 'There was an authentication issue. Please refresh the page and try again.';
+      } else if (error.message?.includes('unauthenticated')) {
+        errorContent += 'Please sign in to use the chat feature.';
+      } else if (error.message?.includes('resource-exhausted')) {
+        errorContent += 'Too many requests. Please wait a moment and try again.';
       } else if (error.message?.includes('timeout')) {
         errorContent += 'The request took too long. Please try again with a shorter message.';
       } else {
-        errorContent += 'Please try again or contact support@irema.rw for assistance.';
+        errorContent += 'Please try again or contact support@irema.app for assistance.';
       }
 
       const errorMessage = {
@@ -137,7 +116,7 @@ Be concise, friendly, and professional. If you can't help, suggest contacting su
     }
   }
 
-  if (!user || !API_KEY) return null;
+  if (!user) return null;
 
   return (
     <>

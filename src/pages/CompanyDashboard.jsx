@@ -9,6 +9,12 @@ import ChangePasswordModal from '../components/ChangePasswordModal';
 import './CompanyDashboard.css';
 import StoriesSection from '../components/StoriesSection';
 import ReviewModal from '../components/ReviewModal';
+import FreeMetricsPanel from '../components/FreeMetricsPanel';
+import MiddleMetricsPanel from '../components/MiddleMetricsPanel';
+import PremiumMetricsPanel from '../components/PremiumMetricsPanel';
+import AnalyticsTrialCountdown from '../components/AnalyticsTrialCountdown';
+import AnalyticsUpgradePrompt from '../components/AnalyticsUpgradePrompt';
+import TierComparison from '../components/TierComparison';
 
 /* ── Brand Logo ── */
 function BizLogo() {
@@ -302,6 +308,10 @@ export default function CompanyDashboard() {
     reviewCount: true,
     responseRate: true,
   });
+  const [analyticsMetrics, setAnalyticsMetrics] = useState(null);
+  const [analyticsAccessLevel, setAnalyticsAccessLevel] = useState('free');
+  const [isOnTrial, setIsOnTrial] = useState(false);
+  const [trialDaysRemaining, setTrialDaysRemaining] = useState(0);
   const chartRefs = useRef({});
   const dropRef = useRef(null);
 
@@ -396,6 +406,37 @@ export default function CompanyDashboard() {
     document.addEventListener('mousedown', h);
     return () => document.removeEventListener('mousedown', h);
   }, []);
+
+  // Load analytics metrics and check trial status
+  useEffect(() => {
+    if (!company?.id || !subscription) return;
+
+    // Determine analytics access level
+    const tierLevel = subscription?.analyticsAccessLevel || 'free';
+    setAnalyticsAccessLevel(tierLevel);
+
+    // Check trial status
+    if (subscription?.analyticsTrialEndsAt) {
+      const trialEnds = subscription.analyticsTrialEndsAt.toDate
+        ? subscription.analyticsTrialEndsAt.toDate()
+        : new Date(subscription.analyticsTrialEndsAt.seconds * 1000);
+      const daysLeft = Math.ceil((trialEnds - Date.now()) / (1000 * 60 * 60 * 24));
+      setTrialDaysRemaining(Math.max(0, daysLeft));
+      setIsOnTrial(daysLeft > 0);
+    }
+
+    // Fetch latest analytics metrics
+    const today = new Date().toISOString().split('T')[0];
+    getDoc(doc(db, 'analytics_metrics', company.id, 'daily', `daily_${today}`))
+      .then(docSnap => {
+        if (docSnap.exists()) {
+          setAnalyticsMetrics(docSnap.data());
+        }
+      })
+      .catch(() => {
+        // Metrics not yet calculated, will show default state
+      });
+  }, [company?.id, subscription]);
 
   // Analytics charts
   const drawCharts = useCallback(() => {
@@ -515,7 +556,7 @@ export default function CompanyDashboard() {
       const reviewDoc = reviews.find(r => r.id === reviewId);
       if (reviewDoc?.userId) {
         await addDoc(collection(db, 'notifications'), {
-          userId: reviewDoc.userId,
+          targetUserId: reviewDoc.userId,
           companyId: company.id,
           companyName: company.companyName || company.name,
           type: 'business_reply',
@@ -944,90 +985,34 @@ export default function CompanyDashboard() {
                 <h1>{t('cd.analytics')||'Analytics'}</h1>
                 <p className="biz-page-sub">{t('cd.analytics_sub')||'Powered by real data from your Irema profile'}</p>
               </div>
-              <div className="biz-analytics-kpis">
-                {[
-                  {label:t('cd.total_reviews')||'Total Reviews', val:reviews.length},
-                  {label:t('cd.avg_rating')||'Avg Rating', val: reviews.length ? avg.toFixed(1)+'★' : '—'},
-                  {label:t('cd.response_rate')||'Response Rate', val:responseRate+'%'},
-                  {label:t('cd.five_star')||'5-Star Reviews', val:rCounts[5]||0},
-                  {label:t('cd.low_star')||'1-2 Star Reviews', val:(rCounts[1]||0)+(rCounts[2]||0)},
-                  {label:t('cd.reviews_month')||'Reviews This Month', val:reviews.filter(r=>{
-                    const t=r.createdAt?.seconds?r.createdAt.seconds*1000:0;
-                    return Date.now()-t<30*86400000;
-                  }).length},
-                  {label:'Positive Reviews', val: reviews.length ? `${Math.round(((rCounts[4]||0)+(rCounts[5]||0))/reviews.length*100)}%` : '—', sub:`${(rCounts[4]||0)+(rCounts[5]||0)} of ${reviews.length}`},
-                  {label:'Avg Review Rating', val: reviews.length ? (reviews.reduce((s,r)=>s+(r.rating||0),0)/reviews.length).toFixed(1) : '—', sub:'Based on all reviews'},
-                ].map(k=>(
-                  <div key={k.label} className="biz-analytics-kpi">
-                    <div className="biz-analytics-kpi-val">{k.val}</div>
-                    <div className="biz-analytics-kpi-label">{k.label}</div>
-                    {k.sub && <div style={{fontSize:'0.7rem',color:'var(--biz-text-3)',marginTop:4}}>{k.sub}</div>}
-                  </div>
-                ))}
-              </div>
-              {/* Monthly breakdown */}
-              <div className="biz-card" style={{marginTop:20}}>
-                <h3>{t('cd.this_month')||'This Month Performance'}</h3>
-                <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(140px,1fr))',gap:12,marginTop:12}}>
-                  {(() => {
-                    const now = new Date();
-                    const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
-                    const thisMonthReviews = reviews.filter(r => {
-                      const t = r.createdAt?.seconds ? r.createdAt.seconds * 1000 : 0;
-                      return t >= thisMonthStart;
-                    });
-                    const thisMonthAvg = thisMonthReviews.length ?
-                      (thisMonthReviews.reduce((s,r) => s + (r.rating||0), 0) / thisMonthReviews.length).toFixed(1) : 0;
-                    const thisMonthCounts = {1:0, 2:0, 3:0, 4:0, 5:0};
-                    thisMonthReviews.forEach(r => { if(r.rating) thisMonthCounts[r.rating]++; });
 
-                    return [
-                      {label:'Reviews this month', val:thisMonthReviews.length},
-                      {label:'Avg rating this month', val:thisMonthReviews.length ? thisMonthAvg + '★' : '—'},
-                      {label:'5★ this month', val:thisMonthCounts[5]},
-                      {label:'1-2★ this month', val:(thisMonthCounts[1]||0)+(thisMonthCounts[2]||0)},
-                    ].map((m,i) => (
-                      <div key={i} style={{padding:'12px',background:'var(--biz-bg-2)',borderRadius:8}}>
-                        <div style={{fontSize:'0.7rem',color:'var(--biz-text-3)',fontWeight:600,marginBottom:4}}>{m.label}</div>
-                        <div style={{fontSize:'1.5rem',fontWeight:700,color:'var(--biz-brand)'}}>{m.val}</div>
-                      </div>
-                    ));
-                  })()}
-                </div>
-              </div>
+              {/* Trial Countdown */}
+              {isOnTrial && <AnalyticsTrialCountdown daysRemaining={trialDaysRemaining} />}
 
-              <div className="biz-charts-grid">
-                <div className="biz-chart-card" style={{gridColumn:'1/-1'}}>
-                  <h3>{t('cd.review_trend')||'Review Volume & Rating Trend'}</h3>
-                  <div style={{height:260,position:'relative'}}><canvas id="bizReviewTrend"/></div>
-                </div>
-                <div className="biz-chart-card">
-                  <h3>{t('cd.rating_dist')||'Rating Distribution'}</h3>
-                  <div style={{height:220,position:'relative'}}><canvas id="bizRatingDist"/></div>
-                </div>
-                <div className="biz-chart-card">
-                  <h3>{t('cd.response_rate')||'Response Rate'}</h3>
-                  <div style={{position:'relative',height:220,display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column',gap:8}}>
-                    <canvas id="bizResponseRate" style={{maxWidth:180,maxHeight:180}}/>
-                    <div style={{position:'absolute',fontSize:'1.8rem',fontWeight:700,color:'var(--biz-brand)'}}>{responseRate}%</div>
-                    <div style={{fontSize:'0.78rem',color:'var(--biz-text-3)',marginTop:4}}>{t('cd.of_reviews_answered')||'of reviews answered'}</div>
-                  </div>
-                </div>
-              </div>
-              {/* Sentiment keywords from reviews */}
-              <div className="biz-card" style={{marginTop:20}}>
-                <h3>{t('cd.review_highlights')||'Review Highlights'}</h3>
-                <div className="biz-highlights-grid">
-                  {reviews.slice(0,5).map(r=>(
-                    <div key={r.id} className="biz-highlight-item">
-                      <Stars rating={r.rating} size={12}/>
-                      <p>"{r.comment?.slice(0,100)||'No comment'}{r.comment?.length>100?'…':''}"</p>
-                      <span>{r.userName||'Anonymous'}</span>
-                    </div>
-                  ))}
-                  {reviews.length===0 && <p style={{color:'var(--biz-text-4)',gridColumn:'1/-1',padding:'20px 0'}}>{t('cd.no_reviews_analyse')||'No reviews yet to analyse.'}</p>}
-                </div>
-              </div>
+              {/* Tier-Gated Analytics Display */}
+              {analyticsAccessLevel === 'free' && !isOnTrial && (
+                <FreeMetricsPanel metrics={analyticsMetrics} category={company?.category} company={company} />
+              )}
+              {analyticsAccessLevel === 'middle' && (
+                <MiddleMetricsPanel metrics={analyticsMetrics} category={company?.category} company={company} />
+              )}
+              {analyticsAccessLevel === 'premium' && (
+                <PremiumMetricsPanel metrics={analyticsMetrics} category={company?.category} company={company} />
+              )}
+              {isOnTrial && (
+                <MiddleMetricsPanel metrics={analyticsMetrics} category={company?.category} company={company} />
+              )}
+
+              {/* Upgrade Prompt */}
+              {(analyticsAccessLevel === 'free' || isOnTrial) && (
+                <AnalyticsUpgradePrompt
+                  currentTier={analyticsAccessLevel}
+                  category={company?.category}
+                  onUpgradeSelect={(tier) => {
+                    setSection('payments');
+                  }}
+                />
+              )}
             </div>
           )}
 
@@ -1437,7 +1422,56 @@ export default function CompanyDashboard() {
                 <h1>{t('cd.payments')||'Payments'}</h1>
                 <p className="biz-page-sub">{t('cd.payments_sub')||'View and manage your payment history and invoices'}</p>
               </div>
-              <div className="biz-card">
+
+              {/* Analytics Tier Upgrade */}
+              {company?.category && (
+                <div className="biz-card">
+                  <h3>📊 Analytics Subscription</h3>
+                  <p style={{color:'var(--biz-text-2)',marginBottom:20}}>Unlock advanced insights and grow your business:</p>
+                  <TierComparison
+                    currentTier={analyticsAccessLevel}
+                    category={company.category}
+                    onSelectTier={async (tier) => {
+                      if (tier === 'free') {
+                        showToast('You\'re already on the free tier', 'success');
+                        return;
+                      }
+
+                      // Create payment record for tier upgrade
+                      try {
+                        await addDoc(collection(db, 'payments'), {
+                          companyId: company.id,
+                          businessName: company.companyName,
+                          type: 'analytics',
+                          tier,
+                          description: `${company.category} Analytics - ${tier} tier`,
+                          status: 'pending',
+                          createdAt: serverTimestamp(),
+                        });
+
+                        // Update subscription
+                        if (subscription?.id) {
+                          await updateDoc(doc(db, 'subscriptions', subscription.id), {
+                            analyticsAccessLevel: tier,
+                            analyticsCategoryTier: {
+                              [company.category]: tier,
+                            },
+                            updatedAt: serverTimestamp(),
+                          });
+                        }
+
+                        // Update local state
+                        setAnalyticsAccessLevel(tier);
+                        showToast(`✓ Upgraded to ${tier} tier! Payment will be processed.`, 'success');
+                      } catch (err) {
+                        showToast('Error upgrading tier: ' + err.message, 'error');
+                      }
+                    }}
+                  />
+                </div>
+              )}
+
+              <div className="biz-card" style={{marginTop:24}}>
                 <h3>Payment Methods</h3>
                 <p style={{color:'var(--biz-text-2)',marginBottom:16}}>We accept multiple payment methods in Rwanda:</p>
                 <div className="biz-payment-methods">

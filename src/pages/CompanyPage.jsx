@@ -294,25 +294,34 @@ export default function CompanyPage() {
   }
 
   async function translateReview(reviewId, text) {
-    if (translated[reviewId]) { setTranslated(p => ({ ...p, [reviewId]: null })); return; }
+    if (translated[reviewId]) {
+      setTranslated(p => ({ ...p, [reviewId]: null }));
+      return;
+    }
+
     setTranslating(p => ({ ...p, [reviewId]: true }));
+
     try {
-      const resp = await fetch(`https://api.anthropic.com/v1/messages`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': import.meta.env.VITE_ANTHROPIC_API_KEY || '',
-        },
-        body: JSON.stringify({
-          model: 'claude-3-5-sonnet-20241022', max_tokens: 300,
-          messages: [{ role: 'user', content: `Translate this review to ${i18n.language === 'rw' ? 'Kinyarwanda' : i18n.language === 'fr' ? 'French' : i18n.language === 'sw' ? 'Swahili' : 'English'}. Return ONLY the translation, no explanation:\n\n"${text}"` }]
-        })
+      const { httpsCallable } = await import('firebase/functions');
+      const { functions } = await import('../firebase/config');
+
+      const callClaudeAPI = httpsCallable(functions, 'callClaudeAPI');
+      const result = await callClaudeAPI({
+        mode: 'translate',
+        message: text,
+        targetLanguage: i18n.language === 'rw' ? 'Kinyarwanda'
+          : i18n.language === 'fr' ? 'French'
+          : i18n.language === 'sw' ? 'Swahili'
+          : 'English'
       });
-      const data = await resp.json();
-      const tx = data.content?.[0]?.text || text;
-      setTranslated(p => ({ ...p, [reviewId]: tx }));
-    } catch { setTranslated(p => ({ ...p, [reviewId]: text })); }
-    setTranslating(p => ({ ...p, [reviewId]: false }));
+
+      setTranslated(p => ({ ...p, [reviewId]: result.data.message }));
+    } catch (error) {
+      console.error('Translation error:', error);
+      setTranslated(p => ({ ...p, [reviewId]: text }));
+    } finally {
+      setTranslating(p => ({ ...p, [reviewId]: false }));
+    }
   }
 
   const sortedReviews = [...reviews].sort((a, b) => {
