@@ -1085,6 +1085,46 @@ export default function CompanyDashboard() {
                 <MiddleMetricsPanel metrics={calculatedMetrics} category={company?.category} company={company} />
               )}
 
+              {/* Charts Section */}
+              {reviews.length > 0 && (
+                <div style={{marginTop:32}}>
+                  <div style={{marginBottom:24,paddingBottom:16,borderBottom:'1px solid var(--biz-border)'}}>
+                    <h2 style={{margin:'0 0 8px 0',fontSize:'1.2rem',fontWeight:700,color:'var(--biz-text-1)'}}>
+                      📈 Trends & Performance
+                    </h2>
+                    <p style={{margin:0,color:'var(--biz-text-3)',fontSize:'0.9rem'}}>
+                      Review trends, rating distribution, and response metrics
+                    </p>
+                  </div>
+
+                  <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(300px,1fr))',gap:20}}>
+                    {/* Review Trend Chart */}
+                    <div style={{background:'var(--biz-surface)',borderRadius:12,padding:16,border:'1px solid var(--biz-border)'}}>
+                      <h3 style={{margin:'0 0 12px 0',fontSize:'0.95rem',fontWeight:600,color:'var(--biz-text-1)'}}>
+                        Reviews Over Time
+                      </h3>
+                      <canvas id="bizReviewTrend" style={{maxHeight:250}}/>
+                    </div>
+
+                    {/* Rating Distribution Chart */}
+                    <div style={{background:'var(--biz-surface)',borderRadius:12,padding:16,border:'1px solid var(--biz-border)'}}>
+                      <h3 style={{margin:'0 0 12px 0',fontSize:'0.95rem',fontWeight:600,color:'var(--biz-text-1)'}}>
+                        Rating Distribution
+                      </h3>
+                      <canvas id="bizRatingDist" style={{maxHeight:250}}/>
+                    </div>
+
+                    {/* Response Rate Chart */}
+                    <div style={{background:'var(--biz-surface)',borderRadius:12,padding:16,border:'1px solid var(--biz-border)'}}>
+                      <h3 style={{margin:'0 0 12px 0',fontSize:'0.95rem',fontWeight:600,color:'var(--biz-text-1)'}}>
+                        Response Rate
+                      </h3>
+                      <canvas id="bizResponseRate" style={{maxHeight:250}}/>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Upgrade Prompt */}
               {(analyticsAccessLevel === 'free' || isOnTrial) && (
                 <AnalyticsUpgradePrompt
