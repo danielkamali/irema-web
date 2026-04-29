@@ -82,7 +82,7 @@ function getNav(t, company) {
     { id:'profile',        label:t('cd.business_profile')||'Business Profile', icon:'M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2 M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z' },
     { id:'subscription',   label:t('cd.subscription')||'Subscription',     icon:'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 0 0 3-3V8a3 3 0 0 0-3-3H6a3 3 0 0 0-3 3v8a3 3 0 0 0 3 3z' },
     { id:'analytics-tier', label:'Analytics Subscription',  icon:'M16 6l2.293-2.293a1 1 0 011.414 0l2.586 2.586a1 1 0 010 1.414L20 9m-4-4v12a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2h-8a2 2 0 00-2 2' },
-    { id:'payments',       label:t('cd.payments')||'Payments',            icon:'M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm0 6c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm0-12C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z' },
+    { id:'payments',       label:'Payments',            icon:'M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm0 6c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm0-12C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z' },
     { id:'notifications',  label:t('cd.notifications')||'Notifications',    icon:'M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9 M13.73 21a2 2 0 0 1-3.46 0' },
     { id:'qrcode',         label:'QR Code',                                   icon:'M3 3h7v7H3z M14 3h7v7h-7z M3 14h7v7H3z M14 14h3v3h-3z M20 14h1v1h-1z M17 17h3v3h-3z M20 20h1v1h-1z' },
     // Stories nav shown only if feature is enabled by admin
@@ -313,6 +313,8 @@ export default function CompanyDashboard() {
   const [analyticsAccessLevel, setAnalyticsAccessLevel] = useState('free');
   const [isOnTrial, setIsOnTrial] = useState(false);
   const [trialDaysRemaining, setTrialDaysRemaining] = useState(0);
+  const [paymentHistory, setPaymentHistory] = useState([]);
+  const [paymentsTab, setPaymentsTab] = useState('methods'); // 'methods' | 'history'
   const chartRefs = useRef({});
   const dropRef = useRef(null);
 
@@ -506,6 +508,17 @@ export default function CompanyDashboard() {
     },{cutout:'78%',plugins:{legend:{display:false}}});
 
   }, [reviews]);
+
+  // Load payment history
+  useEffect(() => {
+    if (!company?.id) return;
+    getDocs(query(collection(db, 'payments'), where('companyId', '==', company.id), orderBy('createdAt', 'desc')))
+      .then(snap => {
+        const payments = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        setPaymentHistory(payments);
+      })
+      .catch(e => console.error('Error loading payments:', e));
+  }, [company?.id]);
 
   useEffect(() => {
     if (section !== 'analytics') return;
@@ -1459,55 +1472,161 @@ export default function CompanyDashboard() {
           {section==='payments' && (
             <div className="biz-content">
               <div className="biz-page-header">
-                <h1>{t('cd.payments')||'Payment Methods'}</h1>
-                <p className="biz-page-sub">{t('cd.payments_sub')||'View payment methods and payment history'}</p>
+                <h1>Payments</h1>
+                <p className="biz-page-sub">Manage payment methods and view invoices</p>
               </div>
 
-              {/* Payment methods */}
-              <div className="biz-card">
-                <h3>{t('cd.payment_methods')||'Accepted Payment Methods in Rwanda'}</h3>
-                <div className="biz-payment-methods">
-                  {[
-                    {name:'MTN MoMo', icon:'📱', detail:'Pay via *182# or MTN app'},
-                    {name:'Airtel Money', icon:'📲', detail:'Pay via *185# or Airtel app'},
-                    {name:'Bank Transfer', icon:'🏦', detail:'BPR, BK, KCB, Equity'},
-                    {name:'Visa/Mastercard', icon:'💳', detail:'International cards accepted'},
-                  ].map(p=>(
-                    <div key={p.name} className="biz-payment-item">
-                      <span>{p.icon}</span>
-                      <div>
-                        <strong>{p.name}</strong>
-                        <p>{p.detail}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+              {/* Tabbed Navigation */}
+              <div style={{display:'flex',gap:8,marginBottom:24,borderBottom:'1px solid var(--biz-border)',paddingBottom:12}}>
+                <button
+                  onClick={() => setPaymentsTab('methods')}
+                  style={{
+                    padding:'8px 16px',
+                    border:'none',
+                    background:'none',
+                    cursor:'pointer',
+                    fontSize:'0.95rem',
+                    fontWeight:paymentsTab==='methods'?700:500,
+                    color:paymentsTab==='methods'?'var(--biz-text-1)':'var(--biz-text-3)',
+                    borderBottom:paymentsTab==='methods'?'2px solid var(--biz-brand)':'none',
+                    marginBottom:'-12px',
+                    paddingBottom:'20px'
+                  }}
+                >
+                  Payment Methods
+                </button>
+                <button
+                  onClick={() => setPaymentsTab('history')}
+                  style={{
+                    padding:'8px 16px',
+                    border:'none',
+                    background:'none',
+                    cursor:'pointer',
+                    fontSize:'0.95rem',
+                    fontWeight:paymentsTab==='history'?700:500,
+                    color:paymentsTab==='history'?'var(--biz-text-1)':'var(--biz-text-3)',
+                    borderBottom:paymentsTab==='history'?'2px solid var(--biz-brand)':'none',
+                    marginBottom:'-12px',
+                    paddingBottom:'20px'
+                  }}
+                >
+                  Invoices ({paymentHistory.length})
+                </button>
               </div>
 
-              <div className="biz-card" style={{marginTop:24}}>
-                <h3>Payment Methods</h3>
-                <p style={{color:'var(--biz-text-2)',marginBottom:16}}>We accept multiple payment methods in Rwanda:</p>
-                <div className="biz-payment-methods">
-                  {[
-                    {name:'MTN MoMo', icon:'📱', detail:'Pay via *182# or MTN app'},
-                    {name:'Airtel Money', icon:'📲', detail:'Pay via *185# or Airtel app'},
-                    {name:'Bank Transfer', icon:'🏦', detail:'BPR, BK, KCB, Equity'},
-                    {name:'Visa/Mastercard', icon:'💳', detail:'International cards accepted'},
-                  ].map(p=>(
-                    <div key={p.name} className="biz-payment-item">
-                      <span>{p.icon}</span>
-                      <div>
-                        <strong>{p.name}</strong>
-                        <p>{p.detail}</p>
+              {/* Payment Methods Tab */}
+              {paymentsTab === 'methods' && (
+                <div className="biz-card">
+                  <h3>{t('cd.payment_methods')||'Accepted Payment Methods in Rwanda'}</h3>
+                  <p style={{color:'var(--biz-text-2)',marginBottom:20}}>We accept multiple payment methods for your subscription:</p>
+                  <div className="biz-payment-methods">
+                    {[
+                      {name:'MTN MoMo', icon:'📱', detail:'Pay via *182# or MTN app'},
+                      {name:'Airtel Money', icon:'📲', detail:'Pay via *185# or Airtel app'},
+                      {name:'Bank Transfer', icon:'🏦', detail:'BPR, BK, KCB, Equity'},
+                      {name:'Visa/Mastercard', icon:'💳', detail:'International cards accepted'},
+                    ].map(p=>(
+                      <div key={p.name} className="biz-payment-item">
+                        <span>{p.icon}</span>
+                        <div>
+                          <strong>{p.name}</strong>
+                          <p>{p.detail}</p>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
-              <div className="biz-card" style={{marginTop:16}}>
-                <h3>Invoice History</h3>
-                <p style={{color:'var(--biz-text-2)'}}>Your invoices and payment history will appear here. Once you subscribe to a paid plan, all transactions will be tracked automatically.</p>
-              </div>
+              )}
+
+              {/* Invoices Tab */}
+              {paymentsTab === 'history' && (
+                <div>
+                  {paymentHistory.length === 0 ? (
+                    <div className="biz-card" style={{textAlign:'center',padding:'40px 24px'}}>
+                      <div style={{fontSize:'3rem',marginBottom:16}}>📄</div>
+                      <p style={{color:'var(--biz-text-2)',marginBottom:8}}>No invoices yet</p>
+                      <p style={{color:'var(--biz-text-3)',fontSize:'0.9rem'}}>Your invoices and payment history will appear here. Once you upgrade to a paid plan, all transactions will be tracked automatically.</p>
+                    </div>
+                  ) : (
+                    <div style={{display:'grid',gap:16}}>
+                      {paymentHistory.map(payment => (
+                        <div key={payment.id} className="biz-card" style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                          <div>
+                            <h4 style={{margin:'0 0 8px 0',color:'var(--biz-text-1)'}}>
+                              {payment.description || `${payment.type} - ${payment.tier}`}
+                            </h4>
+                            <div style={{display:'flex',gap:24,fontSize:'0.85rem',color:'var(--biz-text-3)'}}>
+                              <span>Invoice #{payment.id.slice(0,8).toUpperCase()}</span>
+                              <span>{payment.createdAt?.toDate ? new Date(payment.createdAt.toDate()).toLocaleDateString() : new Date(payment.createdAt?.seconds*1000).toLocaleDateString()}</span>
+                              <span>Status: <strong style={{color:payment.status==='paid'?'#2d8f6f':'#d97706'}}>{payment.status || 'pending'}</strong></span>
+                            </div>
+                          </div>
+                          <div style={{display:'flex',alignItems:'center',gap:12}}>
+                            <div style={{textAlign:'right'}}>
+                              <div style={{fontSize:'1.1rem',fontWeight:700,color:'var(--biz-text-1)'}}>
+                                RWF {payment.price?.toLocaleString() || 'N/A'}
+                              </div>
+                            </div>
+                            <div style={{display:'flex',gap:8}}>
+                              <button
+                                onClick={() => {
+                                  const invoice = `INVOICE #${payment.id.slice(0,8).toUpperCase()}\n\nBusiness: ${payment.businessName}\nDate: ${payment.createdAt?.toDate ? new Date(payment.createdAt.toDate()).toLocaleDateString() : new Date(payment.createdAt?.seconds*1000).toLocaleDateString()}\nDescription: ${payment.description}\nAmount: RWF ${payment.price?.toLocaleString()}\nStatus: ${payment.status}`;
+                                  const element = document.createElement('a');
+                                  const file = new Blob([invoice], {type:'text/plain'});
+                                  element.href = URL.createObjectURL(file);
+                                  element.download = `invoice-${payment.id.slice(0,8)}.txt`;
+                                  document.body.appendChild(element);
+                                  element.click();
+                                  document.body.removeChild(element);
+                                }}
+                                style={{
+                                  padding:'6px 14px',
+                                  fontSize:'0.85rem',
+                                  border:'1px solid var(--biz-border)',
+                                  background:'var(--biz-bg)',
+                                  borderRadius:6,
+                                  cursor:'pointer',
+                                  fontWeight:600,
+                                  color:'var(--biz-text-1)',
+                                  transition:'all 0.15s'
+                                }}
+                                onMouseEnter={(e) => { e.target.style.background='var(--biz-bg-2)'; }}
+                                onMouseLeave={(e) => { e.target.style.background='var(--biz-bg)'; }}
+                              >
+                                ⬇ Download
+                              </button>
+                              <button
+                                onClick={() => {
+                                  const invoice = `INVOICE #${payment.id.slice(0,8).toUpperCase()}\n\nBusiness: ${payment.businessName}\nDate: ${payment.createdAt?.toDate ? new Date(payment.createdAt.toDate()).toLocaleDateString() : new Date(payment.createdAt?.seconds*1000).toLocaleDateString()}\nDescription: ${payment.description}\nAmount: RWF ${payment.price?.toLocaleString()}\nStatus: ${payment.status}`;
+                                  const printWindow = window.open('', '', 'height=600,width=800');
+                                  printWindow.document.write('<pre style="font-family:monospace;padding:20px">' + invoice + '</pre>');
+                                  printWindow.document.close();
+                                  printWindow.print();
+                                }}
+                                style={{
+                                  padding:'6px 14px',
+                                  fontSize:'0.85rem',
+                                  border:'1px solid var(--biz-border)',
+                                  background:'var(--biz-bg)',
+                                  borderRadius:6,
+                                  cursor:'pointer',
+                                  fontWeight:600,
+                                  color:'var(--biz-text-1)',
+                                  transition:'all 0.15s'
+                                }}
+                                onMouseEnter={(e) => { e.target.style.background='var(--biz-bg-2)'; }}
+                                onMouseLeave={(e) => { e.target.style.background='var(--biz-bg)'; }}
+                              >
+                                🖨 Print
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
 
