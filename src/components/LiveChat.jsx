@@ -56,7 +56,8 @@ export default function LiveChat() {
     e.preventDefault();
     if (!inputValue.trim() || loading) return;
 
-    const userMessage = { role: 'user', content: inputValue, timestamp: new Date().toISOString() };
+    const messageContent = inputValue; // Capture value before state update
+    const userMessage = { role: 'user', content: messageContent, timestamp: new Date().toISOString() };
     setMessages(prev => [...prev, userMessage]);
     setInputValue('');
     setLoading(true);
@@ -66,7 +67,7 @@ export default function LiveChat() {
       const callClaudeAPI = httpsCallable(functions, 'callClaudeAPI');
       const result = await callClaudeAPI({
         mode: 'chat',
-        message: inputValue,
+        message: messageContent,
         sessionId: sessionId
       });
 
@@ -130,25 +131,38 @@ export default function LiveChat() {
           width: 64,
           height: 64,
           borderRadius: '50%',
-          background: 'linear-gradient(135deg, #2d8f6f 0%, #1f6b52 100%)',
+          background: '#2d8f6f',
           color: 'white',
-          border: '3px solid white',
+          border: 'none',
           cursor: 'pointer',
-          fontSize: '1.8rem',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          boxShadow: '0 6px 20px rgba(45, 143, 111, 0.4)',
+          boxShadow: '0 8px 24px rgba(45, 143, 111, 0.35)',
           zIndex: 999,
           transition: 'all 0.3s ease',
           transform: isOpen ? 'scale(0.95)' : 'scale(1)',
-          hover: 'transform: scale(1.1)'
         }}
         title="Support Agent - Chat with us!"
-        onMouseEnter={(e) => e.target.style.transform = 'scale(1.1)'}
+        onMouseEnter={(e) => e.target.style.transform = 'scale(1.08)'}
         onMouseLeave={(e) => e.target.style.transform = isOpen ? 'scale(0.95)' : 'scale(1)'}
       >
-        🤖
+        <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+          {/* Robot head */}
+          <rect x="6" y="8" width="20" height="16" rx="2" fill="white" stroke="white" strokeWidth="1.5"/>
+          {/* Left eye */}
+          <circle cx="11" cy="12" r="2.5" fill="#2d8f6f"/>
+          {/* Right eye */}
+          <circle cx="21" cy="12" r="2.5" fill="#2d8f6f"/>
+          {/* Antenna left */}
+          <rect x="10" y="2" width="1.5" height="6" fill="white"/>
+          <circle cx="10.75" cy="1.5" r="1.2" fill="white"/>
+          {/* Antenna right */}
+          <rect x="21.5" y="2" width="1.5" height="6" fill="white"/>
+          <circle cx="22.25" cy="1.5" r="1.2" fill="white"/>
+          {/* Mouth */}
+          <path d="M 12 16 Q 16 18 20 16" stroke="white" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
+        </svg>
       </button>
 
       {/* Chat Panel */}

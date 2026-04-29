@@ -15,10 +15,10 @@ export default function BlogPage() {
 
   // Load published blogs from Firestore
   useEffect(() => {
+    // Query without orderBy to avoid requiring Firestore index
     const q = query(
       collection(db, 'blogs'),
-      where('published', '==', true),
-      orderBy('createdAt', 'desc')
+      where('published', '==', true)
     );
 
     const unsubscribe = onSnapshot(q, (snap) => {
@@ -26,6 +26,14 @@ export default function BlogPage() {
         id: doc.id,
         ...doc.data()
       }));
+      // Sort by createdAt in JavaScript (desc)
+      blogDocs.sort((a, b) => {
+        const aTime = a.createdAt?.seconds || a.createdAt?.toDate?.() || 0;
+        const bTime = b.createdAt?.seconds || b.createdAt?.toDate?.() || 0;
+        const aMs = typeof aTime === 'number' ? aTime * 1000 : aTime;
+        const bMs = typeof bTime === 'number' ? bTime * 1000 : bTime;
+        return bMs - aMs;
+      });
       setBlogs(blogDocs);
       setLoading(false);
     }, (error) => {

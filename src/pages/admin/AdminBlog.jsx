@@ -146,8 +146,16 @@ export default function AdminBlog() {
 
   async function loadBlogs() {
     try {
-      const snap = await getDocs(query(collection(db, 'blogs'), orderBy('createdAt', 'desc')));
-      setBlogs(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      // Fetch without orderBy to avoid requiring Firestore index
+      const snap = await getDocs(collection(db, 'blogs'));
+      const blogsList = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      // Sort by createdAt in JavaScript (desc)
+      blogsList.sort((a, b) => {
+        const aTime = a.createdAt?.seconds || a.createdAt || 0;
+        const bTime = b.createdAt?.seconds || b.createdAt || 0;
+        return bTime - aTime;
+      });
+      setBlogs(blogsList);
     } catch (e) {
       console.error('Failed to load blogs:', e);
       showToast('Failed to load blogs', 'error');

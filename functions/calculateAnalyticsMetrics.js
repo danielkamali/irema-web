@@ -8,8 +8,7 @@
 const { onSchedule } = require('firebase-functions/v2/scheduler');
 const admin = require('firebase-admin');
 
-// Initialize Firebase Admin
-admin.initializeApp();
+// Firebase Admin is initialized in index.js, just get the db instance
 const db = admin.firestore();
 
 // Metrics calculation functions (import from shared utility if possible, or inline)

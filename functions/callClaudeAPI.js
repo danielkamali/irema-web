@@ -6,7 +6,8 @@ const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const admin = require('firebase-admin');
 
 const db = admin.firestore();
-const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
+// Get API key from environment (set via Firebase console or gcloud)
+const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || process.env.anthropic_api_key;
 
 /**
  * callClaudeAPI - Secure server-side proxy for Claude API calls

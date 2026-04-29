@@ -288,14 +288,6 @@ service cloud.firestore {
       allow delete: if isActiveAdmin();
     }
 
-    match /support_chats/{chatId} {
-      // Chat sessions: each user can manage their own chats
-      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
-      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-      allow update: if isSignedIn() && resource.data.userId == request.auth.uid;
-      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
-    }
-
     match /analytics_metrics/{companyId} {
       // Latest analytics snapshot - readable by company owner or admin
       allow read: if isSignedIn() && (
