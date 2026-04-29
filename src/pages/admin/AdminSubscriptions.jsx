@@ -60,6 +60,26 @@ const PLANS = [
   },
 ];
 
+const ANALYTICS_TIERS = {
+  free: {
+    name: 'Free', price: 0, color: '#6b7280',
+    metrics: ['avgRating', 'totalReviews', 'responseRate', 'reviewCountThisMonth', 'topComplaint', 'ratingDistribution']
+  },
+  middle: {
+    name: 'Advanced', price: 15000, color: '#2d8f6f',
+    metrics: ['avgRating', 'sentimentScore', 'competitorRank', 'topPraisedThemes', 'topComplaintThemes', 'seasonalTrends', 'staffQualityScore', 'pricePerceptionScore']
+  },
+  premium: {
+    name: 'Professional', price: 45000, color: '#7c3aed',
+    metrics: ['avgRating', 'aiRecommendations', 'menuOptimizationInsights', 'competitiveThreeatAnalysis', 'customerPersonaBreakdown', 'revenueImpactForecast', 'monthlyExecReport']
+  }
+};
+
+const CATEGORIES = [
+  'restaurant', 'bank', 'healthcare', 'retail', 'hotel', 'salon',
+  'school', 'transport', 'technology', 'automotive', 'entertainment', 'real_estate', 'food_delivery'
+];
+
 export default function AdminSubscriptions() {
   const { t } = useTranslation();
   const { user: adminUser } = useAuthStore();
@@ -78,6 +98,11 @@ export default function AdminSubscriptions() {
   const [assignForm, setAssignForm] = useState({ businessId: '', plan: 'professional', status: 'active', trialDays: 0 });
   const [bizSearch, setBizSearch] = useState('');
   const [filteredBiz, setFilteredBiz] = useState([]);
+  const [analyticsTierModal, setAnalyticsTierModal] = useState(false);
+  const [analyticsTierForm, setAnalyticsTierForm] = useState({ businessId: '', category: '', tier: 'free' });
+  const [analyticsBizSearch, setAnalyticsBizSearch] = useState('');
+  const [analyticsFilteredBiz, setAnalyticsFilteredBiz] = useState([]);
+  const [categoryFilter, setCategoryFilter] = useState('');
 
   const showToast = (msg, type = 'success') => { setToast({ msg, type }); setTimeout(() => setToast(null), 3200); };
 
@@ -194,6 +219,56 @@ export default function AdminSubscriptions() {
       setAssignModal(false);
       setAssignForm({ businessId: '', plan: 'professional', status: 'active', trialDays: 0 });
       showToast(`Subscription assigned to ${selectedBiz?.companyName || selectedBiz?.name}`);
+    } catch (e) {
+      showToast(e.message, 'error');
+      console.error(e);
+    }
+    setSaving(false);
+  };
+
+  const handleAssignAnalyticsTier = async () => {
+    if (!analyticsTierForm.businessId || !analyticsTierForm.category) {
+      showToast('Please select a business and category', 'error');
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const selectedBiz = businesses.find(b => b.id === analyticsTierForm.businessId);
+      const existingSub = subs.find(s => s.companyId === analyticsTierForm.businessId);
+
+      if (!existingSub) {
+        showToast('Business must have a subscription first', 'error');
+        setSaving(false);
+        return;
+      }
+
+      // Update subscription with analytics tier
+      const categoryTier = existingSub.analyticsCategoryTier || {};
+      categoryTier[analyticsTierForm.category] = analyticsTierForm.tier;
+
+      await updateDoc(doc(db, 'subscriptions', existingSub.id), {
+        analyticsAccessLevel: analyticsTierForm.tier,
+        analyticsCategoryTier: categoryTier,
+        updatedAt: serverTimestamp(),
+        updatedBy: adminUser?.email,
+      });
+
+      // Log audit
+      await addDoc(collection(db, 'audit_logs'), {
+        action: 'analytics_tier_assigned',
+        detail: `Assigned ${analyticsTierForm.tier} analytics tier for ${analyticsTierForm.category} to ${selectedBiz?.companyName || selectedBiz?.name}`,
+        adminEmail: adminUser?.email,
+        timestamp: serverTimestamp(),
+      });
+
+      // Reload subscriptions
+      const updatedSubs = await getDocs(collection(db, 'subscriptions'));
+      setSubs(updatedSubs.docs.map(d => ({ id: d.id, ...d.data() })));
+
+      setAnalyticsTierModal(false);
+      setAnalyticsTierForm({ businessId: '', category: '', tier: 'free' });
+      showToast(`Analytics tier assigned to ${selectedBiz?.companyName || selectedBiz?.name}`);
     } catch (e) {
       showToast(e.message, 'error');
       console.error(e);
@@ -359,10 +434,18 @@ export default function AdminSubscriptions() {
           <button className={`ap-status-tab${tab === 'payments' ? ' active' : ''}`} onClick={() => setTab('payments')}>
             Payment History <span className="ap-tab-count">{payments.length}</span>
           </button>
+          <button className={`ap-status-tab${tab === 'analytics' ? ' active' : ''}`} onClick={() => setTab('analytics')}>
+            Analytics Tiers <span className="ap-tab-count">{subs.length}</span>
+          </button>
         </div>
         {tab === 'subscriptions' && (
           <button className="ap-btn ap-btn-primary" onClick={() => setAssignModal(true)}>
             + Assign Subscription
+          </button>
+        )}
+        {tab === 'analytics' && (
+          <button className="ap-btn ap-btn-primary" onClick={() => setAnalyticsTierModal(true)}>
+            + Assign Analytics Tier
           </button>
         )}
       </div>
@@ -385,7 +468,47 @@ export default function AdminSubscriptions() {
           <button className="ap-btn ap-btn-ghost ap-btn-sm" onClick={() => { setSearch(''); setStatusFilter(''); }}>↺ Reset</button>
         </div>
 
-        {tab === 'subscriptions' ? (
+        {tab === 'analytics' ? (
+          <table className="ap-table">
+            <thead><tr><th>{t('admin.business')||'Business'}</th><th>Category</th><th>Current Tier</th><th style={{ textAlign: 'right' }}>{t('admin.actions')||'Actions'}</th></tr></thead>
+            <tbody>
+              {loading ? <tr><td colSpan="4" className="ap-loading-cell"><div className="ap-spinner" /></td></tr>
+                : subs.length === 0 ? (
+                  <tr><td colSpan="4" className="ap-empty">
+                    No subscriptions yet — assign subscription tiers first before managing analytics
+                  </td></tr>
+                ) : (
+                  subs.flatMap(s =>
+                    CATEGORIES.map(cat => (
+                      <tr key={`${s.id}-${cat}`} className="ap-tr-hover">
+                        <td className="ap-td-bold">{s.businessName || s.email || '—'}</td>
+                        <td><span className="ap-badge gray">{cat}</span></td>
+                        <td>
+                          <span style={{
+                            padding: '3px 10px', borderRadius: 99, fontSize: '0.72rem', fontWeight: 700,
+                            background: ANALYTICS_TIERS[s.analyticsCategoryTier?.[cat] || 'free']?.color + '20',
+                            color: ANALYTICS_TIERS[s.analyticsCategoryTier?.[cat] || 'free']?.color
+                          }}>
+                            {ANALYTICS_TIERS[s.analyticsCategoryTier?.[cat] || 'free']?.name}
+                          </span>
+                        </td>
+                        <td>
+                          <div className="ap-row-actions" style={{ justifyContent: 'flex-end' }}>
+                            <button className="ap-icon-action-btn" title="Upgrade Tier" onClick={() => {
+                              setAnalyticsTierForm({ businessId: s.companyId, category: cat, tier: s.analyticsCategoryTier?.[cat] || 'free' });
+                              setAnalyticsTierModal(true);
+                            }}>
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="23 4 23 10 17 10" /><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" /></svg>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )
+                )}
+            </tbody>
+          </table>
+        ) : tab === 'subscriptions' ? (
           <table className="ap-table">
             <thead><tr><th>{t('admin.business')||'Business'}</th><th>{t('admin.plan')||'Plan'}</th><th>{t('admin.status')||'Status'}</th><th>{t('admin.amount')||'Amount'}</th><th>Next Billing</th><th>Started</th><th style={{ textAlign: 'right' }}>{t('admin.actions')||'Actions'}</th></tr></thead>
             <tbody>
@@ -484,6 +607,150 @@ export default function AdminSubscriptions() {
             <div className="ap-modal-actions">
               <button className="ap-btn ap-btn-secondary" onClick={() => setCancelConfirm(null)}>Keep Active</button>
               <button className="ap-btn ap-btn-danger" onClick={handleCancel} disabled={saving}>{saving ? 'Cancelling…' : 'Cancel Subscription'}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Analytics Tier Assignment Modal */}
+      {analyticsTierModal && (
+        <div className="ap-modal-overlay" onClick={e => e.target === e.currentTarget && setAnalyticsTierModal(false)}>
+          <div className="ap-modal">
+            <div className="ap-modal-header">
+              <h3>Assign Analytics Tier</h3>
+              <button className="ap-modal-close" onClick={() => setAnalyticsTierModal(false)}>✕</button>
+            </div>
+
+            <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: 20 }}>
+              {/* Business Search */}
+              <div>
+                <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, marginBottom: 8, color: 'var(--text-1)' }}>
+                  Select Business (must have active subscription)
+                </label>
+                <input
+                  type="text"
+                  placeholder="Search businesses..."
+                  value={analyticsBizSearch}
+                  onChange={(e) => {
+                    setAnalyticsBizSearch(e.target.value);
+                    const filtered = subs.filter(s =>
+                      (s.businessName || s.email || '').toLowerCase().includes(e.target.value.toLowerCase())
+                    );
+                    setAnalyticsFilteredBiz(filtered);
+                  }}
+                  style={{
+                    width: '100%', padding: '8px 12px', border: '1px solid var(--border)',
+                    borderRadius: 8, fontSize: '0.9rem', boxSizing: 'border-box'
+                  }}
+                />
+                {analyticsBizSearch && analyticsFilteredBiz.length > 0 && (
+                  <div style={{
+                    marginTop: 8, border: '1px solid var(--border)', borderRadius: 8,
+                    maxHeight: 200, overflowY: 'auto', background: 'var(--bg)'
+                  }}>
+                    {analyticsFilteredBiz.map(biz => (
+                      <div
+                        key={biz.id}
+                        onClick={() => {
+                          setAnalyticsTierForm({ ...analyticsTierForm, businessId: biz.companyId });
+                          setAnalyticsBizSearch('');
+                          setAnalyticsFilteredBiz([]);
+                        }}
+                        style={{
+                          padding: '10px 12px', cursor: 'pointer', borderBottom: '1px solid var(--border)',
+                          transition: 'background 0.15s', backgroundColor: analyticsTierForm.businessId === biz.companyId ? 'var(--brand-xlight)' : 'transparent'
+                        }}
+                        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--bg-2)'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = analyticsTierForm.businessId === biz.companyId ? 'var(--brand-xlight)' : 'transparent'; }}
+                      >
+                        <div style={{ fontWeight: 600, color: 'var(--text-1)' }}>{biz.businessName || biz.email}</div>
+                        <div style={{ fontSize: '0.8rem', color: 'var(--text-3)' }}>{biz.plan} plan</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {analyticsTierForm.businessId && (
+                  <div style={{ marginTop: 8, padding: '8px 12px', background: 'var(--brand-xlight)', borderRadius: 6, color: 'var(--brand)', fontWeight: 600 }}>
+                    ✓ {subs.find(s => s.companyId === analyticsTierForm.businessId)?.businessName || 'Selected'}
+                  </div>
+                )}
+              </div>
+
+              {/* Category Selection */}
+              <div>
+                <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, marginBottom: 8, color: 'var(--text-1)' }}>
+                  Business Category
+                </label>
+                <select
+                  value={analyticsTierForm.category}
+                  onChange={(e) => setAnalyticsTierForm({ ...analyticsTierForm, category: e.target.value })}
+                  style={{
+                    width: '100%', padding: '8px 12px', border: '1px solid var(--border)',
+                    borderRadius: 6, fontSize: '0.9rem', boxSizing: 'border-box'
+                  }}
+                >
+                  <option value="">Select category...</option>
+                  {CATEGORIES.map(cat => (
+                    <option key={cat} value={cat}>{cat.replace('_', ' ').toUpperCase()}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Tier Selection */}
+              <div>
+                <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, marginBottom: 12, color: 'var(--text-1)' }}>
+                  Analytics Tier
+                </label>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 12 }}>
+                  {Object.entries(ANALYTICS_TIERS).map(([tierId, tier]) => (
+                    <div
+                      key={tierId}
+                      onClick={() => setAnalyticsTierForm({ ...analyticsTierForm, tier: tierId })}
+                      style={{
+                        padding: 14, border: `2px solid ${analyticsTierForm.tier === tierId ? tier.color : 'var(--border)'}`,
+                        borderRadius: 8, cursor: 'pointer', transition: 'all 0.15s',
+                        background: analyticsTierForm.tier === tierId ? `${tier.color}10` : 'var(--bg)',
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                        <span style={{ color: tier.color, fontWeight: 700, fontSize: '0.95rem' }}>{tier.name}</span>
+                        <span style={{ fontSize: '0.8rem', color: 'var(--text-3)' }}>
+                          {tier.price === 0 ? 'Free' : tier.price.toLocaleString() + ' RWF'}
+                        </span>
+                      </div>
+                      <div style={{ fontSize: '0.8rem', color: 'var(--text-3)', lineHeight: 1.6 }}>
+                        <strong>Metrics ({tier.metrics.length}):</strong>
+                        <div style={{ marginTop: 4 }}>{tier.metrics.slice(0, 3).join(', ')}{tier.metrics.length > 3 ? '...' : ''}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Summary */}
+              {analyticsTierForm.businessId && analyticsTierForm.category && (
+                <div style={{
+                  padding: 12, background: 'var(--bg)', borderRadius: 8, fontSize: '0.85rem',
+                  color: 'var(--text-2)', borderLeft: '3px solid var(--brand)'
+                }}>
+                  <strong>Summary:</strong>
+                  <div style={{ marginTop: 8 }}>
+                    • <strong>{subs.find(s => s.companyId === analyticsTierForm.businessId)?.businessName}</strong> will get <strong>{ANALYTICS_TIERS[analyticsTierForm.tier]?.name}</strong> analytics for <strong>{analyticsTierForm.category}</strong>
+                  </div>
+                  <div>• {ANALYTICS_TIERS[analyticsTierForm.tier]?.metrics.length} metrics will be available</div>
+                </div>
+              )}
+            </div>
+
+            <div className="ap-modal-actions">
+              <button className="ap-btn ap-btn-secondary" onClick={() => setAnalyticsTierModal(false)}>Cancel</button>
+              <button
+                className="ap-btn ap-btn-primary"
+                onClick={handleAssignAnalyticsTier}
+                disabled={saving || !analyticsTierForm.businessId || !analyticsTierForm.category}
+              >
+                {saving ? 'Assigning…' : 'Assign Analytics Tier'}
+              </button>
             </div>
           </div>
         </div>
