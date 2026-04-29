@@ -1392,42 +1392,12 @@ export default function CompanyDashboard() {
                   </div>
                 ))}
               </div>
-              {/* Payment methods */}
-              <div className="biz-card" style={{marginTop:24}}>
-                <h3>{t('cd.payment_methods')||'Accepted Payment Methods in Rwanda'}</h3>
-                <div className="biz-payment-methods">
-                  {[
-                    {name:'MTN MoMo', icon:'📱', detail:'Pay via *182# or MTN app'},
-                    {name:'Airtel Money', icon:'📲', detail:'Pay via *185# or Airtel app'},
-                    {name:'Bank Transfer', icon:'🏦', detail:'BPR, BK, KCB, Equity'},
-                    {name:'Visa/Mastercard', icon:'💳', detail:'International cards accepted'},
-                  ].map(p=>(
-                    <div key={p.name} className="biz-payment-item">
-                      <span>{p.icon}</span>
-                      <div>
-                        <strong>{p.name}</strong>
-                        <p>{p.detail}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
 
-          {/* ─ PAYMENTS ─ */}
-          {section==='payments' && (
-            <div className="biz-content">
-              <div className="biz-page-header">
-                <h1>{t('cd.payments')||'Payments'}</h1>
-                <p className="biz-page-sub">{t('cd.payments_sub')||'View and manage your payment history and invoices'}</p>
-              </div>
-
-              {/* Analytics Tier Upgrade */}
+              {/* Analytics Tier Upgrade - MOVED HERE FROM PAYMENTS PAGE */}
               {company?.category && (
-                <div className="biz-card">
-                  <h3>📊 Analytics Subscription</h3>
-                  <p style={{color:'var(--biz-text-2)',marginBottom:20}}>Unlock advanced insights and grow your business:</p>
+                <div className="biz-card" style={{marginTop:32,borderTop:'2px solid var(--biz-border)',paddingTop:24}}>
+                  <h3 style={{marginBottom:8}}>📊 Analytics Subscription</h3>
+                  <p style={{color:'var(--biz-text-2)',marginBottom:20}}>Unlock advanced insights for your {company.category} business:</p>
                   <TierComparison
                     currentTier={analyticsAccessLevel}
                     category={company.category}
@@ -1470,6 +1440,37 @@ export default function CompanyDashboard() {
                   />
                 </div>
               )}
+
+              {/* Payment methods */}
+              <div className="biz-card" style={{marginTop:24}}>
+                <h3>{t('cd.payment_methods')||'Accepted Payment Methods in Rwanda'}</h3>
+                <div className="biz-payment-methods">
+                  {[
+                    {name:'MTN MoMo', icon:'📱', detail:'Pay via *182# or MTN app'},
+                    {name:'Airtel Money', icon:'📲', detail:'Pay via *185# or Airtel app'},
+                    {name:'Bank Transfer', icon:'🏦', detail:'BPR, BK, KCB, Equity'},
+                    {name:'Visa/Mastercard', icon:'💳', detail:'International cards accepted'},
+                  ].map(p=>(
+                    <div key={p.name} className="biz-payment-item">
+                      <span>{p.icon}</span>
+                      <div>
+                        <strong>{p.name}</strong>
+                        <p>{p.detail}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ─ PAYMENTS ─ */}
+          {section==='payments' && (
+            <div className="biz-content">
+              <div className="biz-page-header">
+                <h1>{t('cd.payments')||'Payment Methods'}</h1>
+                <p className="biz-page-sub">{t('cd.payments_sub')||'View payment methods and payment history'}</p>
+              </div>
 
               <div className="biz-card" style={{marginTop:24}}>
                 <h3>Payment Methods</h3>
@@ -1550,7 +1551,7 @@ export default function CompanyDashboard() {
                     );
                     return filtered.map(n=>(
                     <div key={n.id}
-                      className={`biz-notif-item${n.read?'':' unread'}${n.reviewId||n.companyId?' biz-notif-clickable':''}`}
+                      className={`biz-notif-item${n.read?'':' unread'}${n.reviewId?' biz-notif-clickable':''}`}
                       onClick={async ()=>{
                         // Mark as read in Firestore AND update local state immediately
                         if (!n.read) {
@@ -1558,13 +1559,16 @@ export default function CompanyDashboard() {
                           setNotifications(prev => prev.map(x => x.id===n.id ? {...x,read:true} : x));
                           setUnreadCount(prev => Math.max(0, prev - 1));
                         }
-                        // Navigate to the specific review
-                        if (n.reviewId && company?.id) {
-                          setSection('reviews');
-                          setTimeout(()=>{
-                            const el = document.getElementById(`review-${n.reviewId}`);
-                            if (el) el.scrollIntoView({behavior:'smooth',block:'center'});
-                          }, 300);
+                        // Open review modal for this review (like user dashboard)
+                        if (n.reviewId) {
+                          try {
+                            const reviewSnap = await getDoc(doc(db,'reviews',n.reviewId));
+                            if (reviewSnap.exists()) {
+                              setReviewModal({ ...reviewSnap.data(), id: n.reviewId });
+                            }
+                          } catch (e) {
+                            console.error('Error opening review:', e);
+                          }
                         }
                       }}
                       style={{cursor: n.reviewId ? 'pointer' : 'default'}}
