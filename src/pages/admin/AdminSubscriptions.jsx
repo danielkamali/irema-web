@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import React, { useState, useEffect } from 'react';
 import { db } from '../../firebase/config';
-import { collection, getDocs, doc, updateDoc, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc, addDoc, serverTimestamp, query, where } from 'firebase/firestore';
 import { useAuthStore } from '../../store/authStore';
 import AdminLayout from './AdminLayout';
 import './AdminPages.css';
@@ -65,6 +65,7 @@ export default function AdminSubscriptions() {
   const { user: adminUser } = useAuthStore();
   const [subs, setSubs] = useState([]);
   const [payments, setPayments] = useState([]);
+  const [businesses, setBusinesses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState('subscriptions');
   const [search, setSearch] = useState('');
@@ -73,18 +74,144 @@ export default function AdminSubscriptions() {
   const [cancelConfirm, setCancelConfirm] = useState(null);
   const [toast, setToast] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [assignModal, setAssignModal] = useState(false);
+  const [assignForm, setAssignForm] = useState({ businessId: '', plan: 'professional', status: 'active', trialDays: 0 });
+  const [bizSearch, setBizSearch] = useState('');
+  const [filteredBiz, setFilteredBiz] = useState([]);
 
   const showToast = (msg, type = 'success') => { setToast({ msg, type }); setTimeout(() => setToast(null), 3200); };
+
+  // Get features available for a plan tier
+  const getFeaturesByPlan = (planId) => {
+    const featureMap = {
+      starter: {
+        reply_reviews: false,
+        analytics_advanced: false,
+        qr_code: false,
+        competitor_insights: false,
+        verified_badge: false,
+        multi_listing: false,
+        ai_sentiment: false,
+        api_access: false,
+        white_label: false,
+        priority_support: false,
+      },
+      professional: {
+        reply_reviews: true,
+        analytics_advanced: true,
+        qr_code: true,
+        competitor_insights: true,
+        verified_badge: true,
+        multi_listing: false,
+        ai_sentiment: false,
+        api_access: false,
+        white_label: false,
+        priority_support: true,
+      },
+      enterprise: {
+        reply_reviews: true,
+        analytics_advanced: true,
+        qr_code: true,
+        competitor_insights: true,
+        verified_badge: true,
+        multi_listing: true,
+        ai_sentiment: true,
+        api_access: true,
+        white_label: true,
+        priority_support: true,
+      },
+    };
+    return featureMap[planId] || featureMap.starter;
+  };
+
+  const handleAssignSubscription = async () => {
+    if (!assignForm.businessId || !assignForm.plan) {
+      showToast('Please select a business and plan', 'error');
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const selectedBiz = businesses.find(b => b.id === assignForm.businessId);
+      const plan = PLANS.find(p => p.id === assignForm.plan);
+
+      // Calculate dates
+      const createdAt = new Date();
+      const nextBillingDate = new Date();
+      nextBillingDate.setMonth(nextBillingDate.getMonth() + 1);
+
+      let analyticsTrialEndsAt = null;
+      if (assignForm.status === 'trial' && assignForm.trialDays > 0) {
+        analyticsTrialEndsAt = new Date();
+        analyticsTrialEndsAt.setDate(analyticsTrialEndsAt.getDate() + parseInt(assignForm.trialDays));
+      }
+
+      // Check if subscription exists
+      const existingSub = subs.find(s => s.companyId === assignForm.businessId);
+
+      const subData = {
+        companyId: assignForm.businessId,
+        businessName: selectedBiz?.companyName || selectedBiz?.name || 'Unknown',
+        email: selectedBiz?.email || '',
+        plan: assignForm.plan,
+        amount: plan?.price || 0,
+        status: assignForm.status,
+        ...(assignForm.status === 'trial' && analyticsTrialEndsAt && { analyticsTrialEndsAt }),
+        nextBillingDate,
+        updatedAt: serverTimestamp(),
+        updatedBy: adminUser?.email,
+      };
+
+      if (existingSub) {
+        // Update existing
+        await updateDoc(doc(db, 'subscriptions', existingSub.id), subData);
+      } else {
+        // Create new
+        subData.createdAt = serverTimestamp();
+        await addDoc(collection(db, 'subscriptions'), subData);
+      }
+
+      // Update company's enabledFeatures based on plan
+      const enabledFeatures = getFeaturesByPlan(assignForm.plan);
+      await updateDoc(doc(db, 'companies', assignForm.businessId), {
+        enabledFeatures,
+        subscriptionPlan: assignForm.plan,
+        updatedAt: serverTimestamp(),
+      });
+
+      // Log audit
+      await addDoc(collection(db, 'audit_logs'), {
+        action: 'subscription_assigned',
+        detail: `Assigned ${assignForm.plan} tier to ${selectedBiz?.companyName || selectedBiz?.name}`,
+        adminEmail: adminUser?.email,
+        timestamp: serverTimestamp(),
+      });
+
+      // Reload subscriptions
+      const updatedSubs = await getDocs(collection(db, 'subscriptions'));
+      setSubs(updatedSubs.docs.map(d => ({ id: d.id, ...d.data() })));
+
+      setAssignModal(false);
+      setAssignForm({ businessId: '', plan: 'professional', status: 'active', trialDays: 0 });
+      showToast(`Subscription assigned to ${selectedBiz?.companyName || selectedBiz?.name}`);
+    } catch (e) {
+      showToast(e.message, 'error');
+      console.error(e);
+    }
+    setSaving(false);
+  };
 
   useEffect(() => {
     (async () => {
       try {
-        const [sSnap, pSnap] = await Promise.all([
+        const [sSnap, pSnap, bSnap] = await Promise.all([
           getDocs(collection(db, 'subscriptions')).catch(() => ({ docs: [] })),
           getDocs(collection(db, 'payments')).catch(() => ({ docs: [] })),
+          getDocs(collection(db, 'companies')).catch(() => ({ docs: [] })),
         ]);
         setSubs(sSnap.docs.map(d => ({ id: d.id, ...d.data() })));
         setPayments(pSnap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0)));
+        setBusinesses(bSnap.docs.map(d => ({ id: d.id, ...d.data() })));
       } catch (e) { console.error(e); }
       setLoading(false);
     })();
@@ -224,13 +351,20 @@ export default function AdminSubscriptions() {
       </div>
 
       {/* Tabs */}
-      <div className="ap-status-tabs" style={{ marginBottom: 'var(--sp-4)' }}>
-        <button className={`ap-status-tab${tab === 'subscriptions' ? ' active' : ''}`} onClick={() => setTab('subscriptions')}>
-          Subscriptions <span className="ap-tab-count">{subs.length}</span>
-        </button>
-        <button className={`ap-status-tab${tab === 'payments' ? ' active' : ''}`} onClick={() => setTab('payments')}>
-          Payment History <span className="ap-tab-count">{payments.length}</span>
-        </button>
+      <div className="ap-status-tabs" style={{ marginBottom: 'var(--sp-4)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button className={`ap-status-tab${tab === 'subscriptions' ? ' active' : ''}`} onClick={() => setTab('subscriptions')}>
+            Subscriptions <span className="ap-tab-count">{subs.length}</span>
+          </button>
+          <button className={`ap-status-tab${tab === 'payments' ? ' active' : ''}`} onClick={() => setTab('payments')}>
+            Payment History <span className="ap-tab-count">{payments.length}</span>
+          </button>
+        </div>
+        {tab === 'subscriptions' && (
+          <button className="ap-btn ap-btn-primary" onClick={() => setAssignModal(true)}>
+            + Assign Subscription
+          </button>
+        )}
       </div>
 
       <div className="ap-table-wrap">
@@ -350,6 +484,174 @@ export default function AdminSubscriptions() {
             <div className="ap-modal-actions">
               <button className="ap-btn ap-btn-secondary" onClick={() => setCancelConfirm(null)}>Keep Active</button>
               <button className="ap-btn ap-btn-danger" onClick={handleCancel} disabled={saving}>{saving ? 'Cancelling…' : 'Cancel Subscription'}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Assign Subscription Modal */}
+      {assignModal && (
+        <div className="ap-modal-overlay" onClick={e => e.target === e.currentTarget && setAssignModal(false)}>
+          <div className="ap-modal">
+            <div className="ap-modal-header">
+              <h3>Assign Subscription to Business</h3>
+              <button className="ap-modal-close" onClick={() => setAssignModal(false)}>✕</button>
+            </div>
+
+            <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: 20 }}>
+              {/* Business Search */}
+              <div>
+                <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, marginBottom: 8, color: 'var(--text-1)' }}>
+                  Select Business
+                </label>
+                <input
+                  type="text"
+                  placeholder="Search businesses..."
+                  value={bizSearch}
+                  onChange={(e) => {
+                    setBizSearch(e.target.value);
+                    const filtered = businesses.filter(b =>
+                      (b.companyName || b.name || '').toLowerCase().includes(e.target.value.toLowerCase()) ||
+                      (b.email || '').toLowerCase().includes(e.target.value.toLowerCase())
+                    );
+                    setFilteredBiz(filtered);
+                  }}
+                  style={{
+                    width: '100%', padding: '8px 12px', border: '1px solid var(--border)',
+                    borderRadius: 8, fontSize: '0.9rem', boxSizing: 'border-box'
+                  }}
+                />
+                {bizSearch && filteredBiz.length > 0 && (
+                  <div style={{
+                    marginTop: 8, border: '1px solid var(--border)', borderRadius: 8,
+                    maxHeight: 200, overflowY: 'auto', background: 'var(--bg)'
+                  }}>
+                    {filteredBiz.map(biz => (
+                      <div
+                        key={biz.id}
+                        onClick={() => {
+                          setAssignForm({ ...assignForm, businessId: biz.id });
+                          setBizSearch('');
+                          setFilteredBiz([]);
+                        }}
+                        style={{
+                          padding: '10px 12px', cursor: 'pointer', borderBottom: '1px solid var(--border)',
+                          transition: 'background 0.15s', backgroundColor: assignForm.businessId === biz.id ? 'var(--brand-xlight)' : 'transparent'
+                        }}
+                        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--bg-2)'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = assignForm.businessId === biz.id ? 'var(--brand-xlight)' : 'transparent'; }}
+                      >
+                        <div style={{ fontWeight: 600, color: 'var(--text-1)' }}>{biz.companyName || biz.name}</div>
+                        <div style={{ fontSize: '0.8rem', color: 'var(--text-3)' }}>{biz.email}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {assignForm.businessId && (
+                  <div style={{ marginTop: 8, padding: '8px 12px', background: 'var(--brand-xlight)', borderRadius: 6, color: 'var(--brand)', fontWeight: 600 }}>
+                    ✓ {businesses.find(b => b.id === assignForm.businessId)?.companyName || 'Selected'}
+                  </div>
+                )}
+              </div>
+
+              {/* Plan Selection */}
+              <div>
+                <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, marginBottom: 8, color: 'var(--text-1)' }}>
+                  Subscription Plan
+                </label>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
+                  {PLANS.map(plan => (
+                    <div
+                      key={plan.id}
+                      onClick={() => setAssignForm({ ...assignForm, plan: plan.id })}
+                      style={{
+                        padding: 12, border: `2px solid ${assignForm.plan === plan.id ? plan.color : 'var(--border)'}`,
+                        borderRadius: 8, cursor: 'pointer', textAlign: 'center', transition: 'all 0.15s',
+                        background: assignForm.plan === plan.id ? `${plan.color}10` : 'var(--bg)',
+                        fontSize: '0.9rem', fontWeight: assignForm.plan === plan.id ? 700 : 500
+                      }}
+                    >
+                      <div style={{ color: plan.color, fontWeight: 700 }}>{plan.name}</div>
+                      <div style={{ fontSize: '0.8rem', color: 'var(--text-3)', marginTop: 4 }}>
+                        {plan.price === 0 ? 'Free' : plan.price.toLocaleString() + ' RWF'}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Status Selection */}
+              <div>
+                <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, marginBottom: 8, color: 'var(--text-1)' }}>
+                  Status
+                </label>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  {['active', 'trial', 'pending'].map(status => (
+                    <button
+                      key={status}
+                      onClick={() => setAssignForm({ ...assignForm, status })}
+                      style={{
+                        flex: 1, padding: '8px 12px', border: `1px solid ${assignForm.status === status ? '#2d8f6f' : 'var(--border)'}`,
+                        background: assignForm.status === status ? '#2d8f6f' : 'var(--bg)',
+                        color: assignForm.status === status ? 'white' : 'var(--text-1)',
+                        borderRadius: 6, cursor: 'pointer', fontWeight: 600, transition: 'all 0.15s'
+                      }}
+                    >
+                      {status.charAt(0).toUpperCase() + status.slice(1)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Trial Days (if trial status) */}
+              {assignForm.status === 'trial' && (
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, marginBottom: 8, color: 'var(--text-1)' }}>
+                    Trial Duration (days)
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="365"
+                    value={assignForm.trialDays}
+                    onChange={(e) => setAssignForm({ ...assignForm, trialDays: e.target.value })}
+                    style={{
+                      width: '100%', padding: '8px 12px', border: '1px solid var(--border)',
+                      borderRadius: 6, fontSize: '0.9rem', boxSizing: 'border-box'
+                    }}
+                    placeholder="14"
+                  />
+                </div>
+              )}
+
+              {/* Summary */}
+              {assignForm.businessId && assignForm.plan && (
+                <div style={{
+                  padding: 12, background: 'var(--bg)', borderRadius: 8, fontSize: '0.85rem',
+                  color: 'var(--text-2)', borderLeft: '3px solid var(--brand)'
+                }}>
+                  <strong>Summary:</strong>
+                  <div style={{ marginTop: 8 }}>
+                    • <strong>{businesses.find(b => b.id === assignForm.businessId)?.companyName || 'Selected business'}</strong> will be assigned to <strong>{PLANS.find(p => p.id === assignForm.plan)?.name}</strong> plan
+                  </div>
+                  <div>• All features for this tier will be unlocked</div>
+                  <div>• Status: <strong>{assignForm.status}</strong></div>
+                  {assignForm.status === 'trial' && assignForm.trialDays && (
+                    <div>• Trial duration: <strong>{assignForm.trialDays} days</strong></div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="ap-modal-actions">
+              <button className="ap-btn ap-btn-secondary" onClick={() => setAssignModal(false)}>Cancel</button>
+              <button
+                className="ap-btn ap-btn-primary"
+                onClick={handleAssignSubscription}
+                disabled={saving || !assignForm.businessId || !assignForm.plan}
+              >
+                {saving ? 'Assigning…' : 'Assign Subscription'}
+              </button>
             </div>
           </div>
         </div>
