@@ -81,6 +81,7 @@ function getNav(t, company) {
     { id:'competitors',    label:t('cd.market_insights')||'Market Insights',  icon:'M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5' },
     { id:'profile',        label:t('cd.business_profile')||'Business Profile', icon:'M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2 M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z' },
     { id:'subscription',   label:t('cd.subscription')||'Subscription',     icon:'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 0 0 3-3V8a3 3 0 0 0-3-3H6a3 3 0 0 0-3 3v8a3 3 0 0 0 3 3z' },
+    { id:'analytics-tier', label:'Analytics Subscription',  icon:'M16 6l2.293-2.293a1 1 0 011.414 0l2.586 2.586a1 1 0 010 1.414L20 9m-4-4v12a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2h-8a2 2 0 00-2 2' },
     { id:'payments',       label:t('cd.payments')||'Payments',            icon:'M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm0 6c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm0-12C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z' },
     { id:'notifications',  label:t('cd.notifications')||'Notifications',    icon:'M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9 M13.73 21a2 2 0 0 1-3.46 0' },
     { id:'qrcode',         label:'QR Code',                                   icon:'M3 3h7v7H3z M14 3h7v7h-7z M3 14h7v7H3z M14 14h3v3h-3z M20 14h1v1h-1z M17 17h3v3h-3z M20 20h1v1h-1z' },
@@ -1392,12 +1393,19 @@ export default function CompanyDashboard() {
                   </div>
                 ))}
               </div>
+            </div>
+          )}
 
-              {/* Analytics Tier Upgrade - MOVED HERE FROM PAYMENTS PAGE */}
-              {company?.category && (
-                <div className="biz-card" style={{marginTop:32,borderTop:'2px solid var(--biz-border)',paddingTop:24}}>
-                  <h3 style={{marginBottom:8}}>📊 Analytics Subscription</h3>
-                  <p style={{color:'var(--biz-text-2)',marginBottom:20}}>Unlock advanced insights for your {company.category} business:</p>
+          {/* ─ ANALYTICS SUBSCRIPTION ─ */}
+          {section==='analytics-tier' && (
+            <div className="biz-content">
+              <div className="biz-page-header">
+                <h1>📊 Analytics Subscription</h1>
+                <p className="biz-page-sub">Unlock advanced insights and grow your {company?.category || 'business'}</p>
+              </div>
+
+              {company?.category ? (
+                <div className="biz-card">
                   <TierComparison
                     currentTier={analyticsAccessLevel}
                     category={company.category}
@@ -1439,10 +1447,24 @@ export default function CompanyDashboard() {
                     }}
                   />
                 </div>
+              ) : (
+                <div className="biz-empty">
+                  <p>Please select a business category first to see analytics tiers.</p>
+                </div>
               )}
+            </div>
+          )}
+
+          {/* ─ PAYMENTS ─ */}
+          {section==='payments' && (
+            <div className="biz-content">
+              <div className="biz-page-header">
+                <h1>{t('cd.payments')||'Payment Methods'}</h1>
+                <p className="biz-page-sub">{t('cd.payments_sub')||'View payment methods and payment history'}</p>
+              </div>
 
               {/* Payment methods */}
-              <div className="biz-card" style={{marginTop:24}}>
+              <div className="biz-card">
                 <h3>{t('cd.payment_methods')||'Accepted Payment Methods in Rwanda'}</h3>
                 <div className="biz-payment-methods">
                   {[
@@ -1460,16 +1482,6 @@ export default function CompanyDashboard() {
                     </div>
                   ))}
                 </div>
-              </div>
-            </div>
-          )}
-
-          {/* ─ PAYMENTS ─ */}
-          {section==='payments' && (
-            <div className="biz-content">
-              <div className="biz-page-header">
-                <h1>{t('cd.payments')||'Payment Methods'}</h1>
-                <p className="biz-page-sub">{t('cd.payments_sub')||'View payment methods and payment history'}</p>
               </div>
 
               <div className="biz-card" style={{marginTop:24}}>
@@ -1564,7 +1576,7 @@ export default function CompanyDashboard() {
                           try {
                             const reviewSnap = await getDoc(doc(db,'reviews',n.reviewId));
                             if (reviewSnap.exists()) {
-                              setReviewModal({ ...reviewSnap.data(), id: n.reviewId });
+                              setSelectedReview({ ...reviewSnap.data(), id: n.reviewId });
                             }
                           } catch (e) {
                             console.error('Error opening review:', e);

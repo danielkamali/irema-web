@@ -44,6 +44,18 @@ service firebase.storage {
         );
     }
 
+    // ── Business background images ───────────────────────────────────
+    match /business-backgrounds/{companyId}/{fileName} {
+      allow read: if true;
+      allow write: if isSignedIn()
+        && underSizeMB(10) && isImage()
+        && firestore.exists(/databases/(default)/documents/companies/$(companyId))
+        && (
+          firestore.get(/databases/(default)/documents/companies/$(companyId)).data.adminUserId == request.auth.uid
+          || firestore.get(/databases/(default)/documents/companies/$(companyId)).data.addedBy == request.auth.uid
+        );
+    }
+
     // ── Review photos: user-keyed path (preferred) ───────────────────
     // Keying on userId avoids the eventual-consistency race where the
     // review doc was just created and Storage rules can't yet read it.
