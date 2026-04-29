@@ -80,10 +80,16 @@ export default function AdminLayout({ children }) {
   const langRef = useRef(null);
 
   async function handleLogout() {
-    clearPermissionsCache();
-    try { await signOut(auth); } catch(e) { console.error(e); }
-    clear();
-    navigate('/admin/login');
+    try {
+      clearPermissionsCache();
+      await signOut(auth);
+      clear();
+      // Use hard redirect to prevent module loading issues after logout
+      window.location.href = '/admin/login';
+    } catch (e) {
+      console.error('Logout error:', e);
+      window.location.href = '/admin/login';
+    }
   }
 
   useEffect(() => {

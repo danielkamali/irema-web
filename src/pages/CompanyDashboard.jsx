@@ -511,14 +511,19 @@ export default function CompanyDashboard() {
 
   // Load payment history
   useEffect(() => {
-    if (!company?.id) return;
+    if (!company?.id || !currentUser) return;
     getDocs(query(collection(db, 'payments'), where('companyId', '==', company.id), orderBy('createdAt', 'desc')))
       .then(snap => {
         const payments = snap.docs.map(d => ({ id: d.id, ...d.data() }));
         setPaymentHistory(payments);
       })
-      .catch(e => console.error('Error loading payments:', e));
-  }, [company?.id]);
+      .catch(e => {
+        // Silently fail on permission errors (e.g., during logout)
+        if (e.code !== 'permission-denied') {
+          console.error('Error loading payments:', e);
+        }
+      });
+  }, [company?.id, currentUser]);
 
   useEffect(() => {
     if (section !== 'analytics') return;
@@ -706,7 +711,16 @@ export default function CompanyDashboard() {
     setUnreadCount(0);
   }
 
-  const logout = () => signOut(auth).then(()=>navigate('/'));
+  const logout = async () => {
+    try {
+      await signOut(auth);
+      // Use hard redirect to prevent module loading issues
+      window.location.href = '/';
+    } catch (e) {
+      console.error('Logout error:', e);
+      window.location.href = '/';
+    }
+  };
   const avg = reviews.length ? reviews.reduce((s,r)=>s+(r.rating||0),0)/reviews.length : 0;
   const rCounts = {1:0,2:0,3:0,4:0,5:0};
   reviews.forEach(r=>{ if(r.rating>=1&&r.rating<=5) rCounts[r.rating]++; });

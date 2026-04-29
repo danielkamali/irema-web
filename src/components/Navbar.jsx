@@ -113,10 +113,16 @@ export default function Navbar() {
   }
 
   async function handleLogout() {
-    clearPermissionsCache();
-    await signOut(auth);
-    setProfileOpen(false);
-    navigate('/');
+    try {
+      clearPermissionsCache();
+      await signOut(auth);
+      setProfileOpen(false);
+      // Use hard redirect to prevent module loading issues after logout
+      window.location.href = '/';
+    } catch (e) {
+      console.error('Logout error:', e);
+      window.location.href = '/';
+    }
   }
 
   const currentLang = LANGUAGES.find(l => l.code === i18n.language) || LANGUAGES[0];
