@@ -250,6 +250,7 @@ export default function AdminSubscriptions() {
       await updateDoc(doc(db, 'subscriptions', existingSub.id), {
         analyticsAccessLevel: analyticsTierForm.tier,
         analyticsCategoryTier: categoryTier,
+        analyticsTrialEndsAt: null, // Clear trial date when admin assigns tier
         updatedAt: serverTimestamp(),
         updatedBy: adminUser?.email,
       });

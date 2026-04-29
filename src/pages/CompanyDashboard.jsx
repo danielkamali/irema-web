@@ -721,6 +721,60 @@ export default function CompanyDashboard() {
       window.location.href = '/';
     }
   };
+
+  // Calculate metrics from reviews for display
+  const calculateMetricsFromReviews = () => {
+    if (!reviews.length) return null;
+
+    const ratings = reviews.map(r => r.rating || 0);
+    const avgRating = ratings.reduce((s, r) => s + r, 0) / ratings.length;
+
+    // Sentiment analysis - simple keyword based
+    const POSITIVE_KEYWORDS = ['great', 'excellent', 'amazing', 'good', 'love', 'best', 'recommend', 'perfect', 'fantastic', 'wonderful'];
+    const NEGATIVE_KEYWORDS = ['bad', 'terrible', 'awful', 'poor', 'hate', 'worst', 'disappointing', 'horrible', 'rude', 'slow'];
+
+    let positiveCount = 0, negativeCount = 0;
+    reviews.forEach(r => {
+      const text = (r.text || '').toLowerCase();
+      if (POSITIVE_KEYWORDS.some(kw => text.includes(kw))) positiveCount++;
+      if (NEGATIVE_KEYWORDS.some(kw => text.includes(kw))) negativeCount++;
+    });
+
+    const sentimentScore = Math.round(((positiveCount - negativeCount) / reviews.length * 100) + 50);
+
+    // Rating distribution
+    const distribution = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+    ratings.forEach(r => { if (distribution.hasOwnProperty(r)) distribution[r]++; });
+
+    // Top complaints and praise
+    const topComplaint = NEGATIVE_KEYWORDS.find(kw =>
+      reviews.some(r => (r.text || '').toLowerCase().includes(kw))
+    ) || 'quality';
+
+    const topPraise = POSITIVE_KEYWORDS.find(kw =>
+      reviews.some(r => (r.text || '').toLowerCase().includes(kw))
+    ) || 'service';
+
+    // This month's reviews
+    const now = Date.now();
+    const thisMonthReviews = reviews.filter(r => {
+      const reviewTime = (r.createdAt?.seconds || 0) * 1000;
+      const age = now - reviewTime;
+      return age < 30 * 24 * 60 * 60 * 1000;
+    }).length;
+
+    return {
+      avgRating: parseFloat(avgRating.toFixed(1)),
+      totalReviews: reviews.length,
+      sentimentScore: Math.min(100, Math.max(0, sentimentScore)),
+      reviewCountThisMonth: thisMonthReviews,
+      topComplaint,
+      topPraise,
+      ratingDistribution: distribution
+    };
+  };
+
+  const calculatedMetrics = analyticsMetrics || calculateMetricsFromReviews();
   const avg = reviews.length ? reviews.reduce((s,r)=>s+(r.rating||0),0)/reviews.length : 0;
   const rCounts = {1:0,2:0,3:0,4:0,5:0};
   reviews.forEach(r=>{ if(r.rating>=1&&r.rating<=5) rCounts[r.rating]++; });
@@ -1019,16 +1073,16 @@ export default function CompanyDashboard() {
 
               {/* Tier-Gated Analytics Display */}
               {analyticsAccessLevel === 'free' && !isOnTrial && (
-                <FreeMetricsPanel metrics={analyticsMetrics} category={company?.category} company={company} />
+                <FreeMetricsPanel metrics={calculatedMetrics} category={company?.category} company={company} />
               )}
               {analyticsAccessLevel === 'middle' && (
-                <MiddleMetricsPanel metrics={analyticsMetrics} category={company?.category} company={company} />
+                <MiddleMetricsPanel metrics={calculatedMetrics} category={company?.category} company={company} />
               )}
               {analyticsAccessLevel === 'premium' && (
-                <PremiumMetricsPanel metrics={analyticsMetrics} category={company?.category} company={company} />
+                <PremiumMetricsPanel metrics={calculatedMetrics} category={company?.category} company={company} />
               )}
               {isOnTrial && (
-                <MiddleMetricsPanel metrics={analyticsMetrics} category={company?.category} company={company} />
+                <MiddleMetricsPanel metrics={calculatedMetrics} category={company?.category} company={company} />
               )}
 
               {/* Upgrade Prompt */}
