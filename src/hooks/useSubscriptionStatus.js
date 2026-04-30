@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { db, collection, query, where, getDocs, doc, updateDoc } from '../firebase/config';
+import { db, collection, query, where, getDocs, onSnapshot, doc, updateDoc } from '../firebase/config';
 
 // Module-scope constants (avoid reallocation on every render/call)
 const PLAN_RANK = { starter: 0, professional: 1, enterprise: 2 };
@@ -73,38 +73,31 @@ export function useSubscriptionStatus(companyId) {
   // Guard to prevent duplicate auto-lock writes
   const [lockAttempted, setLockAttempted] = useState(false);
 
-  // Load subscription from Firestore
+  // Load subscription from Firestore (real-time listener)
   useEffect(() => {
     if (!companyId) {
       setLoading(false);
       return;
     }
 
-    let cancelled = false;
-    const loadSubscription = async () => {
-      try {
+    const q = query(collection(db, 'subscriptions'), where('companyId', '==', companyId));
+    const unsub = onSnapshot(q, (snap) => {
+      if (!snap.empty) {
+        const sub = { id: snap.docs[0].id, ...snap.docs[0].data() };
+        setSubscription(sub);
         setError(null);
-        const q = query(collection(db, 'subscriptions'), where('companyId', '==', companyId));
-        const snap = await getDocs(q);
-        if (cancelled) return;
-        if (!snap.empty) {
-          const sub = { id: snap.docs[0].id, ...snap.docs[0].data() };
-          setSubscription(sub);
-        } else {
-          setSubscription(null);
-        }
-      } catch (e) {
-        console.error('useSubscriptionStatus: failed to load subscription:', e);
-        if (!cancelled) {
-          setError(e.message || 'Failed to load subscription');
-          setSubscription(null);
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
+      } else {
+        setSubscription(null);
+        setError(null);
       }
-    };
-    loadSubscription();
-    return () => { cancelled = true; };
+      setLoading(false);
+    }, (e) => {
+      console.error('useSubscriptionStatus: failed to load subscription:', e);
+      setError(e.message || 'Failed to load subscription');
+      setSubscription(null);
+      setLoading(false);
+    });
+    return unsub;
   }, [companyId]);
 
   // Auto-lock expired subscriptions (trial or paid past billing date)
