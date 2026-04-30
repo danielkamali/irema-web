@@ -303,12 +303,34 @@ export default function AdminSubscriptions() {
     !search || (p.businessName || p.email || p.description || '').toLowerCase().includes(search.toLowerCase())
   );
 
+  // Features to set when a subscription is cancelled or expired (strips all premium features)
+  const getStarterFeatures = (existingFeatures) => ({
+    reply_reviews: false,
+    analytics_advanced: false,
+    qr_code: false,
+    competitor_insights: false,
+    verified_badge: false,
+    multi_listing: false,
+    ai_sentiment: false,
+    api_access: false,
+    white_label: false,
+    priority_support: false,
+    product_listings: false,
+    company_stories: existingFeatures?.company_stories || false,
+  });
+
   const handleCancel = async () => {
     if (!cancelConfirm) return;
     setSaving(true);
     try {
       await updateDoc(doc(db, 'subscriptions', cancelConfirm.id), {
         status: 'cancelled', cancelledAt: serverTimestamp(), cancelledBy: adminUser?.email
+      });
+      // Clear enabledFeatures so premium access is immediately revoked
+      await updateDoc(doc(db, 'companies', cancelConfirm.companyId), {
+        enabledFeatures: getStarterFeatures(cancelConfirm.enabledFeatures),
+        subscriptionPlan: 'starter',
+        updatedAt: serverTimestamp(),
       });
       await addDoc(collection(db, 'audit_logs'), {
         action: 'subscription_cancelled',
