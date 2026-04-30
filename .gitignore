@@ -8,3 +8,4 @@ dist/
 *.log
 functions/.env*
 .env*
+.*
