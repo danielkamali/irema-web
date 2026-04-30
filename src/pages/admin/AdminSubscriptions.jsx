@@ -321,6 +321,7 @@ export default function AdminSubscriptions() {
 
   const handleCancel = async () => {
     if (!cancelConfirm) return;
+    console.log('[AdminSubscriptions] Cancelling:', cancelConfirm);
     setSaving(true);
     try {
       await updateDoc(doc(db, 'subscriptions', cancelConfirm.id), {
@@ -330,6 +331,7 @@ export default function AdminSubscriptions() {
         cancelledAt: serverTimestamp(),
         cancelledBy: adminUser?.email
       });
+      console.log('[AdminSubscriptions] Subscription cancelled, now clearing enabledFeatures');
       // Clear enabledFeatures so premium access is immediately revoked
       await updateDoc(doc(db, 'companies', cancelConfirm.companyId), {
         enabledFeatures: getStarterFeatures(cancelConfirm.enabledFeatures),
@@ -344,7 +346,10 @@ export default function AdminSubscriptions() {
       setSubs(prev => prev.map(s => s.id === cancelConfirm.id ? { ...s, status: 'cancelled' } : s));
       setCancelConfirm(null);
       showToast('Subscription cancelled');
-    } catch (e) { showToast(e.message, 'error'); }
+    } catch (e) {
+      console.error('[AdminSubscriptions] Cancel failed:', e);
+      showToast(e.message, 'error');
+    }
     setSaving(false);
   };
 
