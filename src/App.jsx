@@ -10,6 +10,7 @@ import Footer from './components/Footer';
 import LoadingSpinner from './components/LoadingSpinner';
 import AuthModal from './components/AuthModal';
 import AuthRedirectHandler from './components/AuthRedirectHandler';
+import { SubscriptionGuard } from './components/SubscriptionGuard';
 import LiveChat from './components/LiveChat';
 import EnvBanner from './components/EnvBanner';
 
@@ -136,7 +137,7 @@ export default function App() {
           <Route path="/dashboard" element={
             <ProtectedRoute><PublicLayout><UserDashboard /></PublicLayout></ProtectedRoute>
           } />
-          <Route path="/company-dashboard" element={<CompanyDashboard />} />
+          <Route path="/company-dashboard" element={<SubscriptionGuard><CompanyDashboard /></SubscriptionGuard>} />
 
           {/* Admin routes */}
           <Route path="/admin/login" element={<AdminLogin />} />
