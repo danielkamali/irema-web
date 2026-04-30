@@ -15,6 +15,7 @@ import PremiumMetricsPanel from '../components/PremiumMetricsPanel';
 import AnalyticsTrialCountdown from '../components/AnalyticsTrialCountdown';
 import AnalyticsUpgradePrompt from '../components/AnalyticsUpgradePrompt';
 import TierComparison from '../components/TierComparison';
+import { useSubscriptionStatus } from '../hooks/useSubscriptionStatus';
 
 /* ── Brand Logo ── */
 function BizLogo() {
@@ -73,7 +74,7 @@ function Toast({ msg, type, onClose }) {
 }
 
 /* ── NAV ── */
-function getNav(t, company) {
+function getNav(t, company, subStatus) {
   return [
     { id:'overview',       label:t('cd.overview')||'Overview',        icon:'M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z M9 22V12h6v10' },
     { id:'reviews',        label:t('cd.reviews')||'Reviews',          icon:'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z' },
@@ -88,7 +89,7 @@ function getNav(t, company) {
     // Stories nav shown only if feature is enabled by admin
     ...(company?.enabledFeatures?.company_stories ? [{ id:'stories', label:'Stories', icon:'M15 10l4.553-2.069A1 1 0 0 1 21 8.871V15.13a1 1 0 0 1-1.447.9L15 14M3 8a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8z' }] : []),
     // Products: available for trial, professional, enterprise — not free
-    ...(company?.enabledFeatures?.product_listings || company?.plan === 'enterprise' ? [{ id:'products', label:'Products', icon:'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4' }] : []),
+    ...(subStatus.hasAccess('product_listings') || company?.enabledFeatures?.product_listings ? [{ id:'products', label:'Products', icon:'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4' }] : []),
   ];
 }
 
@@ -318,6 +319,9 @@ export default function CompanyDashboard() {
   const chartRefs = useRef({});
   const dropRef = useRef(null);
 
+  // Centralized subscription status (replaces scattered inline checks)
+  const subStatus = useSubscriptionStatus(company?.id);
+
   const showToast = (msg, type='success') => { setToast({msg,type}); };
 
   useEffect(() => {
@@ -386,6 +390,9 @@ export default function CompanyDashboard() {
           if (sub.locked && sub.status !== 'active') setIsLocked(true);
         }
 
+        // Sync lock state with hook
+        setIsLocked(subStatus.isLocked);
+
         // Load competitors last (lowest priority, simple query)
         if (co.category) {
           getDocs(query(collection(db,'companies'), where('category','==',co.category), limit(10)))
@@ -414,19 +421,11 @@ export default function CompanyDashboard() {
   useEffect(() => {
     if (!company?.id || !subscription) return;
 
-    // Determine analytics access level
-    const tierLevel = subscription?.analyticsAccessLevel || 'free';
-    setAnalyticsAccessLevel(tierLevel);
-
-    // Check trial status
-    if (subscription?.analyticsTrialEndsAt) {
-      const trialEnds = subscription.analyticsTrialEndsAt.toDate
-        ? subscription.analyticsTrialEndsAt.toDate()
-        : new Date(subscription.analyticsTrialEndsAt.seconds * 1000);
-      const daysLeft = Math.ceil((trialEnds - Date.now()) / (1000 * 60 * 60 * 24));
-      setTrialDaysRemaining(Math.max(0, daysLeft));
-      setIsOnTrial(daysLeft > 0);
-    }
+    // Analytics state now sourced from useSubscriptionStatus hook
+    // (handles expiry downgrade automatically)
+    setAnalyticsAccessLevel(subStatus.analyticsAccessLevel);
+    setTrialDaysRemaining(subStatus.analyticsTrialDaysLeft);
+    setIsOnTrial(subStatus.isOnAnalyticsTrial);
 
     // Fetch latest analytics metrics
     const today = new Date().toISOString().split('T')[0];
@@ -439,7 +438,7 @@ export default function CompanyDashboard() {
       .catch(() => {
         // Metrics not yet calculated, will show default state
       });
-  }, [company?.id, subscription]);
+  }, [company?.id, subscription, subStatus.analyticsAccessLevel, subStatus.analyticsTrialDaysLeft, subStatus.isOnAnalyticsTrial]);
 
   // Analytics charts
   const drawCharts = useCallback(() => {
@@ -542,7 +541,7 @@ export default function CompanyDashboard() {
     if (!company) { showToast('Company not loaded','error'); return; }
 
     // Rate limit replies for free tier: 3 per day
-    if (subscription?.status === 'free' || !subscription?.plan || subscription?.plan === 'starter') {
+    if (!subStatus.hasAccess('unlimited_replies')) {
       const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
       const todaysReplies = reviews.reduce((count, review) => {
         const replyCount = (review.replies || []).filter(r =>
@@ -964,8 +963,8 @@ export default function CompanyDashboard() {
                 </div>
               </div>
             </div>
-            <nav className="biz-nav">
-              {getNav(t, company).map(item => (
+              <nav className="biz-nav">
+               {getNav(t, company, subStatus).map(item => (
                 <button key={item.id}
                   className={`biz-nav-link${section===item.id?' active':''}`}
                   onClick={()=>setSection(item.id)}>
@@ -1140,21 +1139,21 @@ export default function CompanyDashboard() {
               </div>
 
               {/* Trial Countdown */}
-              {isOnTrial && <AnalyticsTrialCountdown daysRemaining={trialDaysRemaining} />}
+               {subStatus.isOnAnalyticsTrial && <AnalyticsTrialCountdown daysRemaining={subStatus.analyticsTrialDaysLeft} />}
 
-              {/* Tier-Gated Analytics Display */}
-              {analyticsAccessLevel === 'free' && !isOnTrial && (
-                <FreeMetricsPanel metrics={calculatedMetrics} category={company?.category} company={company} />
-              )}
-              {analyticsAccessLevel === 'middle' && (
-                <MiddleMetricsPanel metrics={calculatedMetrics} category={company?.category} company={company} />
-              )}
-              {analyticsAccessLevel === 'premium' && (
-                <PremiumMetricsPanel metrics={calculatedMetrics} category={company?.category} company={company} />
-              )}
-              {isOnTrial && (
-                <MiddleMetricsPanel metrics={calculatedMetrics} category={company?.category} company={company} />
-              )}
+               {/* Tier-Gated Analytics Display */}
+               {subStatus.analyticsAccessLevel === 'free' && !subStatus.isOnAnalyticsTrial && (
+                 <FreeMetricsPanel metrics={calculatedMetrics} category={company?.category} company={company} />
+               )}
+               {subStatus.analyticsAccessLevel === 'middle' && (
+                 <MiddleMetricsPanel metrics={calculatedMetrics} category={company?.category} company={company} />
+               )}
+               {subStatus.analyticsAccessLevel === 'premium' && (
+                 <PremiumMetricsPanel metrics={calculatedMetrics} category={company?.category} company={company} />
+               )}
+               {subStatus.isOnAnalyticsTrial && (
+                 <MiddleMetricsPanel metrics={calculatedMetrics} category={company?.category} company={company} />
+               )}
 
               {/* Charts Section */}
               {reviews.length > 0 && (
