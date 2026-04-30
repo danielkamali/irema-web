@@ -98,7 +98,7 @@ const PLANS = [
     cta:'Get Started Free', highlight:false },
   { id:'professional', name:'Professional', price:25000, currency:'RWF', period:'month',
     features:['1 business listing','Unlimited reviews','Unlimited responses to reviews','Advanced analytics + charts','Priority support','Verified badge','QR code downloads','Competitor insights'],
-    cta:'Start 14-day Trial', highlight:true },
+    cta:'Get Professional', highlight:true },
   { id:'enterprise', name:'Enterprise', price:75000, currency:'RWF', period:'month',
     features:['Up to 5 listings','Unlimited everything','Unlimited responses','AI sentiment analysis','Dedicated account manager','Custom integrations','White-label widgets','API access','SLA support','Product listings on your page'],
     cta:'Get Enterprise', highlight:false },
@@ -383,7 +383,7 @@ export default function CompanyDashboard() {
               setIsLocked(true);
             }
           }
-          if (sub.locked) setIsLocked(true);
+          if (sub.locked && sub.status !== 'active') setIsLocked(true);
         }
 
         // Load competitors last (lowest priority, simple query)
@@ -1545,43 +1545,53 @@ export default function CompanyDashboard() {
                     <ul className="biz-plan-features">
                       {plan.features.map(f=><li key={f}><span className="biz-plan-check">✓</span>{f}</li>)}
                     </ul>
-                    <button className={`biz-btn biz-plan-btn${plan.highlight?' biz-btn-primary':' biz-btn-outline'}`}
-                      disabled={subscription?.status === 'trial' && plan.id === 'professional'}
-                      onClick={async ()=>{
-                        if (plan.id === 'starter') {
-                          showToast('You are on the Starter (Free) plan.');
-                        } else if (plan.id === 'professional') {
-                          if (subscription?.status === 'trial') {
-                            showToast('Your 14-day trial is already active!'); return;
-                          }
-                          // Start trial
-                          const trialEnd = new Date();
-                          trialEnd.setDate(trialEnd.getDate() + 14);
-                          const subData = {
-                            companyId: company.id, businessName: company.companyName||company.name,
-                            adminEmail: company.adminEmail, plan: 'professional',
-                            status: 'trial', trialEndsAt: trialEnd,
-                            locked: false, createdAt: serverTimestamp(),
-                          };
-                          const ref = await addDoc(collection(db,'subscriptions'), subData).catch(e=>{showToast(e.message,'error');return null;});
-                          if (!ref) return;
-                          setSubscription({id:ref.id,...subData});
-                          setTrialDaysLeft(14);
-                          // Notify admin
-                          await addDoc(collection(db,'notifications'), {
-                            type:'trial_started', userId:'admin',
-                            message:`${company.companyName||company.name} started a 14-day Professional trial.`,
-                            companyId: company.id, createdAt: serverTimestamp(), read: false,
-                          }).catch(()=>{});
-                          showToast('✓ 14-day Professional trial started! Enjoy full features.', 'success');
-                        } else if (plan.id === 'enterprise') {
-                          setEnterpriseModal(true);
-                        }
-                      }}>
-                      {plan.id === 'professional' && subscription?.status === 'trial'
-                        ? `Trial Active — ${trialDaysLeft ?? '?'} days left`
-                        : plan.cta}
-                    </button>
+                    {(()=>{
+                      // Effective plan: expired/cancelled/locked → treat as starter
+                      const subStatus = subscription?.status;
+                      const onStarter = !subscription || subStatus === 'expired' || subStatus === 'cancelled' || subscription?.locked;
+                      const effectivePlan = subStatus === 'active' ? (subscription?.plan || company?.plan || 'starter') : onStarter ? 'starter' : null;
+                      const isCurrentPlan = effectivePlan === plan.id;
+                      const isTrialActive = subStatus === 'trial' && plan.id === 'professional';
+
+                      // Starter: show "Current Plan" if effective, otherwise no CTA
+                      if (plan.id === 'starter') {
+                        if (!isCurrentPlan) return null;
+                        return <button className="biz-btn biz-plan-btn biz-btn-outline" disabled>✓ Current Plan</button>;
+                      }
+
+                      return (
+                        <button
+                          className={`biz-btn biz-plan-btn${plan.highlight?' biz-btn-primary':' biz-btn-outline'}`}
+                          disabled={isCurrentPlan || isTrialActive}
+                          onClick={async ()=>{
+                            if (plan.id === 'professional') {
+                              if (isTrialActive) { showToast('Your 14-day trial is already active!'); return; }
+                              const trialEnd = new Date();
+                              trialEnd.setDate(trialEnd.getDate() + 14);
+                              const subData = {
+                                companyId: company.id, businessName: company.companyName||company.name,
+                                adminEmail: company.adminEmail, plan: 'professional',
+                                status: 'trial', trialEndsAt: trialEnd,
+                                locked: false, createdAt: serverTimestamp(),
+                              };
+                              const ref = await addDoc(collection(db,'subscriptions'), subData).catch(e=>{showToast(e.message,'error');return null;});
+                              if (!ref) return;
+                              setSubscription({id:ref.id,...subData});
+                              setTrialDaysLeft(14);
+                              await addDoc(collection(db,'notifications'), {
+                                type:'trial_started', userId:'admin',
+                                message:`${company.companyName||company.name} started a 14-day Professional trial.`,
+                                companyId: company.id, createdAt: serverTimestamp(), read: false,
+                              }).catch(()=>{});
+                              showToast('✓ 14-day Professional trial started! Enjoy full features.', 'success');
+                            } else if (plan.id === 'enterprise') {
+                              setEnterpriseModal(true);
+                            }
+                          }}>
+                          {isCurrentPlan ? '✓ Current Plan' : isTrialActive ? `Trial Active — ${trialDaysLeft ?? '?'} days left` : plan.cta}
+                        </button>
+                      );
+                    })()}
                   </div>
                 ))}
               </div>
