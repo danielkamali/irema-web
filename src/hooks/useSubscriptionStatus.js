@@ -124,6 +124,10 @@ export function useSubscriptionStatus(companyId) {
   const isTrial = status === 'trial';
   const isPaidActive = status === 'active';
 
+  if (typeof window !== 'undefined') {
+    console.log('[useSubscriptionStatus]', { companyId, status, plan, isExpired, isCancelled, isLocked, analyticsAccessLevel: subscription?.analyticsAccessLevel });
+  }
+
   // Effective plan: expired/cancelled/locked/missing → starter
   const effectivePlan = (isExpired || isCancelled || isLocked || !subscription)
     ? 'starter'

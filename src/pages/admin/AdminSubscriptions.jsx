@@ -324,7 +324,11 @@ export default function AdminSubscriptions() {
     setSaving(true);
     try {
       await updateDoc(doc(db, 'subscriptions', cancelConfirm.id), {
-        status: 'cancelled', cancelledAt: serverTimestamp(), cancelledBy: adminUser?.email
+        status: 'cancelled',
+        analyticsAccessLevel: 'free',
+        locked: true,
+        cancelledAt: serverTimestamp(),
+        cancelledBy: adminUser?.email
       });
       // Clear enabledFeatures so premium access is immediately revoked
       await updateDoc(doc(db, 'companies', cancelConfirm.companyId), {
