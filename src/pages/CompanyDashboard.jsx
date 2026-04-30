@@ -1546,15 +1546,16 @@ export default function CompanyDashboard() {
                       {plan.features.map(f=><li key={f}><span className="biz-plan-check">✓</span>{f}</li>)}
                     </ul>
                     {(()=>{
-                      // Effective plan: expired/cancelled/locked → treat as starter
+                      const PLAN_RANK = { starter: 0, professional: 1, enterprise: 2 };
                       const subStatus = subscription?.status;
                       const onStarter = !subscription || subStatus === 'expired' || subStatus === 'cancelled' || subscription?.locked;
                       const effectivePlan = subStatus === 'active' ? (subscription?.plan || company?.plan || 'starter') : onStarter ? 'starter' : null;
                       const isCurrentPlan = effectivePlan === plan.id;
                       const isTrialActive = subStatus === 'trial' && plan.id === 'professional';
+                      const isDowngrade = effectivePlan && PLAN_RANK[plan.id] < PLAN_RANK[effectivePlan];
 
-                      // Starter: show "Current Plan" if effective, otherwise no CTA
-                      if (plan.id === 'starter') {
+                      // No CTA for downgrades or non-current starter
+                      if (plan.id === 'starter' || isDowngrade) {
                         if (!isCurrentPlan) return null;
                         return <button className="biz-btn biz-plan-btn biz-btn-outline" disabled>✓ Current Plan</button>;
                       }
