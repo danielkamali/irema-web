@@ -181,6 +181,7 @@ export default function AdminSubscriptions() {
         plan: assignForm.plan,
         amount: plan?.price || 0,
         status: assignForm.status,
+        locked: false,
         ...(assignForm.status === 'trial' && analyticsTrialEndsAt && { analyticsTrialEndsAt }),
         nextBillingDate,
         updatedAt: serverTimestamp(),
@@ -361,9 +362,16 @@ export default function AdminSubscriptions() {
       const renewDate = new Date();
       renewDate.setMonth(renewDate.getMonth() + 1);
       await updateDoc(doc(db, 'subscriptions', sub.id), {
-        status: 'active', renewedAt: serverTimestamp(), nextBillingDate: renewDate
+        status: 'active', locked: false, renewedAt: serverTimestamp(), nextBillingDate: renewDate
       });
-      setSubs(prev => prev.map(s => s.id === sub.id ? { ...s, status: 'active' } : s));
+      if (sub.companyId) {
+        await updateDoc(doc(db, 'companies', sub.companyId), {
+          subscriptionId: sub.id,
+          subscriptionPlan: sub.plan || 'professional',
+          updatedAt: serverTimestamp(),
+        }).catch(() => {});
+      }
+      setSubs(prev => prev.map(s => s.id === sub.id ? { ...s, status: 'active', locked: false, nextBillingDate: renewDate } : s));
       showToast('Subscription renewed successfully');
     } catch (e) { showToast(e.message, 'error'); }
   };

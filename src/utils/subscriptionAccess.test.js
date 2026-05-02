@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { getSubscriptionAccess, canStartProfessionalTrial } from './subscriptionAccess.js';
+import { getSubscriptionAccess, canStartProfessionalTrial, selectBestSubscription } from './subscriptionAccess.js';
 
 const now = new Date('2026-05-02T10:00:00Z');
 
@@ -108,4 +108,33 @@ test('active paid accounts do not see professional trial banner', () => {
     status: 'active',
     nextBillingDate: new Date('2026-06-02T10:00:00Z'),
   }), false);
+});
+
+test('selects linked admin-enabled subscription over older expired starter doc', () => {
+  const expiredStarter = {
+    id: 'starter-old',
+    plan: 'starter',
+    status: 'expired',
+    locked: true,
+    createdAt: { seconds: 100 },
+  };
+  const activePro = {
+    id: 'pro-admin',
+    plan: 'professional',
+    status: 'active',
+    locked: false,
+    nextBillingDate: new Date('2026-06-02T10:00:00Z'),
+    createdAt: { seconds: 50 },
+  };
+
+  assert.equal(selectBestSubscription([expiredStarter, activePro], now, { subscriptionId: 'pro-admin' }).id, 'pro-admin');
+});
+
+test('selects active paid subscription over expired starter when no linked id exists', () => {
+  const best = selectBestSubscription([
+    { id: 'starter-old', plan: 'starter', status: 'expired', locked: true },
+    { id: 'enterprise-active', plan: 'enterprise', status: 'active', locked: false, nextBillingDate: new Date('2026-06-02T10:00:00Z') },
+  ], now);
+
+  assert.equal(best.id, 'enterprise-active');
 });

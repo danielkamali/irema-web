@@ -58,7 +58,7 @@ export default function AdminEnterprise() {
         const subData = {
           companyId: enquiry.companyId, businessName: enquiry.companyName,
           adminEmail: enquiry.contactEmail, plan: 'enterprise',
-          status: 'active', billingCycle: enquiry.billingCycle || 'monthly',
+          status: 'active', locked: false, billingCycle: enquiry.billingCycle || 'monthly',
           amount: enquiry.billingCycle === 'yearly' ? 60000 : 75000,
           activatedAt: serverTimestamp(), activatedBy: user?.email,
           nextBillingDate: (() => { const d = new Date(); d.setMonth(d.getMonth() + 1); return d; })(),
@@ -97,7 +97,7 @@ export default function AdminEnterprise() {
     try {
       const updates = {
         plan: editSubForm.plan, status: editSubForm.status,
-        locked: editSubForm.locked,
+        locked: editSubForm.status === 'active' ? false : editSubForm.locked,
         updatedAt: serverTimestamp(), updatedBy: user?.email,
       };
       if (editSubForm.trialEndsAt) updates.trialEndsAt = new Date(editSubForm.trialEndsAt);
@@ -105,7 +105,10 @@ export default function AdminEnterprise() {
       await updateDoc(doc(db, 'subscriptions', editSub.id), updates);
       // Sync company plan
       if (editSub.companyId) {
-        await updateDoc(doc(db, 'companies', editSub.companyId), { plan: editSubForm.plan }).catch(() => {});
+        await updateDoc(doc(db, 'companies', editSub.companyId), {
+          plan: editSubForm.plan,
+          subscriptionId: editSub.id,
+        }).catch(() => {});
       }
       setSubscriptions(prev => prev.map(s => s.id === editSub.id ? { ...s, ...updates } : s));
       setEditSub(null);

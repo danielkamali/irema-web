@@ -22,6 +22,30 @@ export function canStartProfessionalTrial(subscription) {
   return true;
 }
 
+export function selectBestSubscription(subscriptions = [], now = new Date(), company = {}) {
+  if (!subscriptions.length) return null;
+
+  if (company?.subscriptionId) {
+    const linked = subscriptions.find(sub => sub.id === company.subscriptionId);
+    if (linked) return linked;
+  }
+
+  const score = (subscription) => {
+    const access = getSubscriptionAccess(subscription, now, company);
+    const planScore = access.effectivePlan === 'enterprise' ? 300 : access.effectivePlan === 'professional' ? 200 : 100;
+    const statusScore = subscription.status === 'active' ? 30 : subscription.status === 'trial' ? 20 : subscription.status === 'pending' ? 5 : 0;
+    const lockPenalty = subscription.locked ? -500 : 0;
+    const createdAt = subscription.createdAt?.toDate
+      ? subscription.createdAt.toDate().getTime()
+      : subscription.createdAt?.seconds
+      ? subscription.createdAt.seconds * 1000
+      : 0;
+    return planScore + statusScore + lockPenalty + createdAt / 10000000000000;
+  };
+
+  return [...subscriptions].sort((a, b) => score(b) - score(a))[0];
+}
+
 export function getSubscriptionAccess(subscription, now = new Date(), company = {}) {
   const status = subscription?.status;
   const plan = subscription?.plan || 'starter';

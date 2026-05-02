@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { db, collection, query, where, onSnapshot, doc, updateDoc } from '../firebase/config';
-import { getSubscriptionAccess } from '../utils/subscriptionAccess';
+import { getSubscriptionAccess, selectBestSubscription } from '../utils/subscriptionAccess';
 
 /**
  * Check if a trial or paid subscription has expired and auto-lock it.
@@ -81,7 +81,8 @@ export function useSubscriptionStatus(companyId, company = {}) {
     const q = query(collection(db, 'subscriptions'), where('companyId', '==', companyId));
     const unsub = onSnapshot(q, (snap) => {
       if (!snap.empty) {
-        const sub = { id: snap.docs[0].id, ...snap.docs[0].data() };
+        const subscriptions = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        const sub = selectBestSubscription(subscriptions, new Date(), company);
         setSubscription(sub);
         setError(null);
       } else {
@@ -96,7 +97,7 @@ export function useSubscriptionStatus(companyId, company = {}) {
       setLoading(false);
     });
     return unsub;
-  }, [companyId]);
+  }, [companyId, company?.subscriptionId]);
 
   useEffect(() => {
     setLockAttempted(false);
