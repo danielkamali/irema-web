@@ -315,7 +315,7 @@ export default function BusinessesPage() {
       const trialEndsDate = new Date();
       trialEndsDate.setDate(trialEndsDate.getDate() + 14);
 
-      await addDoc(collection(db,'subscriptions'), {
+      const starterSubRef = await addDoc(collection(db,'subscriptions'), {
         companyId: compRef.id,
         businessName: regForm.companyName,
         adminEmail: userEmail,
@@ -327,6 +327,12 @@ export default function BusinessesPage() {
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       }).catch(err => console.error('Failed to create trial subscription:', err));
+      if (starterSubRef?.id) {
+        await updateDoc(doc(db, 'companies', compRef.id), {
+          subscriptionId: starterSubRef.id,
+          updatedAt: serverTimestamp(),
+        }).catch(() => {});
+      }
 
       // Welcome notification
       await addDoc(collection(db,'notifications'), {

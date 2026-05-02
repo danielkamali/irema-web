@@ -63,15 +63,17 @@ export default function AdminEnterprise() {
           activatedAt: serverTimestamp(), activatedBy: user?.email,
           nextBillingDate: (() => { const d = new Date(); d.setMonth(d.getMonth() + 1); return d; })(),
         };
+        let subscriptionId = existing?.id;
         if (existing) {
           await updateDoc(doc(db, 'subscriptions', existing.id), subData);
         } else {
-          await addDoc(collection(db, 'subscriptions'), { ...subData, createdAt: serverTimestamp() });
+          const ref = await addDoc(collection(db, 'subscriptions'), { ...subData, createdAt: serverTimestamp() });
+          subscriptionId = ref.id;
         }
         // Update company's plan
         if (enquiry.companyId) {
           await updateDoc(doc(db, 'companies', enquiry.companyId), {
-            plan: 'enterprise', planActivatedAt: serverTimestamp(),
+            plan: 'enterprise', subscriptionId, planActivatedAt: serverTimestamp(),
           }).catch(() => {});
         }
         showToast(`✓ Enterprise plan activated for ${enquiry.companyName}`);

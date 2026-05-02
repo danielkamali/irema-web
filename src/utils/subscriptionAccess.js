@@ -13,6 +13,15 @@ function isPast(value, now) {
   return date ? date < now : false;
 }
 
+export function canStartProfessionalTrial(subscription) {
+  if (!subscription) return true;
+  if (subscription.trialEndsAt || subscription.trialStarted || subscription.trialStartedAt) return false;
+  if (subscription.status === 'active' && ['professional', 'enterprise'].includes(subscription.plan)) return false;
+  if (subscription.status === 'pending' && ['professional', 'enterprise'].includes(subscription.plan)) return false;
+  if (subscription.status === 'trial' && subscription.plan === 'professional') return false;
+  return true;
+}
+
 export function getSubscriptionAccess(subscription, now = new Date(), company = {}) {
   const status = subscription?.status;
   const plan = subscription?.plan || 'starter';
@@ -52,7 +61,7 @@ export function getSubscriptionAccess(subscription, now = new Date(), company = 
   const planFeatureMap = {
     reply_reviews: rank >= 1,
     unlimited_replies: rank >= 1,
-    analytics_advanced: rank >= 1 || isOnAnalyticsTrial,
+    analytics_advanced: rank >= 1,
     analytics_premium: rank >= 2,
     qr_code: rank >= 1,
     competitor_insights: rank >= 1,

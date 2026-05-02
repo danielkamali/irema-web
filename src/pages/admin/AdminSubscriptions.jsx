@@ -187,13 +187,15 @@ export default function AdminSubscriptions() {
         updatedBy: adminUser?.email,
       };
 
+      let subscriptionId = existingSub?.id;
       if (existingSub) {
         // Update existing
         await updateDoc(doc(db, 'subscriptions', existingSub.id), subData);
       } else {
         // Create new
         subData.createdAt = serverTimestamp();
-        await addDoc(collection(db, 'subscriptions'), subData);
+        const ref = await addDoc(collection(db, 'subscriptions'), subData);
+        subscriptionId = ref.id;
       }
 
       // Update company's enabledFeatures based on plan
@@ -201,6 +203,7 @@ export default function AdminSubscriptions() {
       await updateDoc(doc(db, 'companies', assignForm.businessId), {
         enabledFeatures,
         subscriptionPlan: assignForm.plan,
+        subscriptionId,
         updatedAt: serverTimestamp(),
       });
 

@@ -39,7 +39,7 @@ service cloud.firestore {
         request.resource.data.keys().hasOnly([
           'companyId', 'businessName', 'adminEmail', 'email',
           'plan', 'status', 'locked',
-          'trialStarted', 'trialEndsAt',
+          'trialStarted', 'trialStartedAt', 'trialEndsAt',
           'analyticsAccessLevel', 'analyticsTrialStartedAt', 'analyticsTrialEndsAt',
           'amount', 'billingCycle',
           'createdAt', 'updatedAt'
@@ -78,6 +78,50 @@ service cloud.firestore {
           (resource.data.status == 'active' &&
             resource.data.nextBillingDate is timestamp &&
             resource.data.nextBillingDate <= request.time)
+        );
+    }
+
+    function isOwnerStartingProfessionalTrial() {
+      return isSubscriptionOwner() &&
+        request.resource.data.companyId == resource.data.companyId &&
+        request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly([
+            'companyId', 'businessName', 'adminEmail', 'email',
+            'plan', 'status', 'trialEndsAt', 'trialStartedAt', 'trialStarted',
+            'locked', 'amount', 'billingCycle', 'updatedAt'
+          ]) &&
+        (!('trialEndsAt' in resource.data)) &&
+        (!('trialStarted' in resource.data)) &&
+        (!('trialStartedAt' in resource.data)) &&
+        (!('plan' in resource.data) || resource.data.plan in ['starter', 'free']) &&
+        request.resource.data.plan == 'professional' &&
+        request.resource.data.status == 'trial' &&
+        request.resource.data.locked == false &&
+        request.resource.data.trialEndsAt is timestamp &&
+        request.resource.data.trialEndsAt <= request.time + duration.value(15, 'd');
+    }
+
+    function companyHasPaidFeatureAccess(companyId) {
+      return exists(/databases/$(database)/documents/companies/$(companyId)) &&
+        get(/databases/$(database)/documents/companies/$(companyId)).data.subscriptionId is string &&
+        exists(/databases/$(database)/documents/subscriptions/$(get(/databases/$(database)/documents/companies/$(companyId)).data.subscriptionId)) &&
+        get(/databases/$(database)/documents/subscriptions/$(get(/databases/$(database)/documents/companies/$(companyId)).data.subscriptionId)).data.companyId == companyId &&
+        get(/databases/$(database)/documents/subscriptions/$(get(/databases/$(database)/documents/companies/$(companyId)).data.subscriptionId)).data.plan in ['professional', 'enterprise'] &&
+        get(/databases/$(database)/documents/subscriptions/$(get(/databases/$(database)/documents/companies/$(companyId)).data.subscriptionId)).data.status in ['active', 'trial'] &&
+        get(/databases/$(database)/documents/subscriptions/$(get(/databases/$(database)/documents/companies/$(companyId)).data.subscriptionId)).data.locked != true &&
+        (
+          (
+            get(/databases/$(database)/documents/subscriptions/$(get(/databases/$(database)/documents/companies/$(companyId)).data.subscriptionId)).data.status == 'trial' &&
+            get(/databases/$(database)/documents/subscriptions/$(get(/databases/$(database)/documents/companies/$(companyId)).data.subscriptionId)).data.trialEndsAt is timestamp &&
+            get(/databases/$(database)/documents/subscriptions/$(get(/databases/$(database)/documents/companies/$(companyId)).data.subscriptionId)).data.trialEndsAt > request.time
+          ) ||
+          (
+            get(/databases/$(database)/documents/subscriptions/$(get(/databases/$(database)/documents/companies/$(companyId)).data.subscriptionId)).data.status == 'active' &&
+            (
+              !('nextBillingDate' in get(/databases/$(database)/documents/subscriptions/$(get(/databases/$(database)/documents/companies/$(companyId)).data.subscriptionId)).data) ||
+              get(/databases/$(database)/documents/subscriptions/$(get(/databases/$(database)/documents/companies/$(companyId)).data.subscriptionId)).data.nextBillingDate > request.time
+            )
+          )
         );
     }
 
@@ -127,7 +171,8 @@ service cloud.firestore {
         // Company owner can add replies to reviews of their own business
         (request.resource.data.replies != null &&
           exists(/databases/$(database)/documents/companies/$(resource.data.companyId)) &&
-          get(/databases/$(database)/documents/companies/$(resource.data.companyId)).data.adminUserId == request.auth.uid)
+          get(/databases/$(database)/documents/companies/$(resource.data.companyId)).data.adminUserId == request.auth.uid &&
+          companyHasPaidFeatureAccess(resource.data.companyId))
       );
       allow delete: if isSignedIn() && (
         request.auth.uid == resource.data.userId || isAdmin()
@@ -317,7 +362,7 @@ service cloud.firestore {
       // Owners may only perform the automatic downgrade when an existing trial
       // or paid subscription has actually passed its expiry date. Plan, status,
       // analytics tier, amount, and lock resets are admin-only.
-      allow update: if isActiveAdmin() || isOwnerAutoExpiringSubscription();
+      allow update: if isActiveAdmin() || isOwnerAutoExpiringSubscription() || isOwnerStartingProfessionalTrial();
       allow delete: if isActiveAdmin();
     }
 

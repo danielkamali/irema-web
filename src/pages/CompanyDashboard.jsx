@@ -16,6 +16,7 @@ import AnalyticsTrialCountdown from '../components/AnalyticsTrialCountdown';
 import AnalyticsUpgradePrompt from '../components/AnalyticsUpgradePrompt';
 import TierComparison from '../components/TierComparison';
 import { useSubscriptionStatus } from '../hooks/useSubscriptionStatus';
+import { canStartProfessionalTrial } from '../utils/subscriptionAccess';
 
 /* ── Brand Logo ── */
 function BizLogo() {
@@ -314,13 +315,78 @@ export default function CompanyDashboard() {
   const [trialDaysRemaining, setTrialDaysRemaining] = useState(0);
   const [paymentHistory, setPaymentHistory] = useState([]);
   const [paymentsTab, setPaymentsTab] = useState('methods'); // 'methods' | 'history'
+  const [trialStarting, setTrialStarting] = useState(false);
   const chartRefs = useRef({});
   const dropRef = useRef(null);
 
   // Centralized subscription status (replaces scattered inline checks)
   const subStatus = useSubscriptionStatus(company?.id, company);
+  const canStartTrial = !subStatus.loading && canStartProfessionalTrial(subStatus.subscription);
+  const canReplyToReviews = subStatus.hasAccess('reply_reviews');
+  const canViewAnalytics = subStatus.hasAccess('analytics_advanced');
 
   const showToast = (msg, type='success') => { setToast({msg,type}); };
+
+  async function startProfessionalTrial() {
+    if (!company?.id) return;
+    if (!canStartProfessionalTrial(subStatus.subscription)) {
+      showToast('This business has already used its free trial.', 'error');
+      return;
+    }
+
+    const trialEnd = new Date();
+    trialEnd.setDate(trialEnd.getDate() + 14);
+    const trialCoreData = {
+      plan: 'professional',
+      status: 'trial',
+      trialEndsAt: trialEnd,
+      trialStartedAt: serverTimestamp(),
+      trialStarted: new Date().toISOString(),
+      locked: false,
+      updatedAt: serverTimestamp(),
+    };
+    const trialCreateData = {
+      ...trialCoreData,
+      companyId: company.id,
+      businessName: company.companyName || company.name || 'Business',
+      adminEmail: company.adminEmail || company.email || company.workEmail || currentUser?.email || '',
+      amount: 25000,
+      billingCycle: 'monthly',
+    };
+
+    try {
+      setTrialStarting(true);
+      let nextSubscription;
+      if (subStatus.subscription?.id) {
+        await updateDoc(doc(db, 'subscriptions', subStatus.subscription.id), trialCoreData);
+        if (company.subscriptionId !== subStatus.subscription.id) {
+          await updateDoc(doc(db, 'companies', company.id), { subscriptionId: subStatus.subscription.id, updatedAt: serverTimestamp() }).catch(() => {});
+        }
+        nextSubscription = { ...subStatus.subscription, ...trialCoreData };
+      } else {
+        const ref = await addDoc(collection(db, 'subscriptions'), {
+          ...trialCreateData,
+          createdAt: serverTimestamp(),
+        });
+        await updateDoc(doc(db, 'companies', company.id), { subscriptionId: ref.id, updatedAt: serverTimestamp() }).catch(() => {});
+        nextSubscription = { id: ref.id, ...trialCreateData };
+      }
+
+      setSubscription(nextSubscription);
+      setTrialDaysLeft(14);
+      await addDoc(collection(db,'notifications'), {
+        type:'trial_started', userId:'admin',
+        message:`${company.companyName||company.name} started a 14-day Professional trial.`,
+        companyId: company.id, createdAt: serverTimestamp(), read: false,
+      }).catch(()=>{});
+      showToast('✓ 14-day Professional trial started! Enjoy full features.', 'success');
+    } catch (e) {
+      console.error('Failed to start Professional trial:', e);
+      showToast(e.message || 'Failed to start trial', 'error');
+    } finally {
+      setTrialStarting(false);
+    }
+  }
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async user => {
@@ -537,21 +603,10 @@ export default function CompanyDashboard() {
   async function handleReply(reviewId, replyText) {
     if (!currentUser) { showToast('Not logged in','error'); return; }
     if (!company) { showToast('Company not loaded','error'); return; }
-
-    // Rate limit replies for free tier: 3 per day
-    if (!subStatus.hasAccess('unlimited_replies')) {
-      const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
-      const todaysReplies = reviews.reduce((count, review) => {
-        const replyCount = (review.replies || []).filter(r =>
-          r.isBusinessReply && r.userId === currentUser.uid && r.timestamp > oneDayAgo
-        ).length;
-        return count + replyCount;
-      }, 0);
-
-      if (todaysReplies >= 3) {
-        showToast('Free tier limit: 3 replies per day. Upgrade to respond to more reviews.', 'error');
-        return;
-      }
+    if (!canReplyToReviews) {
+      showToast('Replying to reviews is available on Professional and Enterprise plans.', 'error');
+      setSection('subscription');
+      return;
     }
 
     const reply = {
@@ -1045,7 +1100,7 @@ export default function CompanyDashboard() {
                       </div>
                       {r.comment && <p className="biz-rr-comment">{r.comment.slice(0,120)}{r.comment.length>120?'…':''}</p>}
                       {(r.replies||[]).filter(p=>p.by==='business'||p.isBusinessReply).length===0 && (
-                        <button className="biz-rr-reply-btn" onClick={()=>setSection('reviews')}>{t('cd.reply')||'Reply'} →</button>
+                        <button className="biz-rr-reply-btn" onClick={()=>setSection('reviews')}>{canReplyToReviews ? (t('cd.reply')||'Reply') : 'View'} →</button>
                       )}
                     </div>
                   ))}
@@ -1073,7 +1128,7 @@ export default function CompanyDashboard() {
               <div className="biz-page-header">
                 <div>
                   <h1>{t('cd.customer_reviews')||'Customer Reviews'}</h1>
-                  <p className="biz-page-sub">{reviews.length} total · {responded} replied · {responseRate}% response rate</p>
+                  <p className="biz-page-sub">{reviews.length} total · {canReplyToReviews ? `${responded} replied · ${responseRate}% response rate` : 'Upgrade to Professional to reply'}</p>
                 </div>
                 <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
                   <select className="biz-select" value={ratingFilter} onChange={e=>setRatingFilter(e.target.value)}>
@@ -1094,6 +1149,15 @@ export default function CompanyDashboard() {
                   </select>
                 </div>
               </div>
+              {!canReplyToReviews && (
+                <div className="biz-card" style={{marginBottom:20,borderColor:'var(--biz-brand)',background:'rgba(45,143,111,0.08)',display:'flex',justifyContent:'space-between',gap:16,alignItems:'center',flexWrap:'wrap'}}>
+                  <div>
+                    <div style={{fontWeight:800,color:'var(--biz-text-1)',marginBottom:4}}>Replies are a Professional feature</div>
+                    <div style={{fontSize:'0.88rem',color:'var(--biz-text-2)'}}>You can still read every customer review. Upgrade when you are ready to respond as the business.</div>
+                  </div>
+                  <button className="biz-btn biz-btn-primary" onClick={()=>setSection('subscription')}>Upgrade to Reply</button>
+                </div>
+              )}
               {/* Widget card grid — click any card to open ReviewModal */}
               {filteredReviews.length===0
                 ? <div className="biz-empty">{t('cd.no_reviews_filter')||'No reviews match your filter.'}</div>
@@ -1116,13 +1180,13 @@ export default function CompanyDashboard() {
                             <span style={{fontSize:'0.75rem',color:'var(--biz-text-4)',background:'var(--biz-bg-2)',padding:'2px 8px',borderRadius:99}}>{revs.length} review{revs.length!==1?'s':''}</span>
                           </div>
                           <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(260px,1fr))',gap:14}}>
-                            {revs.map(r=><BizReviewWidget key={r.id} review={r} onClick={()=>setSelectedReview(r)}/>)}
+                            {revs.map(r=><BizReviewWidget key={r.id} review={r} onClick={()=>setSelectedReview(r)} canReply={canReplyToReviews}/>)}
                           </div>
                         </div>
                       ));
                     })()
                   : <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(260px,1fr))',gap:14}}>
-                      {filteredReviews.map(r=><BizReviewWidget key={r.id} review={r} onClick={()=>setSelectedReview(r)}/>)}
+                      {filteredReviews.map(r=><BizReviewWidget key={r.id} review={r} onClick={()=>setSelectedReview(r)} canReply={canReplyToReviews}/>)}
                     </div>
               }
             </div>
@@ -1135,6 +1199,15 @@ export default function CompanyDashboard() {
                 <h1>{t('cd.analytics')||'Analytics'}</h1>
                 <p className="biz-page-sub">{t('cd.analytics_sub')||'Powered by real data from your Irema profile'}</p>
               </div>
+
+              {!canViewAnalytics ? (
+                <div className="biz-card" style={{borderColor:'var(--biz-brand)',background:'rgba(45,143,111,0.08)'}}>
+                  <h2 style={{marginTop:0}}>Analytics are available on Professional and Enterprise</h2>
+                  <p style={{color:'var(--biz-text-2)',marginBottom:18}}>Starter businesses can manage their profile and read reviews. Upgrade to unlock analytics dashboards, trends, and performance insights.</p>
+                  <button className="biz-btn biz-btn-primary" onClick={()=>setSection('subscription')}>View Paid Plans</button>
+                </div>
+              ) : (
+                <>
 
               {/* Trial Countdown */}
                {subStatus.isOnAnalyticsTrial && <AnalyticsTrialCountdown daysRemaining={subStatus.analyticsTrialDaysLeft} />}
@@ -1202,6 +1275,8 @@ export default function CompanyDashboard() {
                     setSection('payments');
                   }}
                 />
+              )}
+                </>
               )}
             </div>
           )}
@@ -1528,6 +1603,26 @@ export default function CompanyDashboard() {
                 <h1>{t('cd.subscription_plans')||'Subscription Plans'}</h1>
                 <p className="biz-page-sub">{t('cd.subscription_sub')||'Choose the right plan for your business — priced for Rwanda'}</p>
               </div>
+              {canStartTrial && (
+                <div className="biz-card" style={{
+                  marginBottom: 20,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 16,
+                  flexWrap: 'wrap',
+                  borderColor: 'var(--biz-brand)',
+                  background: 'linear-gradient(90deg, rgba(45,143,111,0.10), rgba(232,184,0,0.10))'
+                }}>
+                  <div>
+                    <div style={{fontWeight:800,color:'var(--biz-text-1)',marginBottom:4}}>Start your 14-day Professional trial</div>
+                    <div style={{fontSize:'0.88rem',color:'var(--biz-text-2)'}}>Unlock replies, advanced analytics, QR code downloads, competitor insights, and more.</div>
+                  </div>
+                  <button className="biz-btn biz-btn-primary" onClick={startProfessionalTrial} disabled={trialStarting}>
+                    {trialStarting ? 'Starting...' : 'Start Free Trial'}
+                  </button>
+                </div>
+              )}
               <div className="biz-plans-grid">
                 {PLANS.map(plan=>(
                   <div key={plan.id} className={`biz-plan-card${plan.highlight?' biz-plan-highlight':''}`}>
@@ -1561,25 +1656,7 @@ export default function CompanyDashboard() {
                           disabled={isCurrentPlan || isTrialActive}
                           onClick={async ()=>{
                             if (plan.id === 'professional') {
-                              if (isTrialActive) { showToast('Your 14-day trial is already active!'); return; }
-                              const trialEnd = new Date();
-                              trialEnd.setDate(trialEnd.getDate() + 14);
-                              const subData = {
-                                companyId: company.id, businessName: company.companyName||company.name,
-                                adminEmail: company.adminEmail, plan: 'professional',
-                                status: 'trial', trialEndsAt: trialEnd,
-                                locked: false, createdAt: serverTimestamp(),
-                              };
-                              const ref = await addDoc(collection(db,'subscriptions'), subData).catch(e=>{showToast(e.message,'error');return null;});
-                              if (!ref) return;
-                              setSubscription({id:ref.id,...subData});
-                              setTrialDaysLeft(14);
-                              await addDoc(collection(db,'notifications'), {
-                                type:'trial_started', userId:'admin',
-                                message:`${company.companyName||company.name} started a 14-day Professional trial.`,
-                                companyId: company.id, createdAt: serverTimestamp(), read: false,
-                              }).catch(()=>{});
-                              showToast('✓ 14-day Professional trial started! Enjoy full features.', 'success');
+                              await startProfessionalTrial();
                             } else if (plan.id === 'enterprise') {
                               setEnterpriseModal(true);
                             }
@@ -1929,7 +2006,7 @@ export default function CompanyDashboard() {
             reactions={{helpful:selectedReview.helpful||0,love:selectedReview.love||0,thanks:selectedReview.thanks||0}}
             onReact={null}
             companyName={company?.companyName||company?.name}
-            onReply={async (reviewId, text) => {
+            onReply={canReplyToReviews ? async (reviewId, text) => {
               // Build reply object matching handleReply format
               const newReply = {
                 by: 'business', isBusinessReply: true, text,
@@ -1942,7 +2019,7 @@ export default function CompanyDashboard() {
               setSelectedReview(prev => prev ? {...prev, replies:[...(prev.replies||[]), newReply]} : prev);
               // Also persist to Firestore
               await handleReply(reviewId, text);
-            }}
+            } : undefined}
             onDelete={null}
           />
         )}
@@ -2197,7 +2274,7 @@ function ProductsSection({ company, currentUser, showToast }) {
 }
 
 /* ── Biz Review Widget — homepage-style card, opens modal on click ── */
-function BizReviewWidget({ review, onClick }) {
+function BizReviewWidget({ review, onClick, canReply = true }) {
   const name = review.userName||'Anonymous';
   const COLORS = ['#2d8f6f','#0ea5e9','#8b5cf6','#f59e0b','#ef4444','#14b8a6'];
   const color = COLORS[name.charCodeAt(0) % COLORS.length];
@@ -2234,7 +2311,7 @@ function BizReviewWidget({ review, onClick }) {
           ? <span style={{fontSize:'0.72rem',background:'#f0faf6',color:'#1f6b52',padding:'2px 8px',borderRadius:99,fontWeight:600}}>💬 {(review.replies||[]).length} repl{(review.replies||[]).length!==1?'ies':'y'}</span>
           : <span style={{fontSize:'0.72rem',color:'var(--biz-text-4)'}}>No replies yet</span>
         }
-        <span style={{fontSize:'0.72rem',color:'var(--biz-brand)',fontWeight:600}}>Reply →</span>
+        <span style={{fontSize:'0.72rem',color:'var(--biz-brand)',fontWeight:600}}>{canReply ? 'Reply' : 'View'} →</span>
       </div>
     </div>
   );
