@@ -1,6 +1,6 @@
 import Footer from '../components/Footer';
 import React, { useState, useEffect } from 'react';
-import { db, auth, collection, addDoc, serverTimestamp, getDocs, query, where } from '../firebase/config';
+import { db, auth, collection, addDoc, serverTimestamp, getDocs, query, where, Timestamp } from '../firebase/config';
 import { signInWithEmailAndPassword, signOut, createUserWithEmailAndPassword, onAuthStateChanged, sendPasswordResetEmail, signInWithRedirect, signInWithPopup, updateProfile, browserLocalPersistence, setPersistence } from 'firebase/auth';
 import { useAuthStore } from '../store/authStore';
 import { googleProvider } from '../firebase/config';
