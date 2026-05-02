@@ -1,0 +1,86 @@
+const PLAN_RANK = { starter: 0, professional: 1, enterprise: 2 };
+
+function toDate(value) {
+  if (!value) return null;
+  if (value instanceof Date) return value;
+  if (typeof value.toDate === 'function') return value.toDate();
+  if (typeof value.seconds === 'number') return new Date(value.seconds * 1000);
+  return new Date(value);
+}
+
+function isPast(value, now) {
+  const date = toDate(value);
+  return date ? date < now : false;
+}
+
+export function getSubscriptionAccess(subscription, now = new Date(), company = {}) {
+  const status = subscription?.status;
+  const plan = subscription?.plan || 'starter';
+  const isTrialExpired = status === 'trial' && isPast(subscription?.trialEndsAt, now);
+  const isPaidExpired = status === 'active' && isPast(subscription?.nextBillingDate, now);
+  const isExpired = status === 'expired' || isTrialExpired || isPaidExpired;
+  const isCancelled = status === 'cancelled';
+  const isLocked = subscription?.locked === true;
+  const isAccessStatus = status === 'active' || status === 'trial';
+  const isTrial = status === 'trial' && !isExpired;
+  const isBlocked = isExpired || isCancelled || isLocked || !subscription || !isAccessStatus;
+
+  const effectivePlan = isBlocked ? 'starter' : plan;
+  const rank = PLAN_RANK[effectivePlan] || 0;
+
+  let trialDaysLeft = null;
+  if (status === 'trial' && subscription?.trialEndsAt) {
+    const endDate = toDate(subscription.trialEndsAt);
+    trialDaysLeft = endDate
+      ? Math.max(0, Math.ceil((endDate - now) / (1000 * 60 * 60 * 24)))
+      : null;
+  }
+
+  let analyticsTrialDaysLeft = 0;
+  let isOnAnalyticsTrial = false;
+  if (subscription?.analyticsTrialEndsAt && !isBlocked) {
+    const trialEnds = toDate(subscription.analyticsTrialEndsAt);
+    analyticsTrialDaysLeft = trialEnds
+      ? Math.max(0, Math.ceil((trialEnds - now) / (1000 * 60 * 60 * 24)))
+      : 0;
+    isOnAnalyticsTrial = analyticsTrialDaysLeft > 0;
+  }
+
+  const rawAnalyticsLevel = subscription?.analyticsAccessLevel || 'free';
+  const analyticsAccessLevel = isBlocked ? 'free' : rawAnalyticsLevel;
+
+  const planFeatureMap = {
+    reply_reviews: rank >= 1,
+    unlimited_replies: rank >= 1,
+    analytics_advanced: rank >= 1 || isOnAnalyticsTrial,
+    analytics_premium: rank >= 2,
+    qr_code: rank >= 1,
+    competitor_insights: rank >= 1,
+    verified_badge: rank >= 1,
+    multi_listing: rank >= 2,
+    ai_sentiment: rank >= 2,
+    api_access: rank >= 2,
+    white_label: rank >= 2,
+    priority_support: rank >= 1,
+    company_stories: rank >= 1,
+    product_listings: rank >= 2,
+  };
+
+  function hasAccess(feature) {
+    if (isBlocked) return false;
+    return Boolean(planFeatureMap[feature] || company?.enabledFeatures?.[feature]);
+  }
+
+  return {
+    effectivePlan,
+    isExpired,
+    isCancelled,
+    isLocked,
+    isTrial,
+    trialDaysLeft,
+    analyticsAccessLevel,
+    isOnAnalyticsTrial,
+    analyticsTrialDaysLeft,
+    hasAccess,
+  };
+}

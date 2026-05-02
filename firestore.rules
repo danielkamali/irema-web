@@ -23,6 +23,64 @@ service cloud.firestore {
         get(/databases/$(database)/documents/admin_users/$(request.auth.uid)).data.isActive == true;
     }
 
+    function ownsCompany(companyId) {
+      return isSignedIn() &&
+        companyId != null &&
+        exists(/databases/$(database)/documents/companies/$(companyId)) &&
+        get(/databases/$(database)/documents/companies/$(companyId)).data.adminUserId == request.auth.uid;
+    }
+
+    function isSubscriptionOwner() {
+      return ownsCompany(resource.data.companyId);
+    }
+
+    function isValidOwnerSubscriptionCreate() {
+      return ownsCompany(request.resource.data.companyId) &&
+        request.resource.data.keys().hasOnly([
+          'companyId', 'businessName', 'adminEmail', 'email',
+          'plan', 'status', 'locked',
+          'trialStarted', 'trialEndsAt',
+          'analyticsAccessLevel', 'analyticsTrialStartedAt', 'analyticsTrialEndsAt',
+          'amount', 'billingCycle',
+          'createdAt', 'updatedAt'
+        ]) &&
+        (
+          (
+            request.resource.data.plan == 'starter' &&
+            request.resource.data.status == 'trial' &&
+            request.resource.data.analyticsAccessLevel == 'free'
+          ) ||
+          (
+            request.resource.data.plan == 'professional' &&
+            request.resource.data.status == 'trial' &&
+            (!('locked' in request.resource.data) || request.resource.data.locked == false) &&
+            request.resource.data.trialEndsAt is timestamp &&
+            request.resource.data.trialEndsAt <= request.time + duration.value(15, 'd')
+          ) ||
+          (
+            request.resource.data.plan in ['professional', 'enterprise'] &&
+            request.resource.data.status == 'pending'
+          )
+        );
+    }
+
+    function isOwnerAutoExpiringSubscription() {
+      return isSubscriptionOwner() &&
+        request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['status', 'locked', 'updatedAt']) &&
+        request.resource.data.status == 'expired' &&
+        request.resource.data.locked == true &&
+        resource.data.status in ['trial', 'active'] &&
+        (
+          (resource.data.status == 'trial' &&
+            resource.data.trialEndsAt is timestamp &&
+            resource.data.trialEndsAt <= request.time) ||
+          (resource.data.status == 'active' &&
+            resource.data.nextBillingDate is timestamp &&
+            resource.data.nextBillingDate <= request.time)
+        );
+    }
+
     match /users/{userId} {
       allow read: if isOwner(userId) || isAdmin();
       allow create: if isSignedIn() && request.auth.uid == userId;
@@ -255,20 +313,11 @@ service cloud.firestore {
       // Creating a subscription requires ownership of the linked company
       // (or admin). Prevents a signed-in user from spinning up a billing
       // record attached to someone else's business.
-      allow create: if isSignedIn() && (
-        isAdmin() ||
-        (request.resource.data.companyId != null &&
-          exists(/databases/$(database)/documents/companies/$(request.resource.data.companyId)) &&
-          get(/databases/$(database)/documents/companies/$(request.resource.data.companyId)).data.adminUserId == request.auth.uid)
-      );
-      // Same ownership rule on update — previously ANY signed-in user
-      // could flip plan/locked/status on ANY subscription.
-      allow update: if isActiveAdmin() || (
-        isSignedIn() &&
-        resource.data.companyId != null &&
-        exists(/databases/$(database)/documents/companies/$(resource.data.companyId)) &&
-        get(/databases/$(database)/documents/companies/$(resource.data.companyId)).data.adminUserId == request.auth.uid
-      );
+      allow create: if isActiveAdmin() || isValidOwnerSubscriptionCreate();
+      // Owners may only perform the automatic downgrade when an existing trial
+      // or paid subscription has actually passed its expiry date. Plan, status,
+      // analytics tier, amount, and lock resets are admin-only.
+      allow update: if isActiveAdmin() || isOwnerAutoExpiringSubscription();
       allow delete: if isActiveAdmin();
     }
 
@@ -293,7 +342,7 @@ service cloud.firestore {
       allow read: if isSignedIn() && (
         isAdmin() ||
         (exists(/databases/$(database)/documents/companies/$(companyId)) &&
-          get(/databases/$(database)/documents/companies/$(companyId)).data().adminUserId == request.auth.uid)
+          get(/databases/$(database)/documents/companies/$(companyId)).data.adminUserId == request.auth.uid)
       );
       allow write: if isAdmin();  // Cloud Functions only
 
@@ -302,7 +351,7 @@ service cloud.firestore {
         allow read: if isSignedIn() && (
           isAdmin() ||
           (exists(/databases/$(database)/documents/companies/$(companyId)) &&
-            get(/databases/$(database)/documents/companies/$(companyId)).data().adminUserId == request.auth.uid)
+            get(/databases/$(database)/documents/companies/$(companyId)).data.adminUserId == request.auth.uid)
         );
         allow write: if isAdmin();  // Cloud Functions only
       }

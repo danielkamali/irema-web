@@ -86,10 +86,8 @@ function getNav(t, company, subStatus) {
     { id:'payments',       label:'Payments',            icon:'M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm0 6c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm0-12C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z' },
     { id:'notifications',  label:t('cd.notifications')||'Notifications',    icon:'M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9 M13.73 21a2 2 0 0 1-3.46 0' },
     { id:'qrcode',         label:'QR Code',                                   icon:'M3 3h7v7H3z M14 3h7v7h-7z M3 14h7v7H3z M14 14h3v3h-3z M20 14h1v1h-1z M17 17h3v3h-3z M20 20h1v1h-1z' },
-    // Stories nav shown only if feature is enabled by admin
-    ...(company?.enabledFeatures?.company_stories ? [{ id:'stories', label:'Stories', icon:'M15 10l4.553-2.069A1 1 0 0 1 21 8.871V15.13a1 1 0 0 1-1.447.9L15 14M3 8a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8z' }] : []),
-    // Products: available for trial, professional, enterprise — not free
-    ...(subStatus.hasAccess('product_listings') || company?.enabledFeatures?.product_listings ? [{ id:'products', label:'Products', icon:'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4' }] : []),
+    ...(subStatus.hasAccess('company_stories') ? [{ id:'stories', label:'Stories', icon:'M15 10l4.553-2.069A1 1 0 0 1 21 8.871V15.13a1 1 0 0 1-1.447.9L15 14M3 8a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8z' }] : []),
+    ...(subStatus.hasAccess('product_listings') ? [{ id:'products', label:'Products', icon:'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4' }] : []),
   ];
 }
 
@@ -320,7 +318,7 @@ export default function CompanyDashboard() {
   const dropRef = useRef(null);
 
   // Centralized subscription status (replaces scattered inline checks)
-  const subStatus = useSubscriptionStatus(company?.id);
+  const subStatus = useSubscriptionStatus(company?.id, company);
 
   const showToast = (msg, type='success') => { setToast({msg,type}); };
 
@@ -866,22 +864,22 @@ export default function CompanyDashboard() {
       {toast && <Toast {...toast} onClose={()=>setToast(null)} />}
 
       {/* ── Trial / Lock banners ── */}
-      {trialDaysLeft !== null && trialDaysLeft > 0 && !isLocked && (
-        <div style={{background: trialDaysLeft <= 3 ? '#ef4444' : '#e8b800', color: trialDaysLeft <= 3 ? 'white' : '#1a1200',
+      {subStatus.trialDaysLeft !== null && subStatus.trialDaysLeft > 0 && !subStatus.isLocked && (
+        <div style={{background: subStatus.trialDaysLeft <= 3 ? '#ef4444' : '#e8b800', color: subStatus.trialDaysLeft <= 3 ? 'white' : '#1a1200',
           textAlign:'center', padding:'10px 20px', fontSize:'0.85rem', fontWeight:700, position:'sticky', top:0, zIndex:200}}>
-          {trialDaysLeft <= 3 ? '🚨' : '⏳'} Professional Trial: <strong>{trialDaysLeft} day{trialDaysLeft!==1?'s':''} remaining</strong>
-          {trialDaysLeft <= 3 ? '. Upgrade now to keep your features!' : '. Enjoy your free trial!'}
+          {subStatus.trialDaysLeft <= 3 ? '🚨' : '⏳'} Professional Trial: <strong>{subStatus.trialDaysLeft} day{subStatus.trialDaysLeft!==1?'s':''} remaining</strong>
+          {subStatus.trialDaysLeft <= 3 ? '. Upgrade now to keep your features!' : '. Enjoy your free trial!'}
           <button onClick={()=>setSection('subscription')}
             style={{marginLeft:12,padding:'3px 12px',borderRadius:99,border:'none',
-              background: trialDaysLeft<=3?'white':'#1a1200', color: trialDaysLeft<=3?'#ef4444':'#e8b800',
+              background: subStatus.trialDaysLeft<=3?'white':'#1a1200', color: subStatus.trialDaysLeft<=3?'#ef4444':'#e8b800',
               fontWeight:700,fontSize:'0.78rem',cursor:'pointer'}}>
             Upgrade →
           </button>
         </div>
       )}
-      {isLocked && (
+      {(subStatus.isLocked || subStatus.isExpired || subStatus.isCancelled) && (
         <div style={{background:'#ef4444',color:'white',textAlign:'center',padding:'12px 20px',fontSize:'0.88rem',fontWeight:700,position:'sticky',top:0,zIndex:200}}>
-          🔒 Your trial has expired. Please subscribe to restore full access. Contact us at <a href="mailto:business@irema.rw" style={{color:'white',textDecoration:'underline'}}>business@irema.rw</a>
+          🔒 Your subscription is not active. Please subscribe to restore full access. Contact us at <a href="mailto:business@irema.rw" style={{color:'white',textDecoration:'underline'}}>business@irema.rw</a>
         </div>
       )}
 
@@ -1196,9 +1194,9 @@ export default function CompanyDashboard() {
               )}
 
               {/* Upgrade Prompt */}
-              {(analyticsAccessLevel === 'free' || isOnTrial) && (
+              {(subStatus.analyticsAccessLevel === 'free' || subStatus.isOnAnalyticsTrial) && (
                 <AnalyticsUpgradePrompt
-                  currentTier={analyticsAccessLevel}
+                  currentTier={subStatus.analyticsAccessLevel}
                   category={company?.category}
                   onUpgradeSelect={(tier) => {
                     setSection('payments');
@@ -1546,11 +1544,9 @@ export default function CompanyDashboard() {
                     </ul>
                     {(()=>{
                       const PLAN_RANK = { starter: 0, professional: 1, enterprise: 2 };
-                      const subStatus = subscription?.status;
-                      const onStarter = !subscription || subStatus === 'expired' || subStatus === 'cancelled' || subscription?.locked;
-                      const effectivePlan = subStatus === 'active' ? (subscription?.plan || company?.plan || 'starter') : onStarter ? 'starter' : null;
+                      const effectivePlan = subStatus.effectivePlan;
                       const isCurrentPlan = effectivePlan === plan.id;
-                      const isTrialActive = subStatus === 'trial' && plan.id === 'professional';
+                      const isTrialActive = subStatus.isTrial && plan.id === 'professional';
                       const isDowngrade = effectivePlan && PLAN_RANK[plan.id] < PLAN_RANK[effectivePlan];
 
                       // No CTA for downgrades or non-current starter
@@ -1588,7 +1584,7 @@ export default function CompanyDashboard() {
                               setEnterpriseModal(true);
                             }
                           }}>
-                          {isCurrentPlan ? '✓ Current Plan' : isTrialActive ? `Trial Active — ${trialDaysLeft ?? '?'} days left` : plan.cta}
+                          {isCurrentPlan ? '✓ Current Plan' : isTrialActive ? `Trial Active — ${subStatus.trialDaysLeft ?? '?'} days left` : plan.cta}
                         </button>
                       );
                     })()}
@@ -1609,7 +1605,7 @@ export default function CompanyDashboard() {
               {company?.category ? (
                 <div className="biz-card">
                   <TierComparison
-                    currentTier={analyticsAccessLevel}
+                    currentTier={subStatus.analyticsAccessLevel}
                     category={company.category}
                     onSelectTier={async (tier) => {
                       if (tier === 'free') {
@@ -1630,8 +1626,8 @@ export default function CompanyDashboard() {
                         });
 
                         // Update subscription
-                        if (subscription?.id) {
-                          await updateDoc(doc(db, 'subscriptions', subscription.id), {
+                        if (subStatus.subscription?.id) {
+                          await updateDoc(doc(db, 'subscriptions', subStatus.subscription.id), {
                             analyticsAccessLevel: tier,
                             analyticsCategoryTier: {
                               [company.category]: tier,
