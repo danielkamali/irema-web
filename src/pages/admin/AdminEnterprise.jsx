@@ -54,7 +54,10 @@ export default function AdminEnterprise() {
       });
       if (action === 'active') {
         // Create/update subscription record
-        const existing = subscriptions.find(s => s.companyId === enquiry.companyId);
+        const selectedCompany = companies.find(c => c.id === enquiry.companyId);
+        const existing = selectedCompany?.subscriptionId
+          ? subscriptions.find(s => s.id === selectedCompany.subscriptionId) || subscriptions.find(s => s.companyId === enquiry.companyId)
+          : subscriptions.find(s => s.companyId === enquiry.companyId);
         const subData = {
           companyId: enquiry.companyId, businessName: enquiry.companyName,
           adminEmail: enquiry.contactEmail, plan: 'enterprise',
@@ -70,6 +73,15 @@ export default function AdminEnterprise() {
           const ref = await addDoc(collection(db, 'subscriptions'), { ...subData, createdAt: serverTimestamp() });
           subscriptionId = ref.id;
         }
+        await Promise.all(
+          subscriptions
+            .filter(s => s.companyId === enquiry.companyId && s.id !== subscriptionId && s.locked)
+            .map(s => updateDoc(doc(db, 'subscriptions', s.id), {
+              locked: false,
+              updatedAt: serverTimestamp(),
+              updatedBy: user?.email,
+            }).catch(() => {}))
+        );
         // Update company's plan
         if (enquiry.companyId) {
           await updateDoc(doc(db, 'companies', enquiry.companyId), {

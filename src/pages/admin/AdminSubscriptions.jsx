@@ -171,8 +171,12 @@ export default function AdminSubscriptions() {
         analyticsTrialEndsAt.setDate(analyticsTrialEndsAt.getDate() + parseInt(assignForm.trialDays));
       }
 
-      // Check if subscription exists
-      const existingSub = subs.find(s => s.companyId === assignForm.businessId);
+      // Prefer the subscription currently linked from the company. Older
+      // accounts can have multiple subscription docs, so a plain companyId
+      // lookup may update a stale starter/expired document instead.
+      const existingSub = selectedBiz?.subscriptionId
+        ? subs.find(s => s.id === selectedBiz.subscriptionId) || subs.find(s => s.companyId === assignForm.businessId)
+        : subs.find(s => s.companyId === assignForm.businessId);
 
       const subData = {
         companyId: assignForm.businessId,
@@ -198,6 +202,18 @@ export default function AdminSubscriptions() {
         const ref = await addDoc(collection(db, 'subscriptions'), subData);
         subscriptionId = ref.id;
       }
+
+      // Make sure any previously linked subscription for this business is not
+      // left locked after an admin explicitly enables a plan.
+      await Promise.all(
+        subs
+          .filter(s => s.companyId === assignForm.businessId && s.id !== subscriptionId && s.locked)
+          .map(s => updateDoc(doc(db, 'subscriptions', s.id), {
+            locked: false,
+            updatedAt: serverTimestamp(),
+            updatedBy: adminUser?.email,
+          }).catch(() => {}))
+      );
 
       // Update company's enabledFeatures based on plan
       const enabledFeatures = getFeaturesByPlan(assignForm.plan);
