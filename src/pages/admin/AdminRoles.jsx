@@ -7,41 +7,113 @@ import AdminLayout from './AdminLayout';
 import './AdminPages.css';
 
 const ALL_PERMISSIONS = [
+  // Users
   { key: 'view_users',         label: 'View Users',              group: 'Users' },
   { key: 'edit_users',         label: 'Edit Users',              group: 'Users' },
   { key: 'delete_users',       label: 'Delete Users',            group: 'Users' },
   { key: 'ban_users',          label: 'Ban / Suspend Users',     group: 'Users' },
   { key: 'export_users',       label: 'Export User Data',        group: 'Users' },
+  // Businesses
   { key: 'view_businesses',    label: 'View Businesses',         group: 'Businesses' },
   { key: 'edit_businesses',    label: 'Edit Businesses',         group: 'Businesses' },
   { key: 'verify_businesses',  label: 'Verify Businesses',       group: 'Businesses' },
   { key: 'delete_businesses',  label: 'Delete Businesses',       group: 'Businesses' },
   { key: 'feature_businesses', label: 'Feature Businesses',      group: 'Businesses' },
+  // Reviews
   { key: 'view_reviews',       label: 'View Reviews',            group: 'Reviews' },
   { key: 'delete_reviews',     label: 'Delete Reviews',          group: 'Reviews' },
   { key: 'comment_reviews',    label: 'Comment on Reviews',      group: 'Reviews' },
   { key: 'pin_reviews',        label: 'Pin / Highlight Reviews', group: 'Reviews' },
+  { key: 'flag_reviews',       label: 'Flag Reviews for Review', group: 'Reviews' },
+  // Claims
   { key: 'manage_claims',      label: 'Manage Claims',           group: 'Claims' },
   { key: 'approve_claims',     label: 'Approve Claims',          group: 'Claims' },
   { key: 'reject_claims',      label: 'Reject Claims',           group: 'Claims' },
+  // Reports
   { key: 'view_reports',       label: 'View Reports',            group: 'Reports' },
   { key: 'resolve_reports',    label: 'Resolve Reports',         group: 'Reports' },
   { key: 'escalate_reports',   label: 'Escalate Reports',        group: 'Reports' },
+  // Analytics
   { key: 'view_analytics',     label: 'View Analytics',          group: 'Analytics' },
   { key: 'export_analytics',   label: 'Export Analytics Data',   group: 'Analytics' },
+  // Blog & Content
+  { key: 'view_blogs',         label: 'View Blog Posts',         group: 'Content' },
+  { key: 'create_blogs',       label: 'Create Blog Posts',       group: 'Content' },
+  { key: 'edit_blogs',         label: 'Edit Blog Posts',         group: 'Content' },
+  { key: 'delete_blogs',       label: 'Delete Blog Posts',       group: 'Content' },
+  { key: 'publish_blogs',      label: 'Publish Blog Posts',      group: 'Content' },
+  { key: 'schedule_blogs',     label: 'Schedule Blog Posts',     group: 'Content' },
+  // Newsletter
+  { key: 'view_newsletter',    label: 'View Newsletter',         group: 'Content' },
+  { key: 'manage_subscribers', label: 'Manage Subscribers',      group: 'Content' },
+  { key: 'compose_newsletter', label: 'Compose Newsletter',      group: 'Content' },
+  { key: 'schedule_newsletter',label: 'Schedule Newsletter',     group: 'Content' },
+  { key: 'send_newsletter',    label: 'Send Newsletter',         group: 'Content' },
+  { key: 'view_newsletter_analytics', label: 'View Newsletter Analytics', group: 'Content' },
+  // Support & Chat
+  { key: 'view_chat',          label: 'View Support Chat',       group: 'Support' },
+  { key: 'reply_chat',         label: 'Reply to Chat',           group: 'Support' },
+  { key: 'assign_chat',        label: 'Assign Chat Sessions',    group: 'Support' },
+  { key: 'close_chat',         label: 'Close Chat Sessions',     group: 'Support' },
+  // Notifications
+  { key: 'send_notifications', label: 'Send Notifications',      group: 'Notifications' },
+  { key: 'view_notification_status', label: 'View Notification Status', group: 'Notifications' },
+  // Finance & Payments
+  { key: 'view_payments',      label: 'View Payments',           group: 'Finance' },
+  { key: 'export_payments',    label: 'Export Payment Data',     group: 'Finance' },
+  { key: 'view_invoices',      label: 'View Invoices',           group: 'Finance' },
+  { key: 'view_subscriptions', label: 'View Subscriptions',      group: 'Finance' },
+  { key: 'manage_subscriptions', label: 'Manage Subscriptions',  group: 'Finance' },
+  // System & Admin
   { key: 'manage_admins',      label: 'Manage Administrators',   group: 'System' },
   { key: 'manage_settings',    label: 'Manage Settings',         group: 'System' },
   { key: 'view_audit',         label: 'View Audit Trail',        group: 'System' },
   { key: 'manage_roles',       label: 'Manage Roles',            group: 'System' },
-  { key: 'send_notifications', label: 'Send Notifications',      group: 'System' },
+  // Technical
+  { key: 'manage_api_keys',    label: 'Manage API Keys',         group: 'Technical' },
+  { key: 'manage_webhooks',    label: 'Manage Webhooks',         group: 'Technical' },
+  { key: 'view_logs',          label: 'View System Logs',        group: 'Technical' },
+  { key: 'view_system_health', label: 'View System Health',      group: 'Technical' },
 ];
 
 const PERMISSION_GROUPS = [...new Set(ALL_PERMISSIONS.map(p => p.group))];
 
+// Role Templates - pre-built roles for common use cases
+const ROLE_TEMPLATES = [
+  {
+    name: 'Content Manager',
+    description: 'Manages blog posts, newsletters, and content publications',
+    permissions: ['view_blogs','create_blogs','edit_blogs','delete_blogs','publish_blogs','schedule_blogs','view_newsletter','manage_subscribers','compose_newsletter','schedule_newsletter','send_newsletter','view_newsletter_analytics']
+  },
+  {
+    name: 'Moderator',
+    description: 'Moderates reviews, manages claims, and verifies businesses',
+    permissions: ['view_businesses','verify_businesses','feature_businesses','view_reviews','comment_reviews','delete_reviews','flag_reviews','pin_reviews','manage_claims','approve_claims','reject_claims','view_reports']
+  },
+  {
+    name: 'Support Agent',
+    description: 'Provides customer support and manages support tickets',
+    permissions: ['view_chat','reply_chat','assign_chat','close_chat','view_businesses','view_reviews','comment_reviews','manage_claims','view_reports']
+  },
+  {
+    name: 'Data Analyst',
+    description: 'Views analytics, generates reports, and exports data',
+    permissions: ['view_analytics','export_analytics','view_reports','view_payments','view_invoices','view_subscriptions','export_payments']
+  },
+  {
+    name: 'Technical Lead',
+    description: 'Manages technical systems, logs, and integrations',
+    permissions: ['view_logs','view_audit','view_system_health','manage_api_keys','manage_webhooks']
+  }
+];
+
 const DEFAULT_ROLES = [
   { name: 'Super Admin', permissions: ALL_PERMISSIONS.map(p => p.key), isSystem: true },
-  { name: 'Moderator', permissions: ['view_users','view_businesses','view_reviews','delete_reviews','comment_reviews','manage_claims','view_reports'], isSystem: false },
-  { name: 'Support', permissions: ['view_users','view_businesses','view_reviews','view_reports'], isSystem: false },
+  { name: 'Content Manager', permissions: ROLE_TEMPLATES[0].permissions, isSystem: false },
+  { name: 'Moderator', permissions: ROLE_TEMPLATES[1].permissions, isSystem: false },
+  { name: 'Support Agent', permissions: ROLE_TEMPLATES[2].permissions, isSystem: false },
+  { name: 'Data Analyst', permissions: ROLE_TEMPLATES[3].permissions, isSystem: false },
+  { name: 'Technical Lead', permissions: ROLE_TEMPLATES[4].permissions, isSystem: false },
 ];
 
 export default function AdminRoles() {
@@ -230,14 +302,33 @@ export default function AdminRoles() {
       {/* Create role modal */}
       {creating && (
         <div className="ap-modal-overlay" onClick={e => e.target === e.currentTarget && setCreating(false)}>
-          <div className="ap-modal" style={{ maxWidth:680 }}>
+          <div className="ap-modal" style={{ maxWidth:700 }}>
             <div className="ap-modal-header">
               <h3>{t('admin.create_new_role')||'Create New Role'}</h3>
               <button className="ap-modal-close" onClick={() => setCreating(false)}>✕</button>
             </div>
+
+            <div className="ap-field">
+              <label style={{ fontSize:'0.875rem', fontWeight:600, marginBottom:'8px', display:'block' }}>Use Template (Optional)</label>
+              <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(150px, 1fr))', gap:'8px', marginBottom:'16px' }}>
+                {ROLE_TEMPLATES.map((template, idx) => (
+                  <button
+                    key={idx}
+                    className="ap-btn ap-btn-secondary"
+                    style={{ textAlign:'left', padding:'12px', fontSize:'0.875rem', height:'auto', border: newRole.permissions === template.permissions ? '2px solid var(--brand)' : '1px solid var(--border)' }}
+                    onClick={() => setNewRole({ name: template.name, permissions: [...template.permissions] })}
+                    title={template.description}
+                  >
+                    <div style={{ fontWeight:600 }}>{template.name}</div>
+                    <div style={{ fontSize:'0.75rem', color:'var(--muted)', marginTop:'4px' }}>{template.permissions.length} permissions</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <div className="ap-field">
               <label>{t('admin.role_name')||'Role Name'}</label>
-              <input className="ap-input" value={newRole.name} placeholder={t('admin.role_placeholder')||'e.g. Content Manager'}
+              <input className="ap-input" value={newRole.name} placeholder={t('admin.role_placeholder')||'e.g. Custom Role'}
                 onChange={e => setNewRole(r => ({...r, name: e.target.value}))} />
             </div>
             <div className="ap-field" style={{ marginTop:'var(--sp-5)' }}>
