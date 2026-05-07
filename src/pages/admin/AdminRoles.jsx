@@ -195,75 +195,118 @@ export default function AdminRoles() {
 
   function PermissionCheckboxGroup({ perms, onChange, disabled }) {
     const allPerms = ALL_PERMISSIONS.map(p => p.key);
-    const isAllSelected = perms.length === allPerms.length && allPerms.every(p => perms.includes(p));
-    const isSomeSelected = perms.length > 0 && perms.length < allPerms.length;
 
     return (
       <div className="ap-perm-groups">
-        <div className="ap-perm-bulk-actions" style={{ marginBottom: '16px', display: 'flex', gap: '8px' }}>
-          <button
-            className="ap-btn ap-btn-secondary ap-btn-sm"
-            disabled={disabled}
-            onClick={() => onChange(allPerms)}
-            style={{ flex: '1', padding: '8px 12px', fontSize: '0.875rem' }}
-          >
-            ✓ Select All
-          </button>
-          <button
-            className="ap-btn ap-btn-secondary ap-btn-sm"
-            disabled={disabled}
-            onClick={() => onChange([])}
-            style={{ flex: '1', padding: '8px 12px', fontSize: '0.875rem' }}
-          >
-            ✕ Deselect All
-          </button>
+        {/* Quick Actions Bar */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          paddingBottom: '12px',
+          marginBottom: '16px',
+          borderBottom: '1px solid var(--border)'
+        }}>
+          <div style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--text)' }}>
+            {perms.length} / {allPerms.length} permissions
+          </div>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button
+              className="ap-btn ap-btn-tertiary ap-btn-xs"
+              disabled={disabled}
+              onClick={() => onChange(allPerms)}
+              style={{ padding: '6px 10px', fontSize: '0.75rem' }}
+            >
+              All
+            </button>
+            <button
+              className="ap-btn ap-btn-tertiary ap-btn-xs"
+              disabled={disabled}
+              onClick={() => onChange([])}
+              style={{ padding: '6px 10px', fontSize: '0.75rem' }}
+            >
+              None
+            </button>
+          </div>
         </div>
 
-        <div style={{ fontSize: '0.875rem', color: 'var(--muted)', marginBottom: '12px' }}>
-          {perms.length} / {allPerms.length} permissions selected
-        </div>
+        {/* Permission Groups */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
+          {PERMISSION_GROUPS.map(group => {
+            const groupPerms = ALL_PERMISSIONS.filter(p => p.group === group).map(p => p.key);
+            const groupSelected = groupPerms.filter(p => perms.includes(p));
+            const isGroupAllSelected = groupSelected.length === groupPerms.length;
 
-        {PERMISSION_GROUPS.map(group => {
-          const groupPerms = ALL_PERMISSIONS.filter(p => p.group === group).map(p => p.key);
-          const groupSelected = groupPerms.filter(p => perms.includes(p));
-          const isGroupAllSelected = groupSelected.length === groupPerms.length;
-          const isGroupSomeSelected = groupSelected.length > 0 && groupSelected.length < groupPerms.length;
-
-          return (
-            <div key={group} className="ap-perm-group">
-              <div className="ap-perm-group-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-                <div className="ap-perm-group-label" style={{ margin: 0 }}>{group} ({groupSelected.length}/{groupPerms.length})</div>
-                <button
-                  className="ap-btn ap-btn-tertiary ap-btn-xs"
-                  disabled={disabled}
-                  onClick={() => {
-                    const newPerms = isGroupAllSelected
-                      ? perms.filter(p => !groupPerms.includes(p))
-                      : [...new Set([...perms, ...groupPerms])];
-                    onChange(newPerms);
-                  }}
-                  style={{ padding: '4px 8px', fontSize: '0.75rem' }}
-                >
-                  {isGroupAllSelected ? 'Deselect' : 'Select'} Group
-                </button>
-              </div>
-              {ALL_PERMISSIONS.filter(p => p.group === group).map(p => (
-                <label key={p.key} className="ap-perm-check">
-                  <input
-                    type="checkbox"
-                    checked={perms.includes(p.key)}
+            return (
+              <div key={group} className="ap-perm-group" style={{ paddingBottom: '16px', borderBottom: '1px solid var(--border)' }}>
+                {/* Group Header */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  marginBottom: '12px'
+                }}>
+                  <div style={{
+                    fontSize: '0.875rem',
+                    fontWeight: 600,
+                    color: 'var(--text)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}>
+                    <span>{group}</span>
+                    <span style={{ color: 'var(--muted)', fontWeight: 400 }}>({groupSelected.length})</span>
+                  </div>
+                  <button
+                    className="ap-btn ap-btn-tertiary ap-btn-xs"
                     disabled={disabled}
-                    onChange={e => {
-                      if (e.target.checked) onChange([...perms, p.key]);
-                      else onChange(perms.filter(k => k !== p.key));
+                    onClick={() => {
+                      const newPerms = isGroupAllSelected
+                        ? perms.filter(p => !groupPerms.includes(p))
+                        : [...new Set([...perms, ...groupPerms])];
+                      onChange(newPerms);
                     }}
-                  />
-                  {p.label}
-                </label>
-              ))}
-            </div>
-          );
-        })}
+                    style={{ padding: '4px 8px', fontSize: '0.7rem' }}
+                  >
+                    {isGroupAllSelected ? 'Deselect' : 'Select'}
+                  </button>
+                </div>
+
+                {/* Group Permissions */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {ALL_PERMISSIONS.filter(p => p.group === group).map(p => (
+                    <label key={p.key} className="ap-perm-check" style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      cursor: disabled ? 'not-allowed' : 'pointer',
+                      opacity: disabled ? 0.5 : 1,
+                      fontSize: '0.875rem',
+                      padding: '6px 0'
+                    }}>
+                      <input
+                        type="checkbox"
+                        checked={perms.includes(p.key)}
+                        disabled={disabled}
+                        onChange={e => {
+                          if (e.target.checked) onChange([...perms, p.key]);
+                          else onChange(perms.filter(k => k !== p.key));
+                        }}
+                        style={{
+                          width: '16px',
+                          height: '16px',
+                          cursor: disabled ? 'not-allowed' : 'pointer',
+                          accentColor: 'var(--brand)'
+                        }}
+                      />
+                      <span style={{ color: 'var(--text)' }}>{p.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
     );
   }
