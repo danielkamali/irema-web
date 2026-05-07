@@ -242,7 +242,7 @@ export default function AdminRoles() {
         </div>
 
         {/* Permission Groups */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
           {PERMISSION_GROUPS.map(group => {
             const groupPerms = ALL_PERMISSIONS.filter(p => p.group === group).map(p => p.key);
             const groupSelected = groupPerms.filter(p => perms.includes(p));
@@ -556,7 +556,7 @@ export default function AdminRoles() {
       {/* Create role modal */}
       {creating && (
         <div className="ap-modal-overlay" onClick={e => e.target === e.currentTarget && setCreating(false)}>
-          <div className="ap-modal" style={{ maxWidth:'95vw', width: '1400px', maxHeight: '95vh', overflow: 'auto' }}>
+          <div className="ap-modal" style={{ maxWidth:'98vw', width: '1600px', maxHeight: '95vh', overflow: 'auto' }}>
             <div className="ap-modal-header">
               <h3>{t('admin.create_new_role')||'Create New Role'}</h3>
               <button className="ap-modal-close" onClick={() => setCreating(false)}>✕</button>
