@@ -336,35 +336,176 @@ export default function AdminRoles() {
 
       {loading ? <div className="ap-table-wrap" style={{ padding:'40px', textAlign:'center', color:'var(--muted)' }}>Loading…</div>
       : (
-        <div className="ap-roles-grid">
-          {roles.map(role => (
-            <div key={role.id} className={`ap-role-card${role.isSystem ? ' system' : ''}`}>
-              <div className="ap-role-header">
-                <div>
-                  <div className="ap-role-name">{role.name}</div>
-                  {role.isSystem && <span className="ap-badge teal" style={{ marginTop:4 }}>{t('admin.system_role')||'System Role'}</span>}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' }}>
+          {roles.map(role => {
+            const permissionPercentage = Math.round((role.permissions?.length || 0) / ALL_PERMISSIONS.length * 100);
+
+            return (
+              <div key={role.id} style={{
+                background: 'linear-gradient(135deg, var(--card-bg) 0%, var(--card-bg) 100%)',
+                border: '1px solid var(--border)',
+                borderRadius: '12px',
+                padding: '20px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '16px',
+                transition: 'all 0.2s ease',
+                cursor: 'pointer',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.borderColor = 'var(--brand)';
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.borderColor = 'var(--border)';
+              }}>
+
+                {/* Header with name and badge */}
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+                  <div>
+                    <div style={{
+                      fontSize: '1.125rem',
+                      fontWeight: 700,
+                      color: 'var(--text)',
+                      marginBottom: '6px'
+                    }}>
+                      {role.name}
+                    </div>
+                    {role.isSystem && (
+                      <span style={{
+                        display: 'inline-block',
+                        background: 'rgba(0, 200, 150, 0.2)',
+                        color: '#00c896',
+                        fontSize: '0.7rem',
+                        fontWeight: 600,
+                        padding: '4px 8px',
+                        borderRadius: '4px',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.5px'
+                      }}>
+                        System Role
+                      </span>
+                    )}
+                  </div>
                 </div>
-                <div className="ap-role-actions">
-                  <button className="ap-btn ap-btn-secondary ap-btn-sm" onClick={() => setEditing({ ...role })}>
+
+                {/* Permission count and progress */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '12px'
+                }}>
+                  <div>
+                    <div style={{
+                      fontSize: '0.8rem',
+                      color: 'var(--muted)',
+                      marginBottom: '4px',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px',
+                      fontWeight: 500
+                    }}>
+                      Permissions
+                    </div>
+                    <div style={{
+                      fontSize: '1.5rem',
+                      fontWeight: 700,
+                      color: 'var(--brand)'
+                    }}>
+                      {role.permissions?.length || 0}
+                    </div>
+                  </div>
+                  <div style={{
+                    width: '70px',
+                    height: '70px',
+                    borderRadius: '50%',
+                    background: 'conic-gradient(var(--brand) 0deg ' + (permissionPercentage * 3.6) + 'deg, var(--border) ' + (permissionPercentage * 3.6) + 'deg)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '0.75rem',
+                    fontWeight: 600,
+                    color: 'var(--text)',
+                    boxShadow: 'inset 0 0 0 8px var(--card-bg)'
+                  }}>
+                    {permissionPercentage}%
+                  </div>
+                </div>
+
+                {/* Sample permissions list */}
+                {(role.permissions?.length || 0) > 0 && (
+                  <div style={{ borderTop: '1px solid var(--border)', paddingTop: '12px' }}>
+                    <div style={{
+                      fontSize: '0.75rem',
+                      color: 'var(--muted)',
+                      marginBottom: '8px',
+                      textTransform: 'uppercase',
+                      fontWeight: 500
+                    }}>
+                      Sample Permissions
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      {(role.permissions || []).slice(0, 3).map(p => {
+                        const pm = ALL_PERMISSIONS.find(x => x.key === p);
+                        return pm ? (
+                          <div key={p} style={{
+                            fontSize: '0.8rem',
+                            color: 'var(--text)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px'
+                          }}>
+                            <span style={{
+                              width: '4px',
+                              height: '4px',
+                              background: 'var(--brand)',
+                              borderRadius: '50%',
+                              marginTop: '1px'
+                            }}></span>
+                            {pm.label}
+                          </div>
+                        ) : null;
+                      })}
+                      {(role.permissions?.length || 0) > 3 && (
+                        <div style={{
+                          fontSize: '0.8rem',
+                          color: 'var(--muted)',
+                          fontWeight: 500,
+                          marginTop: '4px'
+                        }}>
+                          +{role.permissions.length - 3} more
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Action buttons */}
+                <div style={{ display: 'flex', gap: '8px', marginTop: 'auto' }}>
+                  <button
+                    className="ap-btn ap-btn-primary ap-btn-sm"
+                    onClick={() => setEditing({ ...role })}
+                    style={{ flex: 1 }}
+                  >
                     Edit
                   </button>
                   {!role.isSystem && (
-                    <button className="ap-btn ap-btn-danger ap-btn-sm" onClick={() => deleteRole(role.id)}>Delete</button>
+                    <button
+                      className="ap-btn ap-btn-danger ap-btn-sm"
+                      onClick={() => deleteRole(role.id)}
+                      style={{ flex: 1 }}
+                    >
+                      Delete
+                    </button>
                   )}
                 </div>
               </div>
-              <div className="ap-role-perm-count">{role.permissions?.length || 0} / {ALL_PERMISSIONS.length} permissions</div>
-              <div className="ap-role-perm-pills">
-                {(role.permissions || []).slice(0,5).map(p => {
-                  const pm = ALL_PERMISSIONS.find(x => x.key === p);
-                  return pm ? <span key={p} className="ap-perm-pill">{pm.label}</span> : null;
-                })}
-                {(role.permissions?.length || 0) > 5 && (
-                  <span className="ap-perm-pill ap-perm-more">+{role.permissions.length - 5} more</span>
-                )}
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
