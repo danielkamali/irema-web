@@ -242,7 +242,7 @@ export default function AdminRoles() {
         </div>
 
         {/* Permission Groups */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '40px', padding: '0 20px' }}>
           {PERMISSION_GROUPS.map(group => {
             const groupPerms = ALL_PERMISSIONS.filter(p => p.group === group).map(p => p.key);
             const groupSelected = groupPerms.filter(p => perms.includes(p));
@@ -251,6 +251,8 @@ export default function AdminRoles() {
             return (
               <div key={group} className="ap-perm-group" style={{
                 paddingBottom: '12px',
+                paddingLeft: '16px',
+                paddingRight: '16px',
                 borderBottom: '1px solid var(--border)',
                 display: 'flex',
                 flexDirection: 'column',
