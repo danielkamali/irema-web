@@ -126,6 +126,7 @@ export default function AdminRoles() {
   const [newRole, setNewRole] = useState({ name: '', permissions: [] });
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState(null);
+  const [deleteConfirm, setDeleteConfirm] = useState(null);
 
   function showToast(msg, type='success') {
     setToast({ msg, type });
@@ -186,11 +187,21 @@ export default function AdminRoles() {
   }
 
   async function deleteRole(id) {
-    if (!window.confirm('Delete this role?')) return;
+    setDeleteConfirm(id);
+  }
+
+  async function confirmDelete() {
+    if (!deleteConfirm) return;
     try {
-      await deleteDoc(doc(db, 'admin_roles', id));
-      setRoles(prev => prev.filter(r => r.id !== id));
-    } catch(e) {}
+      await deleteDoc(doc(db, 'admin_roles', deleteConfirm));
+      setRoles(prev => prev.filter(r => r.id !== deleteConfirm));
+      setDeleteConfirm(null);
+      showToast('Role deleted successfully');
+    } catch(e) {
+      console.error(e);
+      showToast('Error deleting role', 'error');
+      setDeleteConfirm(null);
+    }
   }
 
   function PermissionCheckboxGroup({ perms, onChange, disabled }) {
@@ -591,6 +602,47 @@ export default function AdminRoles() {
           </div>
         </div>
       )}
+      {/* Delete Confirmation Modal */}
+      {deleteConfirm && (
+        <div className="ap-modal-overlay" onClick={e => e.target === e.currentTarget && setDeleteConfirm(null)}>
+          <div className="ap-modal" style={{ maxWidth: '400px' }}>
+            <div className="ap-modal-header">
+              <h3>Delete Role</h3>
+              <button className="ap-modal-close" onClick={() => setDeleteConfirm(null)}>✕</button>
+            </div>
+            <div style={{ padding: '0 20px 20px' }}>
+              <p style={{
+                color: 'var(--muted)',
+                fontSize: '0.95rem',
+                lineHeight: '1.5',
+                marginBottom: '20px'
+              }}>
+                Are you sure you want to delete this role? This action cannot be undone.
+              </p>
+              <div style={{
+                display: 'flex',
+                gap: '12px'
+              }}>
+                <button
+                  className="ap-btn ap-btn-secondary"
+                  onClick={() => setDeleteConfirm(null)}
+                  style={{ flex: 1 }}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="ap-btn ap-btn-danger"
+                  onClick={confirmDelete}
+                  style={{ flex: 1 }}
+                >
+                  Delete Role
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {toast && (
         <div style={{
           position:'fixed', bottom:24, right:24, zIndex:9999,
