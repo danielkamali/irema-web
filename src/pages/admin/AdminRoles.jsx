@@ -231,31 +231,39 @@ export default function AdminRoles() {
         </div>
 
         {/* Permission Groups */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
           {PERMISSION_GROUPS.map(group => {
             const groupPerms = ALL_PERMISSIONS.filter(p => p.group === group).map(p => p.key);
             const groupSelected = groupPerms.filter(p => perms.includes(p));
             const isGroupAllSelected = groupSelected.length === groupPerms.length;
 
             return (
-              <div key={group} className="ap-perm-group" style={{ paddingBottom: '16px', borderBottom: '1px solid var(--border)' }}>
+              <div key={group} className="ap-perm-group" style={{
+                paddingBottom: '12px',
+                borderBottom: '1px solid var(--border)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '8px'
+              }}>
                 {/* Group Header */}
                 <div style={{
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
-                  marginBottom: '12px'
+                  marginBottom: '6px'
                 }}>
                   <div style={{
-                    fontSize: '0.875rem',
-                    fontWeight: 600,
+                    fontSize: '0.8rem',
+                    fontWeight: 700,
                     color: 'var(--text)',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '6px'
+                    gap: '6px',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px'
                   }}>
                     <span>{group}</span>
-                    <span style={{ color: 'var(--muted)', fontWeight: 400 }}>({groupSelected.length})</span>
+                    <span style={{ color: 'var(--muted)', fontWeight: 500, textTransform: 'none' }}>({groupSelected.length}/{groupPerms.length})</span>
                   </div>
                   <button
                     className="ap-btn ap-btn-tertiary ap-btn-xs"
@@ -266,23 +274,24 @@ export default function AdminRoles() {
                         : [...new Set([...perms, ...groupPerms])];
                       onChange(newPerms);
                     }}
-                    style={{ padding: '4px 8px', fontSize: '0.7rem' }}
+                    style={{ padding: '3px 8px', fontSize: '0.65rem', minWidth: '60px' }}
                   >
                     {isGroupAllSelected ? 'Deselect' : 'Select'}
                   </button>
                 </div>
 
                 {/* Group Permissions */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
                   {ALL_PERMISSIONS.filter(p => p.group === group).map(p => (
                     <label key={p.key} className="ap-perm-check" style={{
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '8px',
+                      gap: '6px',
                       cursor: disabled ? 'not-allowed' : 'pointer',
                       opacity: disabled ? 0.5 : 1,
-                      fontSize: '0.875rem',
-                      padding: '6px 0'
+                      fontSize: '0.8rem',
+                      padding: '2px 0',
+                      margin: 0
                     }}>
                       <input
                         type="checkbox"
@@ -293,13 +302,14 @@ export default function AdminRoles() {
                           else onChange(perms.filter(k => k !== p.key));
                         }}
                         style={{
-                          width: '16px',
-                          height: '16px',
+                          width: '14px',
+                          height: '14px',
                           cursor: disabled ? 'not-allowed' : 'pointer',
-                          accentColor: 'var(--brand)'
+                          accentColor: 'var(--brand)',
+                          marginTop: '1px'
                         }}
                       />
-                      <span style={{ color: 'var(--text)' }}>{p.label}</span>
+                      <span style={{ color: 'var(--text)', lineHeight: '1.2' }}>{p.label}</span>
                     </label>
                   ))}
                 </div>
@@ -394,7 +404,7 @@ export default function AdminRoles() {
       {/* Create role modal */}
       {creating && (
         <div className="ap-modal-overlay" onClick={e => e.target === e.currentTarget && setCreating(false)}>
-          <div className="ap-modal" style={{ maxWidth:700 }}>
+          <div className="ap-modal" style={{ maxWidth:'95vw', width: '1400px', maxHeight: '95vh', overflow: 'auto' }}>
             <div className="ap-modal-header">
               <h3>{t('admin.create_new_role')||'Create New Role'}</h3>
               <button className="ap-modal-close" onClick={() => setCreating(false)}>✕</button>
