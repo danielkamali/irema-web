@@ -194,27 +194,76 @@ export default function AdminRoles() {
   }
 
   function PermissionCheckboxGroup({ perms, onChange, disabled }) {
+    const allPerms = ALL_PERMISSIONS.map(p => p.key);
+    const isAllSelected = perms.length === allPerms.length && allPerms.every(p => perms.includes(p));
+    const isSomeSelected = perms.length > 0 && perms.length < allPerms.length;
+
     return (
       <div className="ap-perm-groups">
-        {PERMISSION_GROUPS.map(group => (
-          <div key={group} className="ap-perm-group">
-            <div className="ap-perm-group-label">{group}</div>
-            {ALL_PERMISSIONS.filter(p => p.group === group).map(p => (
-              <label key={p.key} className="ap-perm-check">
-                <input
-                  type="checkbox"
-                  checked={perms.includes(p.key)}
+        <div className="ap-perm-bulk-actions" style={{ marginBottom: '16px', display: 'flex', gap: '8px' }}>
+          <button
+            className="ap-btn ap-btn-secondary ap-btn-sm"
+            disabled={disabled}
+            onClick={() => onChange(allPerms)}
+            style={{ flex: '1', padding: '8px 12px', fontSize: '0.875rem' }}
+          >
+            ✓ Select All
+          </button>
+          <button
+            className="ap-btn ap-btn-secondary ap-btn-sm"
+            disabled={disabled}
+            onClick={() => onChange([])}
+            style={{ flex: '1', padding: '8px 12px', fontSize: '0.875rem' }}
+          >
+            ✕ Deselect All
+          </button>
+        </div>
+
+        <div style={{ fontSize: '0.875rem', color: 'var(--muted)', marginBottom: '12px' }}>
+          {perms.length} / {allPerms.length} permissions selected
+        </div>
+
+        {PERMISSION_GROUPS.map(group => {
+          const groupPerms = ALL_PERMISSIONS.filter(p => p.group === group).map(p => p.key);
+          const groupSelected = groupPerms.filter(p => perms.includes(p));
+          const isGroupAllSelected = groupSelected.length === groupPerms.length;
+          const isGroupSomeSelected = groupSelected.length > 0 && groupSelected.length < groupPerms.length;
+
+          return (
+            <div key={group} className="ap-perm-group">
+              <div className="ap-perm-group-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                <div className="ap-perm-group-label" style={{ margin: 0 }}>{group} ({groupSelected.length}/{groupPerms.length})</div>
+                <button
+                  className="ap-btn ap-btn-tertiary ap-btn-xs"
                   disabled={disabled}
-                  onChange={e => {
-                    if (e.target.checked) onChange([...perms, p.key]);
-                    else onChange(perms.filter(k => k !== p.key));
+                  onClick={() => {
+                    const newPerms = isGroupAllSelected
+                      ? perms.filter(p => !groupPerms.includes(p))
+                      : [...new Set([...perms, ...groupPerms])];
+                    onChange(newPerms);
                   }}
-                />
-                {p.label}
-              </label>
-            ))}
-          </div>
-        ))}
+                  style={{ padding: '4px 8px', fontSize: '0.75rem' }}
+                >
+                  {isGroupAllSelected ? 'Deselect' : 'Select'} Group
+                </button>
+              </div>
+              {ALL_PERMISSIONS.filter(p => p.group === group).map(p => (
+                <label key={p.key} className="ap-perm-check">
+                  <input
+                    type="checkbox"
+                    checked={perms.includes(p.key)}
+                    disabled={disabled}
+                    onChange={e => {
+                      if (e.target.checked) onChange([...perms, p.key]);
+                      else onChange(perms.filter(k => k !== p.key));
+                    }}
+                  />
+                  {p.label}
+                </label>
+              ))}
+            </div>
+          );
+        })}
       </div>
     );
   }
