@@ -231,7 +231,7 @@ export default function AdminRoles() {
         </div>
 
         {/* Permission Groups */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
           {PERMISSION_GROUPS.map(group => {
             const groupPerms = ALL_PERMISSIONS.filter(p => p.group === group).map(p => p.key);
             const groupSelected = groupPerms.filter(p => perms.includes(p));
