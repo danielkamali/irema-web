@@ -13,9 +13,24 @@ export default defineConfig({
         skipWaiting: true,
         clientsClaim: true,
         cleanupOutdatedCaches: true,
-        // Precache all Vite-generated assets
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,webmanifest,woff2}'],
+        // Precache JS/CSS/assets but NOT html — HTML navigations use NetworkFirst
+        // so a normal browser refresh always picks up the latest deploy.
+        globPatterns: ['**/*.{js,css,ico,png,svg,webmanifest,woff2}'],
+        // SPA fallback for offline navigations
+        navigateFallback: 'index.html',
+        navigateFallbackDenylist: [/^\/api\//, /^\/admin\/__\//, /^\/__\//],
         runtimeCaching: [
+          // HTML navigations — always try network first so new deploys are
+          // visible on a normal refresh without needing a hard refresh.
+          {
+            urlPattern: ({ request }) => request.mode === 'navigate',
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'irema-navigations',
+              networkTimeoutSeconds: 5,
+              cacheableResponse: { statuses: [200] },
+            },
+          },
           // Images — CacheFirst, 30 days, max 60 entries
           {
             urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp|ico)$/i,
