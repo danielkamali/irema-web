@@ -1,5 +1,5 @@
 import Footer from '../components/Footer';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { db, auth, collection, addDoc, serverTimestamp, getDocs, query, where, Timestamp } from '../firebase/config';
 import { signInWithEmailAndPassword, signOut, createUserWithEmailAndPassword, onAuthStateChanged, sendPasswordResetEmail, sendEmailVerification, signInWithRedirect, signInWithPopup, updateProfile, browserLocalPersistence, setPersistence } from 'firebase/auth';
 import { useAuthStore } from '../store/authStore';
@@ -8,6 +8,7 @@ import { doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
 import { useThemeStore } from '../store/themeStore';
 import { useTranslation } from 'react-i18next';
+import { LANGUAGES } from '../constants/languages';
 import { ensureUniqueSlug } from '../utils/slug';
 import { getEmailVerificationActionCodeSettings } from '../utils/emailVerification';
 import { getAuthErrorMessage } from '../utils/authErrors';
@@ -47,6 +48,8 @@ export default function BusinessesPage() {
   const { user: globalUser } = useAuthStore();
   const [modal, setModal] = useState(null); // 'login' | 'register' | 'claim'
   const [bizMobileOpen, setBizMobileOpen] = useState(false);
+  const [bpLangOpen, setBpLangOpen] = useState(false);
+  const bpLangRef = useRef(null);
   const [loginForm, setLoginForm] = useState({ email:'', password:'' });
   const [showLoginPw, setShowLoginPw] = useState(false);
   const [showRegPw, setShowRegPw] = useState(false);
@@ -163,6 +166,17 @@ export default function BusinessesPage() {
       setAuthChecking(false);
     });
   }, [navigate]);
+
+  // Close lang dropdown when clicking outside
+  useEffect(() => {
+    function onClickOutside(e) {
+      if (bpLangRef.current && !bpLangRef.current.contains(e.target)) setBpLangOpen(false);
+    }
+    document.addEventListener('mousedown', onClickOutside);
+    return () => document.removeEventListener('mousedown', onClickOutside);
+  }, []);
+
+  const bpCurrentLang = LANGUAGES.find(l => l.code === i18n.language) || LANGUAGES[0];
 
   // LOGIN — Google sign-in on the business portal uses signInWithRedirect
   // directly. We previously raced signInWithPopup against a 20s timeout and
@@ -525,10 +539,29 @@ export default function BusinessesPage() {
             <a className="bp-nav-link" href="#pricing">{t('biz.nav_pricing')}</a>
           </nav>
           <div className="bp-nav-actions">
-            <select className="bp-lang-sel" value={i18n.language} onChange={e=>{i18n.changeLanguage(e.target.value);localStorage.setItem('irema_lang',e.target.value);}}>
-              <option value="en">EN</option><option value="fr">FR</option>
-              <option value="rw">RW</option><option value="sw">SW</option>
-            </select>
+            <div className="lang-switcher" ref={bpLangRef}>
+              <button className="lang-btn" onClick={() => setBpLangOpen(v => !v)} aria-label="Language" aria-expanded={bpLangOpen}>
+                {bpCurrentLang.label}
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                  <polyline points="6 9 12 15 18 9"/>
+                </svg>
+              </button>
+              {bpLangOpen && (
+                <div className="lang-dropdown" role="menu" aria-label="Language options">
+                  {LANGUAGES.map(lang => (
+                    <button
+                      key={lang.code}
+                      className={`lang-option${i18n.language === lang.code ? ' active' : ''}`}
+                      onClick={() => { i18n.changeLanguage(lang.code); localStorage.setItem('irema_lang', lang.code); setBpLangOpen(false); }}
+                      role="menuitem"
+                    >
+                      <span className="lang-code">{lang.label}</span>
+                      <span className="lang-name">{lang.name}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
             <button className="bp-theme-btn" onClick={toggleTheme} title="Toggle theme"
               style={{width:36,height:36,borderRadius:'50%',border:'1px solid var(--border,#e5e7eb)',background:'transparent',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'var(--text-2,#374151)',flexShrink:0}}>
               {theme==='dark'
@@ -546,28 +579,13 @@ export default function BusinessesPage() {
               <button className="bp-claim-btn" onClick={()=>setModal('claim')}>{t('biz.claim_your_biz')}</button>
               <button className="bp-cta-btn" onClick={()=>setModal('register')}>{t('biz.start_free')}</button>
             </div>
-            {/* Mobile hamburger */}
-            <button className="bp-hamburger" onClick={()=>setBizMobileOpen(v=>!v)} aria-label="Menu">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                {bizMobileOpen
-                  ? <><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></>
-                  : <><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></>
-                }
-              </svg>
-            </button>
+            {/* Mobile auth pills — no hamburger needed, bottom nav handles navigation */}
+            <div className="bp-nav-mobile">
+              <button className="bp-login-link" onClick={()=>setModal('login')}>{t('biz.log_in')}</button>
+              <button className="bp-claim-btn" onClick={()=>setModal('claim')}>{t('biz.claim_your_biz')}</button>
+            </div>
           </div>
         </div>
-        {/* Mobile drawer */}
-        {bizMobileOpen && (
-          <div className="bp-mobile-menu">
-            <a className="bp-mobile-item" href="#features" onClick={()=>setBizMobileOpen(false)}>Features</a>
-            <a className="bp-mobile-item" href="#pricing" onClick={()=>setBizMobileOpen(false)}>Pricing</a>
-            <div style={{height:1,background:'#e5e7eb',margin:'4px 0'}}/>
-            <button className="bp-mobile-item" onClick={()=>{setModal('login');setBizMobileOpen(false);}}>Log in</button>
-            <button className="bp-mobile-item" onClick={()=>{setModal('claim');setBizMobileOpen(false);}}>Claim your business</button>
-            <button className="bp-mobile-item bp-mobile-cta" onClick={()=>{setModal('register');setBizMobileOpen(false);}}>List Your Business Free →</button>
-          </div>
-        )}
       </header>
 
       {/* Stats banner */}
@@ -623,12 +641,12 @@ export default function BusinessesPage() {
           <h2>{t('biz.run_reputation')}</h2>
           <div className="bp-feature-grid">
             {[
-              {icon:'📈', key:'analytics'},
-              {icon:'↩️', key:'reply'},
-              {icon:'🏆', key:'competitor'},
-              {icon:'🔔', key:'notif'},
-              {icon:'🌍', key:'lang'},
-              {icon:'✅', key:'badge'},
+              {icon:<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>, key:'analytics'},
+              {icon:<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg>, key:'reply'},
+              {icon:<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.77 5.82 21 7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>, key:'competitor'},
+              {icon:<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>, key:'notif'},
+              {icon:<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>, key:'lang'},
+              {icon:<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>, key:'badge'},
             ].map(f=>(
               <div key={f.key} className="bp-feat-card">
                 <div className="bp-feat-icon">{f.icon}</div>
@@ -731,6 +749,7 @@ export default function BusinessesPage() {
                 {plan.primary && <div className="bp-price-pop">{t('biz.most_popular')}</div>}
                 <h3>{t(`biz.${plan.nameKey}`)}</h3>
                 <div className="bp-price-num">{plan.price}</div>
+                {plan.priceUsd && <div className="bp-price-usd">{plan.priceUsd}</div>}
                 <div className="bp-price-sub">{t(`biz.${plan.subKey}`)}</div>
                 <ul>
                   {plan.features.map(f=><li key={f}><span>✓</span>{f}</li>)}
@@ -759,7 +778,7 @@ export default function BusinessesPage() {
         <div className="bp-container">
           <div style={{display:'flex',flexDirection:'column',alignItems:'center',textAlign:'center',gap:0}}>
             <div style={{display:'inline-flex',alignItems:'center',gap:8,background:'rgba(255,255,255,0.12)',border:'1px solid rgba(255,255,255,0.2)',borderRadius:99,padding:'6px 18px',fontSize:'0.78rem',fontWeight:700,letterSpacing:'0.06em',textTransform:'uppercase',marginBottom:20,color:'rgba(255,255,255,0.9)'}}>
-              🚀 Join businesses across Rwanda
+              Join businesses across Rwanda
             </div>
             <h2 style={{fontSize:'clamp(1.8rem,4vw,2.8rem)',fontWeight:800,margin:'0 0 14px',letterSpacing:'-0.02em',lineHeight:1.15}}>
               {t('biz.ready_grow')}
@@ -811,8 +830,8 @@ export default function BusinessesPage() {
                   <div style={{position:'relative'}}>
                     <input className="bp-input" type={showLoginPw ? 'text' : 'password'} placeholder="Password" required
                       value={loginForm.password} onChange={e=>setLoginForm(p=>({...p,password:e.target.value}))} style={{paddingRight:40}}/>
-                    <button type="button" onClick={()=>setShowLoginPw(v=>!v)} style={{position:'absolute',right:10,top:'50%',transform:'translateY(-50%)',background:'none',border:'none',cursor:'pointer',color:'var(--text-3)',fontSize:'0.9rem',padding:0}}>
-                      {showLoginPw ? '🙈' : '👁️'}
+                    <button type="button" onClick={()=>setShowLoginPw(v=>!v)} style={{position:'absolute',right:10,top:'50%',transform:'translateY(-50%)',background:'none',border:'none',cursor:'pointer',color:'var(--text-3)',padding:0,display:'flex',alignItems:'center'}}>
+                      {showLoginPw ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg> : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>}
                     </button>
                   </div>
                   <button className="bp-btn-primary" type="submit" style={{width:'100%'}} disabled={loginLoading}>
@@ -855,7 +874,7 @@ export default function BusinessesPage() {
 
             {regErr && <div className="bp-error">{regErr}</div>}
             {regSuccess
-              ? <div className="bp-success">🎉 Account created! Redirecting to your dashboard…</div>
+              ? <div className="bp-success">Account created! Redirecting to your dashboard…</div>
               : (
               <form onSubmit={handleRegister}>
                 <div style={{fontSize:'0.72rem',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.08em',color:'var(--brand)',marginBottom:4}}>Your Details</div>
@@ -876,8 +895,8 @@ export default function BusinessesPage() {
                     {!regGoogleUser && (
                       <div style={{position:'relative',gridColumn:'1/-1'}}>
                         <input className="bp-input" type={showRegPw ? 'text' : 'password'} placeholder="Password (min 6 chars) *" required minLength="6" value={regForm.password} onChange={setReg('password')} style={{paddingRight:40}}/>
-                        <button type="button" onClick={()=>setShowRegPw(v=>!v)} style={{position:'absolute',right:10,top:'50%',transform:'translateY(-50%)',background:'none',border:'none',cursor:'pointer',color:'var(--text-3)',fontSize:'0.9rem',padding:0}}>
-                          {showRegPw ? '🙈' : '👁️'}
+                        <button type="button" onClick={()=>setShowRegPw(v=>!v)} style={{position:'absolute',right:10,top:'50%',transform:'translateY(-50%)',background:'none',border:'none',cursor:'pointer',color:'var(--text-3)',padding:0,display:'flex',alignItems:'center'}}>
+                          {showRegPw ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg> : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>}
                         </button>
                       </div>
                     )}

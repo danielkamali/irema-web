@@ -4,7 +4,7 @@ import { browserLocalPersistence, setPersistence } from 'firebase/auth';
 import { useModalStore } from '../store/modalStore';
 import { useAuthStore } from '../store/authStore';
 import {
-  auth, db, doc, setDoc, getDoc, serverTimestamp,
+  auth, db, doc, setDoc, getDoc, serverTimestamp, Timestamp,
   signInWithEmailAndPassword, createUserWithEmailAndPassword,
   signInWithRedirect, googleProvider, updateProfile, sendPasswordResetEmail, sendEmailVerification,
   reload, getIdToken,
@@ -394,7 +394,6 @@ export default function AuthModal() {
         createdAt: serverTimestamp(),
       };
       await setDoc(doc(db, 'users', uid), profileData);
-      // Force immediate profile update in authStore (onAuthStateChanged fires async)
       useAuthStore.getState().setUserProfile(profileData);
       showVerificationNotice(trimmedEmail);
     } catch (e) {
@@ -528,7 +527,7 @@ export default function AuthModal() {
     if (!selectedCompany) { setError('Please search and select a business to review.'); return; }
     if (reviewLimitBlock) { setError(reviewLimitBlock); return; }
     if (rating === 0) { 
-      setError('⭐ Please select a star rating before submitting.');
+      setError('Please select a star rating before submitting.');
       // Shake the star input to draw attention
       const starEl = document.querySelector('.star-rating-input');
       if (starEl) { starEl.style.animation = 'shake 0.4s ease'; setTimeout(()=>{ starEl.style.animation=''; }, 400); }
@@ -640,7 +639,7 @@ export default function AuthModal() {
             </div>
           ) : reviewSuccess ? (
             <div style={{ marginTop: 24, textAlign: 'center' }}>
-              <div style={{ fontSize: '2.5rem', marginBottom: 12 }}>✅</div>
+              <div style={{ marginBottom: 12, display:'flex', justifyContent:'center' }}><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--brand,#1ECAB8)" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg></div>
               <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-1)', marginBottom: 8 }}>
                 Review submitted successfully!
               </h3>
@@ -838,12 +837,12 @@ export default function AuthModal() {
       <div className="modal-overlay" onClick={handleOverlayClick}>
         <div className="modal-box">
           <button className="modal-close-btn" onClick={closeModal}>✕</button>
-          <div className="modal-icon">🔑</div>
+          <div className="modal-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--brand,#1ECAB8)" strokeWidth="2" strokeLinecap="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
           <h2 style={{fontSize:'1.3rem',fontWeight:800,color:'var(--text-1)',marginBottom:6}}>Reset Password</h2>
           <p className="modal-subtitle">Enter your email and we'll send you a reset link.</p>
           {forgotSent ? (
             <div style={{textAlign:'center',padding:'24px 0'}}>
-              <div style={{fontSize:'2.5rem',marginBottom:12}}>✅</div>
+              <div style={{marginBottom:12,display:'flex',justifyContent:'center'}}><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--brand,#1ECAB8)" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg></div>
               <p style={{fontWeight:700,color:'var(--brand)',marginBottom:8}}>Check your inbox!</p>
               <p style={{fontSize:'0.85rem',color:'var(--text-3)',marginBottom:20}}>A reset link was sent to <strong>{forgotEmail}</strong>.</p>
               <button className="btn btn-primary" style={{width:'100%'}} onClick={()=>{setForgotMode(false);setForgotSent(false);}}>Back to Login</button>
@@ -936,7 +935,7 @@ export default function AuthModal() {
       {bizWarning && (
         <div className="modal-overlay" onClick={() => setBizWarning(false)} style={{ zIndex: 2000 }}>
           <div className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth: 420, padding: 36, textAlign: 'center' }}>
-            <div style={{ fontSize: '3rem', marginBottom: 16 }}>🏢</div>
+            <div style={{ marginBottom: 16, display:'flex', justifyContent:'center' }}><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--brand,#1ECAB8)" strokeWidth="1.8" strokeLinecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
             <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.3rem', fontWeight: 800, color: 'var(--text-1)', marginBottom: 12 }}>Business Account Detected</h2>
             <p style={{ color: 'var(--text-3)', fontSize: '0.9rem', lineHeight: 1.7, marginBottom: 24 }}>
               This account is registered as a Business account. Please use the Business Portal to manage your business.

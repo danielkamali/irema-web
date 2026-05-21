@@ -32,10 +32,23 @@
 .bp-nav-link { font-size: 0.88rem; font-weight: 600; color: var(--text-3); cursor: pointer; text-decoration: none; transition: color 0.15s; }
 .bp-nav-link:hover { color: var(--text-1); }
 .bp-nav-actions { display: flex; align-items: center; gap: 10px; }
-.bp-login-link { background: none; border: none; font-size: 0.88rem; font-weight: 600; color: var(--text-3); cursor: pointer; padding: 8px 14px; border-radius: 8px; font-family: inherit; transition: all 0.15s; }
-.bp-login-link:hover { color: var(--text-1); background: #f0efeb; }
-.bp-claim-btn { background: none; border: 1.5px solid var(--green); color: var(--text-1); font-size: 0.85rem; font-weight: 700; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-family: inherit; transition: all 0.15s; }
-.bp-claim-btn:hover { background: var(--green-xl); }
+/* Pill-shaped nav buttons — matches home navbar style */
+.bp-login-link {
+  background: transparent; border: 1.5px solid #d1d5db;
+  font-size: 0.84rem; font-weight: 600; color: var(--text-1);
+  cursor: pointer; padding: 7px 18px; border-radius: 99px;
+  font-family: inherit; transition: border-color 0.15s, color 0.15s, background 0.15s;
+  white-space: nowrap;
+}
+.bp-login-link:hover { border-color: var(--green); color: var(--green); background: rgba(30,202,184,0.06); }
+.bp-claim-btn {
+  background: var(--green); color: #fff;
+  border: none; font-size: 0.84rem; font-weight: 700;
+  padding: 7px 18px; border-radius: 99px;
+  cursor: pointer; font-family: inherit; transition: all 0.2s;
+  box-shadow: 0 2px 10px rgba(30,202,184,0.28); white-space: nowrap;
+}
+.bp-claim-btn:hover { background: var(--green-dk); transform: translateY(-1px); }
 /* On dark backgrounds (hero, footer, banners), make claim btn white */
 .bp-stats-banner .bp-claim-btn,
 .bp-footer .bp-claim-btn,
@@ -114,8 +127,9 @@
 .bp-price-pop { position: absolute; top: -13px; left: 50%; transform: translateX(-50%); background: var(--green); color: #fff; font-size: 0.68rem; font-weight: 700; padding: 4px 14px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap; }
 .bp-price-card h3 { font-family: 'Sora', sans-serif; font-size: 1.1rem; font-weight: 700; color: var(--text-1); }
 .bp-price-num { font-family: 'Sora', sans-serif; font-size: 1.8rem; font-weight: 800; color: var(--green); }
+.bp-price-usd { font-size: 0.78rem; color: var(--text-4); margin-top: 2px; }
 .bp-price-sub { font-size: 0.78rem; color: var(--text-4); margin-bottom: 12px; }
-.bp-price-card ul { list-style: none; display: flex; flex-direction: column; gap: 8px; flex: 1; margin-bottom: 20px; }
+.bp-price-card ul { list-style: none; display: flex; flex-direction: column; gap: 8px; flex: 1; margin-bottom: 16px; }
 .bp-price-card li { display: flex; align-items: flex-start; gap: 8px; font-size: 0.85rem; color: #2e3d38; }
 .bp-price-card li span { color: var(--green); font-weight: 700; flex-shrink: 0; }
 .bp-price-analytics-label { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--green); margin: 6px 0 2px; opacity: 0.85; }
@@ -177,12 +191,6 @@
 .bp-claim-selected strong { font-size: 0.9rem; color: #111816; }
 
 @keyframes bpFadeUp { from { opacity:0; transform: translateY(16px); } to { opacity:1; transform: none; } }
-.bp-lang-sel {
-  padding: 7px 10px; border: 1px solid var(--border); border-radius: 7px;
-  background: #fff; color: var(--text-3); font-size: 0.78rem; font-weight: 700;
-  font-family: inherit; cursor: pointer;
-}
-.bp-lang-sel:focus { outline: none; border-color: var(--green); }
 
 /* Google login button */
 .bp-google-btn {
@@ -206,11 +214,11 @@
 @media (max-width: 480px) {
   .bp-hero { padding: 48px 16px 32px; }
   .bp-hero h1 { font-size: 1.8rem; }
-  .bp-overlay { padding: 0; align-items: flex-end; }
+  .bp-overlay { padding: 16px; align-items: center; justify-content: center; }
   .bp-modal {
     margin: 0; padding: 24px 16px 32px;
-    border-radius: 20px 20px 0 0;
-    max-height: 95vh; overflow-y: auto;
+    border-radius: 20px;
+    max-height: 92vh; overflow-y: auto;
     max-width: 100%;
   }
   .bp-field-row { grid-template-columns: 1fr; }
@@ -270,13 +278,25 @@
   .bp-features-grid { grid-template-columns: repeat(2,1fr); }
 }
 
-/* Mobile: ≤768px — hamburger takes over */
-@media (max-width: 768px) {
+/* Mobile nav pills — Login + Claim Business, no hamburger */
+.bp-nav-mobile {
+  display: none;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Tablet + mobile: ≤1024px — show pill buttons, hide desktop nav (matches bottom nav breakpoint) */
+@media (max-width: 1024px) {
   .bp-nav-desktop { display: none !important; }
-  .bp-hamburger { display: flex !important; }
+  .bp-hamburger { display: none !important; }
+  .bp-nav-mobile { display: flex !important; }
   .bp-navbar-inner { padding: 0 14px; }
   .bp-logo span { font-size: 1rem; }
-  .bp-lang-sel { padding: 5px 8px; font-size: 0.78rem; }
+
+  /* Match Navbar auth button sizing at tablet */
+  .bp-login-link { padding: 6px 14px; font-size: 0.8rem; }
+  .bp-claim-btn  { padding: 6px 14px; font-size: 0.8rem; }
+
   .bp-hero-inner h1 { font-size: 2rem; }
   .bp-hero-sub { font-size: 0.92rem; }
   .bp-stats-inner { gap: 12px; font-size: 0.82rem; }
@@ -294,6 +314,10 @@
   .bp-section { padding: 48px 0; }
   .bp-container { padding: 0 16px; }
   .bp-cta-section { padding: 56px 0; }
+
+  /* Further reduce to match Navbar's ≤640px sizing */
+  .bp-login-link { padding: 6px 12px; font-size: 0.76rem; }
+  .bp-claim-btn  { padding: 6px 14px; font-size: 0.78rem; }
 }
 
 /* Phone small: ≤480px */
@@ -351,7 +375,7 @@
 [data-theme="dark"] .bp-login-link:hover { color: #f0f5f2 !important; background: #1a2e23 !important; }
 [data-theme="dark"] .bp-claim-btn { border-color: #3aad88; color: #3aad88; background: transparent; }
 [data-theme="dark"] .bp-claim-btn:hover { background: rgba(58,173,136,0.1); }
-[data-theme="dark"] .bp-lang-sel { background: #1a2e23; color: #c8e0d4; border: 1px solid #1e3028; }
+
 [data-theme="dark"] .bp-theme-btn { border-color: #1e3028 !important; color: #8aada0 !important; background: transparent !important; }
 [data-theme="dark"] .bp-theme-btn:hover { background: #1a2e23 !important; color: #3aad88 !important; }
 
@@ -395,6 +419,8 @@
 [data-theme="dark"] .bp-price-sub { color: #8aada0; }
 [data-theme="dark"] .bp-price-card li { color: #8aada0; border-color: #2a4035; }
 [data-theme="dark"] .bp-price-card li.yes { color: #c8e0d4; }
+[data-theme="dark"] .bp-price-usd { color: #6b8a7a; }
+[data-theme="dark"] .bp-analytics-label { color: #3aad88; }
 [data-theme="dark"] .bp-pricing-note { color: #8aada0; }
 [data-theme="dark"] .bp-section-label { color: #3aad88; }
 

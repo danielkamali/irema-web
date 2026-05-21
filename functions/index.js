@@ -98,6 +98,11 @@ exports.callClaudeAPI = claudeAPI.callClaudeAPI;
 const newsletter = require('./sendNewsletter');
 exports.sendNewsletter = newsletter.sendNewsletter;
 
+// Import and export MTN MoMo payment functions
+const momoPayments = require('./momoPayments');
+exports.initiateMoMoPayment     = momoPayments.initiateMoMoPayment;
+exports.checkMoMoPaymentStatus  = momoPayments.checkMoMoPaymentStatus;
+
 // Import and export admin moderation functions
 const adminModeration = require('./adminModeration');
 exports.deleteUserData = adminModeration.deleteUserData;

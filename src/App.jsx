@@ -14,6 +14,7 @@ import EmailVerificationGate from './components/EmailVerificationGate';
 import { SubscriptionGuard } from './components/SubscriptionGuard';
 import LiveChat from './components/LiveChat';
 import EnvBanner from './components/EnvBanner';
+import PWAUpdateBanner from './components/PWAUpdateBanner';
 import PWABottomNav from './components/PWABottomNav';
 
 const HomePage = lazy(() => import('./pages/HomePage'));
@@ -44,6 +45,7 @@ const AdminNewsletter = lazy(() => import('./pages/admin/AdminNewsletter'));
 const AdminSupport = lazy(() => import('./pages/admin/AdminSupport'));
 const AdminEnterprise = lazy(() => import('./pages/admin/AdminEnterprise'));
 const AdminTranslations = lazy(() => import('./pages/admin/AdminTranslations'));
+const AdminTwoFactor = lazy(() => import('./pages/admin/AdminTwoFactor'));
 const QRScanPage = lazy(() => import('./pages/QRScanPage'));
 const BlogPage = lazy(() => import('./pages/BlogPage'));
 const NewsletterPage = lazy(() => import('./pages/NewsletterPage'));
@@ -57,7 +59,6 @@ const AuthActionPage = lazy(() => import('./pages/AuthActionPage'));
 const ProfilePage = lazy(() => import('./pages/ProfilePage'));
 const MyReviewsPage = lazy(() => import('./pages/MyReviewsPage'));
 const AllReviewsPage = lazy(() => import('./pages/AllReviewsPage'));
-const AdminTwoFactor = lazy(() => import('./pages/admin/AdminTwoFactor'));
 
 function ProtectedRoute({ children, requireAdmin = false }) {
   const { user, loading } = useAuthStore();
@@ -95,7 +96,6 @@ function PublicLayout({ children }) {
         {children}
       </main>
       <Footer />
-      <AuthModal />
     </>
   );
 }
@@ -136,8 +136,8 @@ export default function App() {
           <Route path="/company/:id" element={<PublicLayout><CompanyPage /></PublicLayout>} />
           <Route path="/businesses" element={<BusinessesPage />} />
           <Route path="/top-rated" element={<PublicLayout><TopRatedPage /></PublicLayout>} />
-          <Route path="/scan" element={<PublicLayout><QRScanPage /></PublicLayout>} />
           <Route path="/reviews" element={<PublicLayout><AllReviewsPage /></PublicLayout>} />
+          <Route path="/scan" element={<PublicLayout><QRScanPage /></PublicLayout>} />
           <Route path="/blog" element={<PublicLayout><BlogPage /></PublicLayout>} />
           <Route path="/newsletter" element={<PublicLayout><NewsletterPage /></PublicLayout>} />
           <Route path="/payments" element={<ProtectedRoute><PaymentsPage /></ProtectedRoute>} />
@@ -186,9 +186,11 @@ export default function App() {
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>
+      <AuthModal />
       <PWABottomNav />
       <LiveChat />
       <EnvBanner />
+      <PWAUpdateBanner />
     </BrowserRouter>
   );
 }
