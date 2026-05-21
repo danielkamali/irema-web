@@ -401,20 +401,6 @@ export default function AuthModal() {
     } finally { setLoading(false); }
   }
 
-  async function handleResendVerification() {
-    if (resendCooldown > 0 || !auth.currentUser) return;
-    setResendingVerification(true);
-    try {
-      await sendEmailVerification(auth.currentUser);
-      setResendCooldown(60);
-      const timer = setInterval(() => {
-        setResendCooldown(v => { if (v <= 1) { clearInterval(timer); return 0; } return v - 1; });
-      }, 1000);
-    } catch (e) {
-      setError('Could not resend email. Please try again in a moment.');
-    } finally { setResendingVerification(false); }
-  }
-
   async function searchCompanies(q) {
     if (!q.trim()) { setCompanyResults([]); return; }
     try {
@@ -809,46 +795,6 @@ export default function AuthModal() {
               )}
             </>
           )}
-        </div>
-      </div>
-    );
-  }
-
-  // ── Email verification pending screen (shown after signup) ──
-  if (verifyEmailSent) {
-    return (
-      <div className="modal-overlay" onClick={handleOverlayClick}>
-        <div className="modal-box">
-          <button className="modal-close-btn" onClick={closeModal}>✕</button>
-          <div className="modal-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--brand,#1ECAB8)" strokeWidth="1.8" strokeLinecap="round">
-              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-              <polyline points="22,6 12,13 2,6"/>
-            </svg>
-          </div>
-          <h2 style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--text-1)', marginBottom: 8 }}>Check your inbox</h2>
-          <p style={{ fontSize: '0.88rem', color: 'var(--text-3)', lineHeight: 1.6, marginBottom: 6 }}>
-            We sent a verification link to <strong style={{ color: 'var(--text-1)' }}>{email}</strong>.
-          </p>
-          <p style={{ fontSize: '0.85rem', color: 'var(--text-3)', lineHeight: 1.6, marginBottom: 20 }}>
-            Click the link in the email to activate your account. You'll need to verify before submitting reviews.
-          </p>
-          {error && <div className="alert alert-error" style={{ marginBottom: 12 }}>{error}</div>}
-          <button
-            className="btn btn-primary"
-            style={{ width: '100%', marginBottom: 10 }}
-            onClick={closeModal}
-          >
-            Got it — I'll check my email
-          </button>
-          <button
-            className="btn btn-outline"
-            style={{ width: '100%', fontSize: '0.84rem' }}
-            onClick={handleResendVerification}
-            disabled={resendingVerification || resendCooldown > 0}
-          >
-            {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : resendingVerification ? 'Sending…' : "Didn't get it? Resend email"}
-          </button>
         </div>
       </div>
     );
