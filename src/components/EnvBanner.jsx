@@ -10,6 +10,9 @@ export default function EnvBanner() {
   const env = import.meta.env.VITE_APP_ENV || 'unknown';
   const projectId = import.meta.env.VITE_FIREBASE_PROJECT_ID || 'unknown';
 
+  // Never show — banner obstructs the bottom nav on mobile.
+  return null;
+
   // Only show on non-production so real users never see it.
   if (env === 'production') return null;
 

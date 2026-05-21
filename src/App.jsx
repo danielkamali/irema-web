@@ -13,6 +13,8 @@ import AuthRedirectHandler from './components/AuthRedirectHandler';
 import { SubscriptionGuard } from './components/SubscriptionGuard';
 import LiveChat from './components/LiveChat';
 import EnvBanner from './components/EnvBanner';
+import PWAUpdateBanner from './components/PWAUpdateBanner';
+import PWABottomNav from './components/PWABottomNav';
 
 const HomePage = lazy(() => import('./pages/HomePage'));
 const SearchResults = lazy(() => import('./pages/SearchResults'));
@@ -42,6 +44,7 @@ const AdminNewsletter = lazy(() => import('./pages/admin/AdminNewsletter'));
 const AdminSupport = lazy(() => import('./pages/admin/AdminSupport'));
 const AdminEnterprise = lazy(() => import('./pages/admin/AdminEnterprise'));
 const AdminTranslations = lazy(() => import('./pages/admin/AdminTranslations'));
+const AdminTwoFactor = lazy(() => import('./pages/admin/AdminTwoFactor'));
 const QRScanPage = lazy(() => import('./pages/QRScanPage'));
 const BlogPage = lazy(() => import('./pages/BlogPage'));
 const NewsletterPage = lazy(() => import('./pages/NewsletterPage'));
@@ -51,6 +54,9 @@ const TermsPage = lazy(() => import('./pages/TermsPage'));
 const PrivacyPage = lazy(() => import('./pages/PrivacyPage'));
 const AboutPage = lazy(() => import('./pages/AboutPage'));
 const ContactPage = lazy(() => import('./pages/ContactPage'));
+const MyReviewsPage = lazy(() => import('./pages/MyReviewsPage'));
+const ProfilePage = lazy(() => import('./pages/ProfilePage'));
+const AllReviewsPage = lazy(() => import('./pages/AllReviewsPage'));
 
 function ProtectedRoute({ children, requireAdmin = false }) {
   const { user, loading } = useAuthStore();
@@ -87,7 +93,6 @@ function PublicLayout({ children }) {
         {children}
       </main>
       <Footer />
-      <AuthModal />
     </>
   );
 }
@@ -128,6 +133,7 @@ export default function App() {
           <Route path="/company/:id" element={<PublicLayout><CompanyPage /></PublicLayout>} />
           <Route path="/businesses" element={<BusinessesPage />} />
           <Route path="/top-rated" element={<PublicLayout><TopRatedPage /></PublicLayout>} />
+          <Route path="/reviews" element={<PublicLayout><AllReviewsPage /></PublicLayout>} />
           <Route path="/scan" element={<PublicLayout><QRScanPage /></PublicLayout>} />
           <Route path="/blog" element={<PublicLayout><BlogPage /></PublicLayout>} />
           <Route path="/newsletter" element={<PublicLayout><NewsletterPage /></PublicLayout>} />
@@ -136,6 +142,12 @@ export default function App() {
           {/* Protected user routes */}
           <Route path="/dashboard" element={
             <ProtectedRoute><PublicLayout><UserDashboard /></PublicLayout></ProtectedRoute>
+          } />
+          <Route path="/my-reviews" element={
+            <ProtectedRoute><PublicLayout><MyReviewsPage /></PublicLayout></ProtectedRoute>
+          } />
+          <Route path="/profile" element={
+            <ProtectedRoute><PublicLayout><ProfilePage /></PublicLayout></ProtectedRoute>
           } />
           <Route path="/company-dashboard" element={<SubscriptionGuard><CompanyDashboard /></SubscriptionGuard>} />
 
@@ -161,6 +173,7 @@ export default function App() {
           <Route path="/admin/features" element={<ProtectedRoute requireAdmin><AdminFeatures /></ProtectedRoute>} />
           <Route path="/admin/enterprise" element={<ProtectedRoute requireAdmin><AdminEnterprise /></ProtectedRoute>} />
           <Route path="/admin/translations" element={<ProtectedRoute requireAdmin><AdminTranslations /></ProtectedRoute>} />
+          <Route path="/admin/two-factor" element={<ProtectedRoute requireAdmin><AdminTwoFactor /></ProtectedRoute>} />
 
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/privacy" element={<PrivacyPage />} />
@@ -169,8 +182,11 @@ export default function App() {
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>
+      <AuthModal />
       <LiveChat />
       <EnvBanner />
+      <PWAUpdateBanner />
+      <PWABottomNav />
     </BrowserRouter>
   );
 }

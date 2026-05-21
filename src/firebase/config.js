@@ -15,6 +15,7 @@ import {
   onAuthStateChanged,
   updateProfile,
   sendPasswordResetEmail,
+  sendEmailVerification,
 } from 'firebase/auth';
 import {
   getFirestore,
@@ -95,6 +96,7 @@ export {
   signInWithEmailAndPassword, createUserWithEmailAndPassword,
   signInWithPopup, signInWithRedirect, getRedirectResult,
   signOut, onAuthStateChanged, updateProfile, sendPasswordResetEmail,
+  sendEmailVerification,
   // Firestore
   collection, doc, getDoc, getDocs, setDoc, addDoc, updateDoc, deleteDoc,
   query, where, orderBy, limit, startAfter, serverTimestamp,

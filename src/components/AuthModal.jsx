@@ -4,9 +4,10 @@ import { browserLocalPersistence, setPersistence } from 'firebase/auth';
 import { useModalStore } from '../store/modalStore';
 import { useAuthStore } from '../store/authStore';
 import {
-  auth, db, doc, setDoc, getDoc, serverTimestamp,
+  auth, db, doc, setDoc, getDoc, serverTimestamp, Timestamp,
   signInWithEmailAndPassword, createUserWithEmailAndPassword,
   signInWithRedirect, googleProvider, updateProfile, sendPasswordResetEmail,
+  sendEmailVerification,
   collection, query, where, getDocs, addDoc, updateDoc, runTransaction,
   storage, storageRef, uploadBytes, getDownloadURL
 } from '../firebase/config';
@@ -47,6 +48,9 @@ export default function AuthModal() {
   const [forgotEmail, setForgotEmail] = useState('');
   const [forgotSent, setForgotSent] = useState(false);
   const [forgotLoading, setForgotLoading] = useState(false);
+  const [verifyEmailSent, setVerifyEmailSent] = useState(false);
+  const [resendingVerification, setResendingVerification] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
 
   // Write review state
   // Pre-select company from modalData (when clicking Write Review on a company page)
@@ -80,6 +84,7 @@ export default function AuthModal() {
       setRating(0); setComment(''); setReviewStep(1); setReviewSuccess(false);
       setSelectedImages([]); setImagePreviews([]); setShowAddBiz(false);
       setForgotMode(false); setForgotEmail(''); setForgotSent(false);
+      setVerifyEmailSent(false); setResendingVerification(false); setResendCooldown(0);
     }
   }, [activeModal]);
 
@@ -266,11 +271,12 @@ export default function AuthModal() {
       const uid = result.user.uid;
       const displayName = trimmedEmail.split('@')[0];
       await updateProfile(result.user, { displayName });
-      const profileData = { displayName, email: trimmedEmail, role: 'user', createdAt: serverTimestamp() };
+      const profileData = { displayName, email: trimmedEmail, role: 'user', createdAt: serverTimestamp(), emailVerified: false };
       await setDoc(doc(db, 'users', uid), profileData);
-      // Force immediate profile update in authStore (onAuthStateChanged fires async)
       useAuthStore.getState().setUserProfile(profileData);
-      closeModal();
+      // Send verification email — do not close modal until verified
+      await sendEmailVerification(result.user);
+      setVerifyEmailSent(true);
     } catch (e) {
       if (e.code === 'auth/email-already-in-use') {
         setError('This email is already registered. Try logging in, or use a different email.');
@@ -278,6 +284,20 @@ export default function AuthModal() {
         setError(e.message);
       }
     } finally { setLoading(false); }
+  }
+
+  async function handleResendVerification() {
+    if (resendCooldown > 0 || !auth.currentUser) return;
+    setResendingVerification(true);
+    try {
+      await sendEmailVerification(auth.currentUser);
+      setResendCooldown(60);
+      const timer = setInterval(() => {
+        setResendCooldown(v => { if (v <= 1) { clearInterval(timer); return 0; } return v - 1; });
+      }, 1000);
+    } catch (e) {
+      setError('Could not resend email. Please try again in a moment.');
+    } finally { setResendingVerification(false); }
   }
 
   async function searchCompanies(q) {
@@ -385,7 +405,7 @@ export default function AuthModal() {
     if (!user) { openModal('login'); return; }
     if (!selectedCompany) { setError('Please search and select a business to review.'); return; }
     if (rating === 0) { 
-      setError('⭐ Please select a star rating before submitting.');
+      setError('Please select a star rating before submitting.');
       // Shake the star input to draw attention
       const starEl = document.querySelector('.star-rating-input');
       if (starEl) { starEl.style.animation = 'shake 0.4s ease'; setTimeout(()=>{ starEl.style.animation=''; }, 400); }
@@ -408,7 +428,30 @@ export default function AuthModal() {
         return;
       }
 
-      // Users can review any number of times - no rate limiting
+      // ── Email verification gate (skip for Google users — already verified) ──
+      const isGoogleUser = user.providerData?.[0]?.providerId === 'google.com';
+      if (!isGoogleUser && !user.emailVerified) {
+        setError('Please verify your email address before submitting a review. Check your inbox for the verification link.');
+        setLoading(false);
+        return;
+      }
+
+      // ── Duplicate review check: one review per user per business per day ──
+      const now = new Date();
+      const startOfToday = Timestamp.fromDate(new Date(now.getFullYear(), now.getMonth(), now.getDate()));
+      const existingSnap = await getDocs(
+        query(
+          collection(db, 'reviews'),
+          where('userId', '==', user.uid),
+          where('companyId', '==', selectedCompany.id),
+          where('createdAt', '>=', startOfToday)
+        )
+      );
+      if (!existingSnap.empty) {
+        setError('You have already reviewed this business today. You can submit another review tomorrow.');
+        setLoading(false);
+        return;
+      }
 
       // Create the review with status 'pending' so admins can moderate before it goes live
       const reviewData = {
@@ -480,7 +523,7 @@ export default function AuthModal() {
             </div>
           ) : reviewSuccess ? (
             <div style={{ marginTop: 24, textAlign: 'center' }}>
-              <div style={{ fontSize: '2.5rem', marginBottom: 12 }}>✅</div>
+              <div style={{ marginBottom: 12, display:'flex', justifyContent:'center' }}><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--brand,#1ECAB8)" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg></div>
               <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-1)', marginBottom: 8 }}>
                 Review submitted successfully!
               </h3>
@@ -630,6 +673,46 @@ export default function AuthModal() {
     );
   }
 
+  // ── Email verification pending screen (shown after signup) ──
+  if (verifyEmailSent) {
+    return (
+      <div className="modal-overlay" onClick={handleOverlayClick}>
+        <div className="modal-box">
+          <button className="modal-close-btn" onClick={closeModal}>✕</button>
+          <div className="modal-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--brand,#1ECAB8)" strokeWidth="1.8" strokeLinecap="round">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+              <polyline points="22,6 12,13 2,6"/>
+            </svg>
+          </div>
+          <h2 style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--text-1)', marginBottom: 8 }}>Check your inbox</h2>
+          <p style={{ fontSize: '0.88rem', color: 'var(--text-3)', lineHeight: 1.6, marginBottom: 6 }}>
+            We sent a verification link to <strong style={{ color: 'var(--text-1)' }}>{email}</strong>.
+          </p>
+          <p style={{ fontSize: '0.85rem', color: 'var(--text-3)', lineHeight: 1.6, marginBottom: 20 }}>
+            Click the link in the email to activate your account. You'll need to verify before submitting reviews.
+          </p>
+          {error && <div className="alert alert-error" style={{ marginBottom: 12 }}>{error}</div>}
+          <button
+            className="btn btn-primary"
+            style={{ width: '100%', marginBottom: 10 }}
+            onClick={closeModal}
+          >
+            Got it — I'll check my email
+          </button>
+          <button
+            className="btn btn-outline"
+            style={{ width: '100%', fontSize: '0.84rem' }}
+            onClick={handleResendVerification}
+            disabled={resendingVerification || resendCooldown > 0}
+          >
+            {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : resendingVerification ? 'Sending…' : "Didn't get it? Resend email"}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   // Login / Signup
   const isLogin = activeModal === 'login';
 
@@ -639,12 +722,12 @@ export default function AuthModal() {
       <div className="modal-overlay" onClick={handleOverlayClick}>
         <div className="modal-box">
           <button className="modal-close-btn" onClick={closeModal}>✕</button>
-          <div className="modal-icon">🔑</div>
+          <div className="modal-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--brand,#1ECAB8)" strokeWidth="2" strokeLinecap="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
           <h2 style={{fontSize:'1.3rem',fontWeight:800,color:'var(--text-1)',marginBottom:6}}>Reset Password</h2>
           <p className="modal-subtitle">Enter your email and we'll send you a reset link.</p>
           {forgotSent ? (
             <div style={{textAlign:'center',padding:'24px 0'}}>
-              <div style={{fontSize:'2.5rem',marginBottom:12}}>✅</div>
+              <div style={{marginBottom:12,display:'flex',justifyContent:'center'}}><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--brand,#1ECAB8)" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg></div>
               <p style={{fontWeight:700,color:'var(--brand)',marginBottom:8}}>Check your inbox!</p>
               <p style={{fontSize:'0.85rem',color:'var(--text-3)',marginBottom:20}}>A reset link was sent to <strong>{forgotEmail}</strong>.</p>
               <button className="btn btn-primary" style={{width:'100%'}} onClick={()=>{setForgotMode(false);setForgotSent(false);}}>Back to Login</button>
@@ -737,7 +820,7 @@ export default function AuthModal() {
       {bizWarning && (
         <div className="modal-overlay" onClick={() => setBizWarning(false)} style={{ zIndex: 2000 }}>
           <div className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth: 420, padding: 36, textAlign: 'center' }}>
-            <div style={{ fontSize: '3rem', marginBottom: 16 }}>🏢</div>
+            <div style={{ marginBottom: 16, display:'flex', justifyContent:'center' }}><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--brand,#1ECAB8)" strokeWidth="1.8" strokeLinecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
             <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.3rem', fontWeight: 800, color: 'var(--text-1)', marginBottom: 12 }}>Business Account Detected</h2>
             <p style={{ color: 'var(--text-3)', fontSize: '0.9rem', lineHeight: 1.7, marginBottom: 24 }}>
               This account is registered as a Business account. Please use the Business Portal to manage your business.

@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Irema — Nav Options</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #f0f0f0;
+    padding: 32px 24px;
+    min-height: 100vh;
+  }
+
+  h1 {
+    text-align: center;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #374151;
+    margin-bottom: 28px;
+    letter-spacing: 0.02em;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    gap: 20px;
+    max-width: 1320px;
+    margin: 0 auto;
+  }
+
+  .option {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .label {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    text-align: center;
+  }
+
+  /* ── Phone shell ── */
+  .phone {
+    width: 100%;
+    aspect-ratio: 9/19;
+    background: #111;
+    border-radius: 36px;
+    padding: 14px 10px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.35), 0 0 0 2px #333;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* notch */
+  .phone::before {
+    content: '';
+    position: absolute;
+    top: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 70px; height: 18px;
+    background: #111;
+    border-radius: 0 0 12px 12px;
+    z-index: 10;
+  }
+
+  .screen {
+    flex: 1;
+    background: #f7f6f3;
+    border-radius: 24px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+
+  /* ── Top Navbar ── */
+  .top-nav {
+    background: #fff;
+    border-bottom: 1px solid #e5e7eb;
+    padding: 10px 14px 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    padding-top: 22px; /* account for notch */
+  }
+
+  .logo {
+    display: flex; align-items: center; gap: 6px;
+  }
+  .logo-mark {
+    width: 26px; height: 26px;
+    background: linear-gradient(135deg, #1f6b52, #164d3b);
+    border-radius: 7px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; color: #e8b800;
+  }
+  .logo-text { font-size: 0.85rem; font-weight: 800; color: #111; }
+
+  .search-bar {
+    flex: 1;
+    background: #f3f4f6;
+    border-radius: 8px;
+    height: 30px;
+    display: flex; align-items: center;
+    padding: 0 10px;
+    gap: 6px;
+    font-size: 0.7rem; color: #9ca3af;
+  }
+
+  .nav-right {
+    display: flex; align-items: center; gap: 6px;
+  }
+  .icon-btn {
+    width: 28px; height: 28px;
+    border-radius: 8px;
+    background: #f3f4f6;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px;
+  }
+  .lang-pill {
+    background: #f3f4f6;
+    border-radius: 6px;
+    padding: 3px 7px;
+    font-size: 0.65rem; font-weight: 700; color: #374151;
+  }
+
+  /* ── Content area ── */
+  .content {
+    flex: 1;
+    overflow: hidden;
+    padding: 14px 12px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .section-title {
+    font-size: 0.75rem; font-weight: 800; color: #111;
+  }
+
+  .card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 10px 12px;
+    border: 1px solid #e5e7eb;
+  }
+  .card-row { display: flex; align-items: center; gap: 8px; }
+  .card-avatar {
+    width: 28px; height: 28px; border-radius: 8px;
+    background: linear-gradient(135deg, #1f6b52, #2d8f6f);
+    flex-shrink: 0;
+  }
+  .card-text { flex: 1; }
+  .card-title { font-size: 0.72rem; font-weight: 700; color: #111; }
+  .card-sub { font-size: 0.62rem; color: #9ca3af; margin-top: 1px; }
+  .stars { color: #e8b800; font-size: 0.7rem; }
+
+  .card-sm {
+    background: #fff;
+    border-radius: 10px;
+    padding: 8px 10px;
+    border: 1px solid #e5e7eb;
+    font-size: 0.68rem;
+    color: #374151;
+    font-weight: 500;
+  }
+
+  /* ── Bottom Nav (base) ── */
+  .bottom-nav {
+    background: #fff;
+    border-top: 1px solid rgba(0,0,0,0.08);
+    box-shadow: 0 -2px 12px rgba(0,0,0,0.06);
+    padding: 6px 0 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    flex-shrink: 0;
+  }
+
+  .tab {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    cursor: pointer;
+  }
+  .tab-icon { font-size: 16px; line-height: 1; }
+  .tab-label {
+    font-size: 0.56rem;
+    font-weight: 500;
+    color: #9ca3af;
+  }
+  .tab.active .tab-label { color: #1ECAB8; font-weight: 700; }
+  .tab.active .tab-icon-wrap svg path,
+  .tab.active .tab-icon-wrap svg polyline,
+  .tab.active .tab-icon-wrap svg circle { stroke: #1ECAB8; }
+
+  /* SVG icons */
+  .tab-icon-wrap svg {
+    width: 18px; height: 18px;
+    stroke: #9ca3af;
+    fill: none;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    display: block;
+  }
+  .tab.active .tab-icon-wrap svg { stroke: #1ECAB8; }
+
+  /* ━━━━━━━━━━━━━━━━━━━━━━━━━
+     OPTION A — Centre CTA
+  ━━━━━━━━━━━━━━━━━━━━━━━━━ */
+  .cta-tab {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    position: relative;
+    padding-bottom: 0;
+  }
+  .cta-btn {
+    width: 44px; height: 44px;
+    background: #1ECAB8;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 14px rgba(30,202,184,0.45);
+    position: relative;
+    top: -10px;
+    font-size: 18px;
+    color: white;
+  }
+  .cta-btn svg {
+    width: 18px; height: 18px;
+    stroke: white; fill: none;
+    stroke-width: 2; stroke-linecap: round;
+  }
+  .cta-tab .tab-label {
+    margin-top: -6px;
+  }
+
+  /* ━━━━━━━━━━━━━━━━━━━━━━━━━
+     OPTION B — More sheet
+  ━━━━━━━━━━━━━━━━━━━━━━━━━ */
+  .bottom-sheet {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    background: #fff;
+    border-radius: 20px 20px 0 0;
+    padding: 10px 0 16px;
+    box-shadow: 0 -8px 32px rgba(0,0,0,0.15);
+    z-index: 20;
+  }
+  .sheet-handle {
+    width: 36px; height: 4px;
+    background: #e5e7eb;
+    border-radius: 2px;
+    margin: 0 auto 12px;
+  }
+  .sheet-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 18px;
+    font-size: 0.72rem; font-weight: 600; color: #374151;
+  }
+  .sheet-item-icon {
+    width: 30px; height: 30px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+  }
+  .sheet-icon-teal { background: #e6faf6; }
+  .sheet-icon-blue { background: #eff6ff; }
+  .sheet-icon-purple { background: #f5f3ff; }
+  .sheet-divider { height: 1px; background: #f3f4f6; margin: 4px 0; }
+
+  /* overlay behind sheet */
+  .sheet-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.25);
+    z-index: 19;
+    border-radius: 24px;
+  }
+
+  /* ━━━━━━━━━━━━━━━━━━━━━━━━━
+     OPTION C — FAB
+  ━━━━━━━━━━━━━━━━━━━━━━━━━ */
+  .fab {
+    position: absolute;
+    bottom: 56px;
+    right: 14px;
+    width: 42px; height: 42px;
+    background: #1ECAB8;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 16px rgba(30,202,184,0.5);
+    font-size: 18px;
+    color: white;
+    z-index: 15;
+  }
+  .fab svg {
+    width: 18px; height: 18px;
+    stroke: white; fill: none;
+    stroke-width: 2; stroke-linecap: round;
+  }
+  .fab-label {
+    position: absolute;
+    bottom: 100px;
+    right: 8px;
+    background: #111;
+    color: #fff;
+    font-size: 0.6rem;
+    font-weight: 700;
+    padding: 4px 8px;
+    border-radius: 6px;
+    white-space: nowrap;
+  }
+  .fab-label::after {
+    content: '';
+    position: absolute;
+    top: 100%; right: 16px;
+    border: 5px solid transparent;
+    border-top-color: #111;
+  }
+
+  /* ━━━━━━━━━━━━━━━━━━━━━━━━━
+     OPTION D — Inline navbar icons
+  ━━━━━━━━━━━━━━━━━━━━━━━━━ */
+  .icon-btn-teal {
+    width: 28px; height: 28px;
+    border-radius: 8px;
+    background: #1ECAB8;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px;
+    color: white;
+  }
+  .icon-btn-teal svg {
+    width: 14px; height: 14px;
+    stroke: white; fill: none;
+    stroke-width: 2; stroke-linecap: round;
+  }
+  .icon-btn svg {
+    width: 14px; height: 14px;
+    stroke: #6b7280; fill: none;
+    stroke-width: 2; stroke-linecap: round;
+  }
+
+  /* ── Tags ── */
+  .pro-tag {
+    background: #ecfdf5;
+    color: #059669;
+    border: 1px solid #a7f3d0;
+    border-radius: 20px;
+    padding: 3px 10px;
+    font-size: 0.6rem;
+    font-weight: 700;
+    display: inline-flex; align-items: center; gap: 4px;
+  }
+  .con-tag {
+    background: #fef2f2;
+    color: #dc2626;
+    border: 1px solid #fecaca;
+    border-radius: 20px;
+    padding: 3px 10px;
+    font-size: 0.6rem;
+    font-weight: 700;
+    display: inline-flex; align-items: center; gap: 4px;
+  }
+
+  .pros-cons {
+    display: flex; flex-direction: column; gap: 4px;
+    margin-top: 10px;
+  }
+  .option-name {
+    font-size: 1rem;
+    font-weight: 800;
+    color: #111;
+    text-align: center;
+    margin-bottom: 2px;
+  }
+  .option-desc {
+    font-size: 0.72rem;
+    color: #6b7280;
+    text-align: center;
+    margin-bottom: 8px;
+    line-height: 1.4;
+  }
+</style>
+</head>
+<body>
+
+<h1>IREMA — Mobile Navigation Options</h1>
+
+<div class="grid">
+
+  <!-- ═══════════════════════════════
+       OPTION A — Centre CTA Button
+  ════════════════════════════════ -->
+  <div class="option">
+    <div class="option-name">Option A</div>
+    <div class="option-desc">Centre CTA — Write Review as a raised button in the bottom bar</div>
+
+    <div class="phone">
+      <div class="screen">
+        <!-- top nav -->
+        <div class="top-nav">
+          <div class="logo">
+            <div class="logo-mark">★</div>
+            <span class="logo-text">Irema</span>
+          </div>
+          <div class="search-bar">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            Search businesses…
+          </div>
+          <div class="nav-right">
+            <span class="lang-pill">EN</span>
+            <div class="icon-btn">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            </div>
+          </div>
+        </div>
+        <!-- content -->
+        <div class="content">
+          <div class="section-title">Top Rated in Kigali</div>
+          <div class="card">
+            <div class="card-row">
+              <div class="card-avatar"></div>
+              <div class="card-text">
+                <div class="card-title">Kigali Serena Hotel</div>
+                <div class="card-sub"><span class="stars">★★★★★</span> 4.9 · 312 reviews</div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-row">
+              <div class="card-avatar" style="background:linear-gradient(135deg,#7c3aed,#5b21b6)"></div>
+              <div class="card-text">
+                <div class="card-title">Java House Rwanda</div>
+                <div class="card-sub"><span class="stars">★★★★☆</span> 4.6 · 208 reviews</div>
+              </div>
+            </div>
+          </div>
+          <div class="card-sm">📷 Scan QR Code — visit any business page</div>
+        </div>
+        <!-- bottom nav Option A -->
+        <div class="bottom-nav" style="padding-bottom:10px">
+          <div class="tab active">
+            <div class="tab-icon-wrap"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
+            <span class="tab-label" style="color:#1ECAB8">Home</span>
+          </div>
+          <div class="tab">
+            <div class="tab-icon-wrap"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></div>
+            <span class="tab-label">Discover</span>
+          </div>
+          <!-- centre CTA -->
+          <div class="cta-tab">
+            <div class="cta-btn">
+              <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </div>
+            <span class="tab-label" style="margin-top:-4px">Review</span>
+          </div>
+          <div class="tab">
+            <div class="tab-icon-wrap"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
+            <span class="tab-label">Top</span>
+          </div>
+          <div class="tab">
+            <div class="tab-icon-wrap"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+            <span class="tab-label">Account</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="pros-cons">
+      <span class="pro-tag">✓ Write Review is always front & centre</span>
+      <span class="pro-tag">✓ Instagram / Twitter pattern — instantly familiar</span>
+      <span class="pro-tag">✓ Zero hidden navigation</span>
+      <span class="con-tag">× QR scan moves elsewhere</span>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════
+       OPTION B — More Sheet
+  ════════════════════════════════ -->
+  <div class="option">
+    <div class="option-name">Option B</div>
+    <div class="option-desc">More Sheet — 5th tab slides up a panel with extra items</div>
+
+    <div class="phone">
+      <div class="screen">
+        <div class="top-nav">
+          <div class="logo">
+            <div class="logo-mark">★</div>
+            <span class="logo-text">Irema</span>
+          </div>
+          <div class="search-bar">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            Search businesses…
+          </div>
+          <div class="nav-right">
+            <span class="lang-pill">EN</span>
+          </div>
+        </div>
+        <div class="content">
+          <div class="section-title">Top Rated in Kigali</div>
+          <div class="card">
+            <div class="card-row">
+              <div class="card-avatar"></div>
+              <div class="card-text">
+                <div class="card-title">Kigali Serena Hotel</div>
+                <div class="card-sub"><span class="stars">★★★★★</span> 4.9 · 312 reviews</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- sheet overlay -->
+        <div class="sheet-overlay"></div>
+        <!-- bottom sheet -->
+        <div class="bottom-sheet">
+          <div class="sheet-handle"></div>
+          <div class="sheet-item">
+            <div class="sheet-item-icon sheet-icon-teal">✍️</div>
+            <span>Write a Review</span>
+          </div>
+          <div class="sheet-item">
+            <div class="sheet-item-icon sheet-icon-blue">📷</div>
+            <span>Scan QR Code</span>
+          </div>
+          <div class="sheet-divider"></div>
+          <div class="sheet-item">
+            <div class="sheet-item-icon sheet-icon-purple">🌐</div>
+            <span>Language</span>
+          </div>
+          <div class="sheet-item">
+            <div class="sheet-item-icon" style="background:#fafafa">☀️</div>
+            <span>Theme</span>
+          </div>
+        </div>
+        <!-- bottom nav -->
+        <div class="bottom-nav" style="padding-bottom:10px; position:relative; z-index:21">
+          <div class="tab active">
+            <div class="tab-icon-wrap"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
+            <span class="tab-label" style="color:#1ECAB8">Home</span>
+          </div>
+          <div class="tab">
+            <div class="tab-icon-wrap"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></div>
+            <span class="tab-label">Discover</span>
+          </div>
+          <div class="tab">
+            <div class="tab-icon-wrap"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
+            <span class="tab-label">Top</span>
+          </div>
+          <div class="tab">
+            <div class="tab-icon-wrap"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+            <span class="tab-label">Account</span>
+          </div>
+          <div class="tab" style="color:#1ECAB8">
+            <div class="tab-icon-wrap"><svg viewBox="0 0 24 24" style="stroke:#1ECAB8"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></div>
+            <span class="tab-label" style="color:#1ECAB8; font-weight:700">More</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="pros-cons">
+      <span class="pro-tag">✓ Everything discoverable — nothing hidden</span>
+      <span class="pro-tag">✓ Scales to any number of features</span>
+      <span class="pro-tag">✓ Spotify / LinkedIn pattern</span>
+      <span class="con-tag">× Write Review is one extra tap away</span>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════
+       OPTION C — FAB
+  ════════════════════════════════ -->
+  <div class="option">
+    <div class="option-name">Option C</div>
+    <div class="option-desc">Floating Action Button — always-visible teal button above the bottom bar</div>
+
+    <div class="phone">
+      <div class="screen" style="position:relative">
+        <div class="top-nav">
+          <div class="logo">
+            <div class="logo-mark">★</div>
+            <span class="logo-text">Irema</span>
+          </div>
+          <div class="search-bar">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            Search businesses…
+          </div>
+          <div class="nav-right">
+            <span class="lang-pill">EN</span>
+          </div>
+        </div>
+        <div class="content">
+          <div class="section-title">Top Rated in Kigali</div>
+          <div class="card">
+            <div class="card-row">
+              <div class="card-avatar"></div>
+              <div class="card-text">
+                <div class="card-title">Kigali Serena Hotel</div>
+                <div class="card-sub"><span class="stars">★★★★★</span> 4.9 · 312 reviews</div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-row">
+              <div class="card-avatar" style="background:linear-gradient(135deg,#7c3aed,#5b21b6)"></div>
+              <div class="card-text">
+                <div class="card-title">Java House Rwanda</div>
+                <div class="card-sub"><span class="stars">★★★★☆</span> 4.6 · 208 reviews</div>
+              </div>
+            </div>
+          </div>
+          <div class="card-sm">← Swipe right to see scan QR</div>
+        </div>
+        <!-- FAB -->
+        <div class="fab-label">Write a Review</div>
+        <div class="fab">
+          <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        </div>
+        <!-- bottom nav -->
+        <div class="bottom-nav" style="padding-bottom:10px">
+          <div class="tab active">
+            <div class="tab-icon-wrap"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
+            <span class="tab-label" style="color:#1ECAB8">Home</span>
+          </div>
+          <div class="tab">
+            <div class="tab-icon-wrap"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></div>
+            <span class="tab-label">Discover</span>
+          </div>
+          <div class="tab">
+            <div class="tab-icon-wrap"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
+            <span class="tab-label">Top Rated</span>
+          </div>
+          <div class="tab">
+            <div class="tab-icon-wrap"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+            <span class="tab-label">Account</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="pros-cons">
+      <span class="pro-tag">✓ Write Review always floating & reachable</span>
+      <span class="pro-tag">✓ Bottom nav stays clean</span>
+      <span class="pro-tag">✓ Popular in Android / Material apps</span>
+      <span class="con-tag">× Can overlap page content</span>
+      <span class="con-tag">× QR Scan still needs a home</span>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════
+       OPTION D — Inline Navbar Icons
+  ════════════════════════════════ -->
+  <div class="option">
+    <div class="option-name">Option D</div>
+    <div class="option-desc">Inline Navbar Actions — icon shortcuts baked into the top bar</div>
+
+    <div class="phone">
+      <div class="screen">
+        <div class="top-nav" style="flex-wrap:nowrap; gap:6px">
+          <div class="logo">
+            <div class="logo-mark">★</div>
+            <span class="logo-text">Irema</span>
+          </div>
+          <div class="search-bar" style="max-width:110px">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            Search…
+          </div>
+          <div class="nav-right" style="gap:5px; flex-shrink:0">
+            <!-- Write Review — teal highlighted -->
+            <div class="icon-btn-teal" title="Write Review">
+              <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </div>
+            <!-- Scan QR -->
+            <div class="icon-btn" title="Scan QR">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#6b7280" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h3v3h-3zM20 14h1v1h-1zM17 17h3v3h-3zM20 20h1v1h-1z"/></svg>
+            </div>
+            <span class="lang-pill">EN</span>
+          </div>
+        </div>
+        <div class="content">
+          <div class="section-title">Top Rated in Kigali</div>
+          <div class="card">
+            <div class="card-row">
+              <div class="card-avatar"></div>
+              <div class="card-text">
+                <div class="card-title">Kigali Serena Hotel</div>
+                <div class="card-sub"><span class="stars">★★★★★</span> 4.9 · 312 reviews</div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-row">
+              <div class="card-avatar" style="background:linear-gradient(135deg,#7c3aed,#5b21b6)"></div>
+              <div class="card-text">
+                <div class="card-title">Java House Rwanda</div>
+                <div class="card-sub"><span class="stars">★★★★☆</span> 4.6 · 208 reviews</div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-row">
+              <div class="card-avatar" style="background:linear-gradient(135deg,#d97706,#b45309)"></div>
+              <div class="card-text">
+                <div class="card-title">Brochette de l'Amitié</div>
+                <div class="card-sub"><span class="stars">★★★★☆</span> 4.4 · 87 reviews</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- bottom nav -->
+        <div class="bottom-nav" style="padding-bottom:10px">
+          <div class="tab active">
+            <div class="tab-icon-wrap"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
+            <span class="tab-label" style="color:#1ECAB8">Home</span>
+          </div>
+          <div class="tab">
+            <div class="tab-icon-wrap"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></div>
+            <span class="tab-label">Discover</span>
+          </div>
+          <div class="tab">
+            <div class="tab-icon-wrap"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
+            <span class="tab-label">Top Rated</span>
+          </div>
+          <div class="tab">
+            <div class="tab-icon-wrap"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+            <span class="tab-label">Account</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="pros-cons">
+      <span class="pro-tag">✓ Simplest to build</span>
+      <span class="pro-tag">✓ Write Review + QR always one tap away</span>
+      <span class="pro-tag">✓ No drawers or sheets</span>
+      <span class="con-tag">× Top bar gets crowded on tiny phones</span>
+      <span class="con-tag">× Icons only — no labels</span>
+    </div>
+  </div>
+
+</div><!-- /grid -->
+
+</body>
+</html>
