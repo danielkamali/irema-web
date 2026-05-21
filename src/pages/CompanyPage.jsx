@@ -9,8 +9,11 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import { getCategoryLabel, formatRelativeTime, getRatingColor, getRatingLabel, getInitials } from '../utils/helpers';
 import { sanitizeUrl } from '../utils/security';
 import { slugify, ensureUniqueSlug, findCompanyBySlug, companyPath } from '../utils/slug';
+import { validateReplyText } from '../utils/reviewLimits';
+import { isArchivedRecord } from '../utils/adminModeration';
 import './CompanyPage.css';
 import StoriesSection from '../components/StoriesSection';
+import ReportReviewModal from '../components/ReportReviewModal';
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || '';
 
@@ -37,6 +40,7 @@ export default function CompanyPage() {
   const [qrDataUrl, setQrDataUrl] = useState('');
   const [showQr, setShowQr] = useState(false);
   const [replyText, setReplyText] = useState({});
+  const [replyError, setReplyError] = useState('');
   const [submittingReply, setSubmittingReply] = useState(null);
   const [isBusinessOwner, setIsBusinessOwner] = useState(false);
   // Review modal state
@@ -49,6 +53,9 @@ export default function CompanyPage() {
   // Translation per review
   const [translated, setTranslated] = useState({}); // { reviewId: text }
   const [translating, setTranslating] = useState({});
+  // Reporting
+  const [reportModal, setReportModal] = useState(null); // review object | null
+  const [reportedReviews, setReportedReviews] = useState(new Set()); // reviewIds the current user already reported
 
   useEffect(() => { const u = onAuthStateChanged(auth, setUser); return u; }, []);
 
@@ -73,6 +80,18 @@ export default function CompanyPage() {
   }, [reviews]);
   // Load company once we know which param we got (slug or id).
   useEffect(() => { if (routeSlug || routeId) { loadCompany(); } }, [routeSlug, routeId]);
+  useEffect(() => {
+    function handleBusinessArchiveChanged(e) {
+      if (e.detail?.status === 'archived' && e.detail?.companyId === company?.id) {
+        setCompany(null);
+        setReviews([]);
+        setProducts([]);
+        setLoading(false);
+      }
+    }
+    window.addEventListener('irema:businessArchiveChanged', handleBusinessArchiveChanged);
+    return () => window.removeEventListener('irema:businessArchiveChanged', handleBusinessArchiveChanged);
+  }, [company?.id]);
   // Generate QR once we have the resolved company (so the code points at the canonical URL)
   useEffect(() => { if (company?.id) generateQR(); }, [company?.id, company?.slug]);
 
@@ -135,7 +154,13 @@ export default function CompanyPage() {
         const snap = await getDoc(doc(db, 'companies', routeId));
         if (snap.exists()) resolved = { id: snap.id, ...snap.data() };
       }
-      if (!resolved) { setLoading(false); return; }
+      if (!resolved || isArchivedRecord(resolved)) {
+        setCompany(null);
+        setReviews([]);
+        setProducts([]);
+        setLoading(false);
+        return;
+      }
 
       // Back-fill a slug on the fly for legacy docs that don't have one yet
       // so the URL rewrite below lands on the canonical /business/<slug> path.
@@ -229,11 +254,16 @@ export default function CompanyPage() {
 
   async function submitReply(reviewId, isBusinessReply = false) {
     const text = replyText[reviewId];
-    if (!text?.trim() || !user) return;
+    if (!user) return;
+    const validation = validateReplyText(text);
+    if (!validation.ok) {
+      setReplyError(validation.message);
+      return;
+    }
     setSubmittingReply(reviewId);
     try {
       const review = reviews.find(r => r.id === reviewId);
-      const newReply = { by: isBusinessReply ? 'business' : 'user', text, userId: user.uid,
+      const newReply = { by: isBusinessReply ? 'business' : 'user', text: text.trim(), userId: user.uid,
         userName: user.displayName || user.email, when: new Date() };
       const updatedReplies = [...(review.replies || []), newReply];
       await updateDoc(doc(db, 'reviews', reviewId), { replies: updatedReplies });
@@ -241,6 +271,7 @@ export default function CompanyPage() {
       setReviews(updated);
       if (activeReview?.id === reviewId) setActiveReview({ ...activeReview, replies: updatedReplies });
       setReplyText(prev => ({ ...prev, [reviewId]: '' }));
+      setReplyError('');
     } catch (e) { console.error(e); }
     setSubmittingReply(null);
   }
@@ -322,6 +353,22 @@ export default function CompanyPage() {
     } finally {
       setTranslating(p => ({ ...p, [reviewId]: false }));
     }
+  }
+
+  // Load which reviews the current user has already reported (so we can disable the flag button)
+  useEffect(() => {
+    if (!user || !company?.id) return;
+    getDocs(query(collection(db, 'reports'),
+      where('reportedBy', '==', user.uid),
+      where('companyId', '==', company.id)
+    )).then(snap => {
+      setReportedReviews(new Set(snap.docs.map(d => d.data().reviewId)));
+    }).catch(() => {});
+  }, [user?.uid, company?.id]);
+
+  function handleReportSuccess(reviewId) {
+    setReportedReviews(prev => new Set([...prev, reviewId]));
+    setReportModal(null);
   }
 
   const sortedReviews = [...reviews].sort((a, b) => {
@@ -479,6 +526,9 @@ export default function CompanyPage() {
                   onOpen={() => setActiveReview(review)}
                   onReact={(type) => handleReaction(review.id, type)}
                   onTranslate={() => translateReview(review.id, review.comment)}
+                  canReport={!!user && review.userId !== user.uid}
+                  isReported={reportedReviews.has(review.id)}
+                  onReport={() => setReportModal(review)}
                   t={t}
                   lang={i18n.language}
                 />
@@ -631,7 +681,11 @@ export default function CompanyPage() {
         <ReviewModal
           review={activeReview}
           replyText={replyText[activeReview.id]||''}
-          onReplyChange={v => setReplyText(p=>({...p,[activeReview.id]:v}))}
+          replyError={replyError}
+          onReplyChange={v => {
+            setReplyText(p=>({...p,[activeReview.id]:v}));
+            setReplyError(v.length > 1000 ? 'Replies can be at most 1000 characters.' : '');
+          }}
           onReplySubmit={() => submitReply(activeReview.id, isBusinessOwner)}
           submitting={submittingReply===activeReview.id}
           reactions={reactions[activeReview.id]}
@@ -657,12 +711,20 @@ export default function CompanyPage() {
           onClose={()=>setLightboxImg(null)}
         />
       )}
+      {reportModal && (
+        <ReportReviewModal
+          review={reportModal}
+          company={company}
+          onClose={() => setReportModal(null)}
+          onSuccess={handleReportSuccess}
+        />
+      )}
     </div>
   );
 }
 
 /* ── Review Widget (Yelp-style card) ── */
-function ReviewWidget({ review, reactions, myReaction, isTranslating, translatedText, onOpen, onReact, onTranslate, t, lang }) {
+function ReviewWidget({ review, reactions, myReaction, isTranslating, translatedText, onOpen, onReact, onTranslate, canReport, isReported, onReport, t, lang }) {
   const name = review.userName || 'Anonymous';
   const comment = translatedText || review.comment || '';
   const short = comment.length > 120 ? comment.slice(0,120)+'…' : comment;
@@ -713,16 +775,32 @@ function ReviewWidget({ review, reactions, myReaction, isTranslating, translated
             {isTranslating ? '…' : ''}
           </button>
         </div>
-        {(review.replies?.length>0) && (
-          <span className="rw-reply-count">💬 {review.replies.length}</span>
-        )}
+        <div style={{display:'flex',alignItems:'center',gap:8}} onClick={e=>e.stopPropagation()}>
+          {(review.replies?.length>0) && (
+            <span className="rw-reply-count">💬 {review.replies.length}</span>
+          )}
+          {canReport && (
+            <button
+              className="rw-react-btn"
+              title={isReported ? 'Already reported' : 'Report this review'}
+              disabled={isReported}
+              onClick={onReport}
+              style={{ opacity: isReported ? 0.5 : 1, color: isReported ? 'var(--text-4)' : undefined }}
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={isReported ? 'currentColor' : '#ef4444'} strokeWidth="2" strokeLinecap="round">
+                <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/>
+              </svg>
+              {isReported ? 'Reported' : ''}
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
 }
 
 /* ── Review Modal ── */
-function ReviewModal({ review, user, isBusinessOwner, replyText, onReplyChange, onReplySubmit, submitting, reactions, myReaction, onReact, translated, isTranslating, onTranslate, onImageClick, onClose, t, lang }) {
+function ReviewModal({ review, user, isBusinessOwner, replyText, replyError, onReplyChange, onReplySubmit, submitting, reactions, myReaction, onReact, translated, isTranslating, onTranslate, onImageClick, onClose, t, lang }) {
   const name = review.userName || 'Anonymous';
   const color = avatarColor(name);
   const comment = translated || review.comment || '';
@@ -821,16 +899,21 @@ function ReviewModal({ review, user, isBusinessOwner, replyText, onReplyChange, 
                 placeholder={isBusinessOwner ? 'Write your business response…' : 'Write a comment…'}
                 value={replyText}
                 onChange={e=>onReplyChange(e.target.value)}
-                onKeyDown={e=>e.key==='Enter'&&!e.shiftKey&&onReplySubmit()}
+                onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();onReplySubmit();}}}
               />
               <button
                 className={`btn btn-sm ${isBusinessOwner?'btn-primary':'btn-outline'}`}
                 onClick={onReplySubmit}
-                disabled={submitting||!replyText.trim()}
+                disabled={submitting||!replyText.trim()||replyText.length > 1000}
               >
                 {submitting?'…':t('review.reply')}
               </button>
             </div>
+            {replyError && (
+              <div style={{marginTop:8,fontSize:'0.78rem',color:'#ef4444',fontWeight:600}}>
+                {replyError}
+              </div>
+            )}
           </div>
         )}
       </div>

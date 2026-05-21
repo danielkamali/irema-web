@@ -7,6 +7,7 @@ import { useThemeStore } from '../../store/themeStore';
 import { getInitials } from '../../utils/helpers';
 import { clearPermissionsCache } from '../../hooks/useAdminPermissions';
 import { LANGUAGES } from '../../constants/languages';
+import ChangePasswordModal from '../../components/ChangePasswordModal';
 import AdminBottomNav from './AdminBottomNav';
 import './AdminLayout.css';
 
@@ -75,6 +76,7 @@ export default function AdminLayout({ children }) {
   const [dropOpen, setDropOpen] = useState(false);
   const [langOpen, setLangOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [changePwOpen, setChangePwOpen] = useState(false);
   const dropRef = useRef(null);
   const langRef = useRef(null);
 
@@ -231,6 +233,10 @@ export default function AdminLayout({ children }) {
         <main className="al-main" onClick={()=>{ if(sidebarOpen) setSidebarOpen(false); }}>{children}</main>
       </div>
 
+      {/* ── Change Password Modal ── */}
+      {changePwOpen && (
+        <ChangePasswordModal onClose={() => { setChangePwOpen(false); }} />
+      )}
       <AdminBottomNav />
     </div>
   );

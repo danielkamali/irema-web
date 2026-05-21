@@ -10,6 +10,7 @@ import Footer from './components/Footer';
 import LoadingSpinner from './components/LoadingSpinner';
 import AuthModal from './components/AuthModal';
 import AuthRedirectHandler from './components/AuthRedirectHandler';
+import EmailVerificationGate from './components/EmailVerificationGate';
 import { SubscriptionGuard } from './components/SubscriptionGuard';
 import LiveChat from './components/LiveChat';
 import EnvBanner from './components/EnvBanner';
@@ -54,8 +55,9 @@ const TermsPage = lazy(() => import('./pages/TermsPage'));
 const PrivacyPage = lazy(() => import('./pages/PrivacyPage'));
 const AboutPage = lazy(() => import('./pages/AboutPage'));
 const ContactPage = lazy(() => import('./pages/ContactPage'));
-const MyReviewsPage = lazy(() => import('./pages/MyReviewsPage'));
+const AuthActionPage = lazy(() => import('./pages/AuthActionPage'));
 const ProfilePage = lazy(() => import('./pages/ProfilePage'));
+const MyReviewsPage = lazy(() => import('./pages/MyReviewsPage'));
 const AllReviewsPage = lazy(() => import('./pages/AllReviewsPage'));
 
 function ProtectedRoute({ children, requireAdmin = false }) {
@@ -82,6 +84,7 @@ function ProtectedRoute({ children, requireAdmin = false }) {
   if (!user) return <Navigate to={requireAdmin ? '/admin/login' : '/'} replace />;
   if (status === 'no') return <Navigate to={requireAdmin ? '/admin/login' : '/'} replace />;
   if (status === 'business') return <Navigate to="/company-dashboard" replace />;
+  if (!requireAdmin) return <EmailVerificationGate>{children}</EmailVerificationGate>;
   return children;
 }
 
@@ -138,18 +141,19 @@ export default function App() {
           <Route path="/blog" element={<PublicLayout><BlogPage /></PublicLayout>} />
           <Route path="/newsletter" element={<PublicLayout><NewsletterPage /></PublicLayout>} />
           <Route path="/payments" element={<ProtectedRoute><PaymentsPage /></ProtectedRoute>} />
+          <Route path="/auth/action" element={<AuthActionPage />} />
 
           {/* Protected user routes */}
           <Route path="/dashboard" element={
             <ProtectedRoute><PublicLayout><UserDashboard /></PublicLayout></ProtectedRoute>
           } />
-          <Route path="/my-reviews" element={
-            <ProtectedRoute><PublicLayout><MyReviewsPage /></PublicLayout></ProtectedRoute>
-          } />
           <Route path="/profile" element={
             <ProtectedRoute><PublicLayout><ProfilePage /></PublicLayout></ProtectedRoute>
           } />
-          <Route path="/company-dashboard" element={<SubscriptionGuard><CompanyDashboard /></SubscriptionGuard>} />
+          <Route path="/my-reviews" element={
+            <ProtectedRoute><PublicLayout><MyReviewsPage /></PublicLayout></ProtectedRoute>
+          } />
+          <Route path="/company-dashboard" element={<EmailVerificationGate><SubscriptionGuard><CompanyDashboard /></SubscriptionGuard></EmailVerificationGate>} />
 
           {/* Admin routes */}
           <Route path="/admin/login" element={<AdminLogin />} />
@@ -183,10 +187,10 @@ export default function App() {
         </Routes>
       </Suspense>
       <AuthModal />
+      <PWABottomNav />
       <LiveChat />
       <EnvBanner />
       <PWAUpdateBanner />
-      <PWABottomNav />
     </BrowserRouter>
   );
 }

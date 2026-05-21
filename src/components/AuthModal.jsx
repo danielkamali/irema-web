@@ -6,15 +6,28 @@ import { useAuthStore } from '../store/authStore';
 import {
   auth, db, doc, setDoc, getDoc, serverTimestamp, Timestamp,
   signInWithEmailAndPassword, createUserWithEmailAndPassword,
-  signInWithRedirect, googleProvider, updateProfile, sendPasswordResetEmail,
-  sendEmailVerification,
+  signInWithRedirect, googleProvider, updateProfile, sendPasswordResetEmail, sendEmailVerification,
+  reload, getIdToken,
   collection, query, where, getDocs, addDoc, updateDoc, runTransaction,
   storage, storageRef, uploadBytes, getDownloadURL
 } from '../firebase/config';
 import { signInWithPopup } from 'firebase/auth';
 import { ensureUniqueSlug } from '../utils/slug';
+import {
+  getReviewLimitId,
+  getReviewLimitStatus,
+  REVIEW_COOLDOWN_MESSAGE,
+  validateReviewText,
+} from '../utils/reviewLimits';
+import {
+  EMAIL_VERIFICATION_REQUIRED_MESSAGE,
+  getEmailVerificationActionCodeSettings,
+  requiresEmailVerification,
+} from '../utils/emailVerification';
+import { getAuthErrorMessage } from '../utils/authErrors';
 import { resolveAuthFlow } from './AuthRedirectHandler';
 import { useNavigate } from 'react-router-dom';
+import { isArchivedRecord } from '../utils/adminModeration';
 
 // ── Review upload constants ──────────────────────────────────────────────────
 const MAX_REVIEW_PHOTOS  = 4;           // max photos per review
@@ -48,9 +61,12 @@ export default function AuthModal() {
   const [forgotEmail, setForgotEmail] = useState('');
   const [forgotSent, setForgotSent] = useState(false);
   const [forgotLoading, setForgotLoading] = useState(false);
-  const [verifyEmailSent, setVerifyEmailSent] = useState(false);
-  const [resendingVerification, setResendingVerification] = useState(false);
-  const [resendCooldown, setResendCooldown] = useState(0);
+  const [verificationEmail, setVerificationEmail] = useState('');
+  const [verifyChecking, setVerifyChecking] = useState(false);
+  const [verifyResending, setVerifyResending] = useState(false);
+  const [verifyMessage, setVerifyMessage] = useState('');
+  const [verifyError, setVerifyError] = useState('');
+  const [verifyCooldown, setVerifyCooldown] = useState(false);
 
   // Write review state
   // Pre-select company from modalData (when clicking Write Review on a company page)
@@ -61,6 +77,9 @@ export default function AuthModal() {
   const [companyResults, setCompanyResults] = useState([]);
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState('');
+  const [commentError, setCommentError] = useState('');
+  const [reviewLimitLoading, setReviewLimitLoading] = useState(false);
+  const [reviewLimitBlock, setReviewLimitBlock] = useState('');
   const [reviewSuccess, setReviewSuccess] = useState(false);
   // Image upload
   const [selectedImages, setSelectedImages] = useState([]);
@@ -81,12 +100,39 @@ export default function AuthModal() {
     if (!activeModal) {
       setEmail(''); setPassword(''); setError(''); setLoading(false);
       setCompanySearch(''); setCompanyResults([]); setSelectedCompany(null);
-      setRating(0); setComment(''); setReviewStep(1); setReviewSuccess(false);
+      setRating(0); setComment(''); setCommentError(''); setReviewLimitBlock(''); setReviewLimitLoading(false); setReviewStep(1); setReviewSuccess(false);
       setSelectedImages([]); setImagePreviews([]); setShowAddBiz(false);
       setForgotMode(false); setForgotEmail(''); setForgotSent(false);
-      setVerifyEmailSent(false); setResendingVerification(false); setResendCooldown(0);
+      setVerificationEmail(''); setVerifyChecking(false); setVerifyResending(false); setVerifyMessage(''); setVerifyError(''); setVerifyCooldown(false);
     }
   }, [activeModal]);
+
+  useEffect(() => {
+    if (activeModal !== 'writeReview' || !user || !selectedCompany?.id) {
+      setReviewLimitBlock('');
+      setReviewLimitLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    setReviewLimitLoading(true);
+    setReviewLimitBlock('');
+    const limitRef = doc(db, 'review_limits', getReviewLimitId(selectedCompany.id, user.uid));
+    getDoc(limitRef)
+      .then(snap => {
+        if (cancelled) return;
+        const status = getReviewLimitStatus(snap.exists() ? snap.data() : null);
+        setReviewLimitBlock(status.blocked ? status.message : '');
+      })
+      .catch(() => {
+        if (!cancelled) setReviewLimitBlock('');
+      })
+      .finally(() => {
+        if (!cancelled) setReviewLimitLoading(false);
+      });
+
+    return () => { cancelled = true; };
+  }, [activeModal, user?.uid, selectedCompany?.id]);
 
   if (!['login', 'signup', 'writeReview'].includes(activeModal)) return null;
 
@@ -130,6 +176,64 @@ export default function AuthModal() {
 
   function handleOverlayClick(e) { if (e.target === e.currentTarget) closeModal(); }
 
+  function showVerificationNotice(emailAddress) {
+    setVerificationEmail(emailAddress || auth.currentUser?.email || email);
+    setError('');
+    setVerifyError('');
+    setVerifyMessage('');
+  }
+
+  async function checkEmailVerified() {
+    const current = auth.currentUser || useAuthStore.getState().user;
+    if (!current) {
+      setVerifyError('Your session expired. Please sign in again to check verification.');
+      return;
+    }
+    setVerifyChecking(true);
+    setVerifyError('');
+    setVerifyMessage('');
+    try {
+      await reload(current);
+      await getIdToken(current, true);
+      useAuthStore.getState().setUser(current);
+      if (!current.emailVerified) {
+        setVerifyError('Your email is not verified yet. Please click the link in your inbox, then check again.');
+        return;
+      }
+      const updates = { emailVerified: true, emailVerifiedAt: serverTimestamp() };
+      await updateDoc(doc(db, 'users', current.uid), updates).catch(() => {});
+      useAuthStore.getState().setUserProfile({ ...(useAuthStore.getState().userProfile || {}), ...updates });
+      setVerifyMessage('Email verified. You can continue now.');
+      setTimeout(() => closeModal(), 700);
+    } catch (e) {
+      setVerifyError(e.message || 'Could not check verification status.');
+    } finally {
+      setVerifyChecking(false);
+    }
+  }
+
+  async function resendVerificationEmail() {
+    const current = auth.currentUser || useAuthStore.getState().user;
+    if (verifyCooldown) return;
+    if (!current) {
+      setVerifyError('Your session expired. Please sign in again to resend the verification email.');
+      return;
+    }
+    setVerifyResending(true);
+    setVerifyError('');
+    setVerifyMessage('');
+    try {
+      await sendEmailVerification(current, getEmailVerificationActionCodeSettings());
+      setVerifyMessage(`Verification email sent to ${current.email}.`);
+      setVerifyCooldown(true);
+      setTimeout(() => setVerifyCooldown(false), 60000);
+    } catch (e) {
+      setVerifyError(e.message || 'Could not resend verification email.');
+    } finally {
+      setVerifyResending(false);
+    }
+  }
+
   async function handleGoogleAuth() {
     if (!termsAccepted && !isLogin) { setError('Please accept the Terms & Conditions to continue.'); return; }
     setLoading(true); setError('');
@@ -162,13 +266,18 @@ export default function AuthModal() {
         const userRef = doc(db, 'users', uid);
         const userSnap = await getDoc(userRef);
         if (!userSnap.exists()) {
-          await setDoc(userRef, {
+          const profileData = {
             displayName: result.user.displayName,
             email: result.user.email,
             photoURL: result.user.photoURL,
             role: 'user',
+            authProvider: 'google',
+            emailVerificationRequired: false,
+            emailVerified: true,
             createdAt: serverTimestamp(),
-          });
+          };
+          await setDoc(userRef, profileData);
+          useAuthStore.getState().setUserProfile(profileData);
         }
         closeModal();
         return;
@@ -183,7 +292,7 @@ export default function AuthModal() {
         return;
       }
     } catch (e) {
-      setError(e?.message || 'Google sign-in failed');
+      setError(getAuthErrorMessage(e));
     } finally { setLoading(false); }
   }
 
@@ -207,13 +316,7 @@ export default function AuthModal() {
       await sendPasswordResetEmail(auth, forgotEmail.trim(), actionCodeSettings);
       setForgotSent(true);
     } catch(err) {
-      if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-email') {
-        setError('We couldn\'t find an account with that email. Please check the address and try again.');
-      } else if (err.code === 'auth/too-many-requests') {
-        setError('Too many attempts. Please wait a few minutes before trying again.');
-      } else {
-        setError('Something went wrong. Please try again or contact support@irema.rw');
-      }
+      setError(getAuthErrorMessage(err));
     }
     setForgotLoading(false);
   }
@@ -243,9 +346,17 @@ export default function AuthModal() {
         setBizWarning(true);
         setLoading(false); return;
       }
+      const userSnap = await getDoc(doc(db, 'users', uid)).catch(() => null);
+      const profileData = userSnap?.exists() ? userSnap.data() : null;
+      if (requiresEmailVerification(cred.user, profileData)) {
+        useAuthStore.getState().setUserProfile(profileData);
+        showVerificationNotice(cred.user.email);
+        setLoading(false);
+        return;
+      }
       closeModal();
     } catch (e) {
-      setError(e.code === 'auth/invalid-credential' ? 'Invalid email or password' : e.message);
+      setError(getAuthErrorMessage(e));
     } finally { setLoading(false); }
   }
 
@@ -271,18 +382,22 @@ export default function AuthModal() {
       const uid = result.user.uid;
       const displayName = trimmedEmail.split('@')[0];
       await updateProfile(result.user, { displayName });
-      const profileData = { displayName, email: trimmedEmail, role: 'user', createdAt: serverTimestamp(), emailVerified: false };
+      await sendEmailVerification(result.user, getEmailVerificationActionCodeSettings());
+      const profileData = {
+        displayName,
+        email: trimmedEmail,
+        role: 'user',
+        authProvider: 'password',
+        emailVerificationRequired: true,
+        emailVerified: false,
+        emailVerificationRequiredAt: serverTimestamp(),
+        createdAt: serverTimestamp(),
+      };
       await setDoc(doc(db, 'users', uid), profileData);
       useAuthStore.getState().setUserProfile(profileData);
-      // Send verification email — do not close modal until verified
-      await sendEmailVerification(result.user);
-      setVerifyEmailSent(true);
+      showVerificationNotice(trimmedEmail);
     } catch (e) {
-      if (e.code === 'auth/email-already-in-use') {
-        setError('This email is already registered. Try logging in, or use a different email.');
-      } else {
-        setError(e.message);
-      }
+      setError(getAuthErrorMessage(e));
     } finally { setLoading(false); }
   }
 
@@ -308,6 +423,7 @@ export default function AuthModal() {
       const results = [];
       snap.forEach(d => {
         const data = d.data();
+        if (isArchivedRecord(data)) return;
         const name = (data.companyName || data.name || '').toLowerCase();
         const cat = (data.category||'').toLowerCase();
         if (name.includes(lower) || cat.includes(lower)) results.push({ id: d.id, ...data });
@@ -403,7 +519,27 @@ export default function AuthModal() {
   async function handleSubmitReview(e) {
     e.preventDefault();
     if (!user) { openModal('login'); return; }
+    const currentProfile = useAuthStore.getState().userProfile;
+    if (currentProfile?.emailVerificationRequired === true && auth.currentUser) {
+      try {
+        await reload(auth.currentUser);
+        await getIdToken(auth.currentUser, true);
+        useAuthStore.getState().setUser(auth.currentUser);
+        if (auth.currentUser.emailVerified && currentProfile?.emailVerified !== true) {
+          const updates = { emailVerified: true, emailVerifiedAt: serverTimestamp() };
+          await updateDoc(doc(db, 'users', auth.currentUser.uid), updates).catch(() => {});
+          useAuthStore.getState().setUserProfile({ ...currentProfile, ...updates });
+        }
+      } catch {
+        // If refresh fails, the verification gate below still protects the write.
+      }
+    }
+    if (requiresEmailVerification(auth.currentUser || user, useAuthStore.getState().userProfile)) {
+      setError(EMAIL_VERIFICATION_REQUIRED_MESSAGE);
+      return;
+    }
     if (!selectedCompany) { setError('Please search and select a business to review.'); return; }
+    if (reviewLimitBlock) { setError(reviewLimitBlock); return; }
     if (rating === 0) { 
       setError('Please select a star rating before submitting.');
       // Shake the star input to draw attention
@@ -411,10 +547,12 @@ export default function AuthModal() {
       if (starEl) { starEl.style.animation = 'shake 0.4s ease'; setTimeout(()=>{ starEl.style.animation=''; }, 400); }
       return; 
     }
-    if (!comment.trim() || comment.trim().length < 5) {
-      setError('Please write at least 5 characters in your review.');
+    const reviewValidation = validateReviewText(comment);
+    if (!reviewValidation.ok) {
+      setCommentError(reviewValidation.message);
       return;
     }
+    setCommentError('');
     setLoading(true); setError('');
     try {
       // Check if user is trying to review their own business
@@ -428,31 +566,6 @@ export default function AuthModal() {
         return;
       }
 
-      // ── Email verification gate (skip for Google users — already verified) ──
-      const isGoogleUser = user.providerData?.[0]?.providerId === 'google.com';
-      if (!isGoogleUser && !user.emailVerified) {
-        setError('Please verify your email address before submitting a review. Check your inbox for the verification link.');
-        setLoading(false);
-        return;
-      }
-
-      // ── Duplicate review check: one review per user per business per day ──
-      const now = new Date();
-      const startOfToday = Timestamp.fromDate(new Date(now.getFullYear(), now.getMonth(), now.getDate()));
-      const existingSnap = await getDocs(
-        query(
-          collection(db, 'reviews'),
-          where('userId', '==', user.uid),
-          where('companyId', '==', selectedCompany.id),
-          where('createdAt', '>=', startOfToday)
-        )
-      );
-      if (!existingSnap.empty) {
-        setError('You have already reviewed this business today. You can submit another review tomorrow.');
-        setLoading(false);
-        return;
-      }
-
       // Create the review with status 'pending' so admins can moderate before it goes live
       const reviewData = {
         userId: user.uid, userName: user.displayName || user.email,
@@ -460,7 +573,24 @@ export default function AuthModal() {
         rating, comment: sanitizeText(comment), createdAt: serverTimestamp(), replies: [], helpful: 0, status: 'pending',
         images: [],
       };
-      const reviewRef = await addDoc(collection(db, 'reviews'), reviewData);
+      const reviewRef = doc(collection(db, 'reviews'));
+      const limitRef = doc(db, 'review_limits', getReviewLimitId(selectedCompany.id, user.uid));
+
+      await runTransaction(db, async (txn) => {
+        const limitSnap = await txn.get(limitRef);
+        const limitStatus = getReviewLimitStatus(limitSnap.exists() ? limitSnap.data() : null);
+        if (limitStatus.blocked) {
+          throw new Error(REVIEW_COOLDOWN_MESSAGE);
+        }
+        txn.set(reviewRef, reviewData);
+        txn.set(limitRef, {
+          companyId: selectedCompany.id,
+          userId: user.uid,
+          lastReviewedAt: serverTimestamp(),
+          lastReviewId: reviewRef.id,
+          updatedAt: serverTimestamp(),
+        });
+      });
 
       // Upload images to Firebase Storage (using review ID as folder), then update review
       if (selectedImages.length > 0) {
@@ -574,7 +704,7 @@ export default function AuthModal() {
                   {companyResults.length > 0 && (
                     <div className="company-results">
                       {companyResults.map(c => (
-                        <button key={c.id} className="company-result-item" onClick={() => { setSelectedCompany(c); setReviewStep(2); }}>
+                        <button key={c.id} className="company-result-item" onClick={() => { setSelectedCompany(c); setReviewLimitBlock(''); setReviewStep(2); }}>
                           <div className="company-result-avatar">{(c.companyName || c.name || '?')[0]}</div>
                           <div>
                             <div className="company-result-name">{c.companyName || c.name}</div>
@@ -627,8 +757,14 @@ export default function AuthModal() {
                       <strong>{selectedCompany.companyName || selectedCompany.name}</strong>
                       <div style={{ fontSize: '0.82rem', color: 'var(--text-3)', textTransform:'capitalize' }}>{(selectedCompany.category||"").replace(/_/g," ")}</div>
                     </div>
-                    <button type="button" className="btn btn-ghost btn-sm" onClick={() => { setReviewStep(1); setSelectedImages([]); setImagePreviews([]); }} style={{ marginLeft: 'auto' }}>Change</button>
+                    <button type="button" className="btn btn-ghost btn-sm" onClick={() => { setReviewStep(1); setReviewLimitBlock(''); setSelectedImages([]); setImagePreviews([]); }} style={{ marginLeft: 'auto' }}>Change</button>
                   </div>
+
+                  {reviewLimitLoading ? (
+                    <div className="alert" style={{marginTop:12}}>Checking review eligibility…</div>
+                  ) : reviewLimitBlock ? (
+                    <div className="alert alert-error" style={{marginTop:12}}>{reviewLimitBlock}</div>
+                  ) : null}
 
                   <label className="form-label">{t('review.your_rating')}</label>
                   <StarRatingInput value={rating} onChange={setRating} size={36} />
@@ -636,7 +772,12 @@ export default function AuthModal() {
                   <label className="form-label" style={{ marginTop: 16 }}>{t('review.your_experience')}</label>
                   <textarea className="input" rows={4} required
                     placeholder={t('review.comment_placeholder')}
-                    value={comment} onChange={e => setComment(e.target.value)} />
+                    value={comment} onChange={e => {
+                      const next = e.target.value;
+                      setComment(next);
+                      setCommentError(next.length > 1000 ? 'Reviews can be at most 1000 characters.' : '');
+                    }} />
+                  {commentError && <div className="alert alert-error">{commentError}</div>}
 
                   {/* Image upload */}
                   <div className="review-image-upload">
@@ -661,7 +802,7 @@ export default function AuthModal() {
                   </div>
 
                   {error && <div className="alert alert-error">{error}</div>}
-                  <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: 8 }} disabled={loading || rating === 0}>
+                  <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: 8 }} disabled={loading || reviewLimitLoading || !!reviewLimitBlock || rating === 0 || comment.length > 1000}>
                     {loading ? t('review.submitting') : t('review.submit')}
                   </button>
                 </form>
@@ -715,6 +856,34 @@ export default function AuthModal() {
 
   // Login / Signup
   const isLogin = activeModal === 'login';
+
+  if ((activeModal === 'login' || activeModal === 'signup') && verificationEmail) {
+    return (
+      <div className="modal-overlay" onClick={handleOverlayClick}>
+        <div className="modal-box">
+          <button className="modal-close-btn" onClick={closeModal}>✕</button>
+          <div className="modal-icon" style={{display:'flex',alignItems:'center',justifyContent:'center'}}>
+            <svg width="36" height="36" viewBox="0 0 60 60" fill="none"><rect width="60" height="60" rx="14" fill="#2d8f6f"/><path d="M30 8l3.9 7.9 8.7 1.3-6.3 6.1 1.5 8.6L30 27.9l-7.8 4.1 1.5-8.6-6.3-6.1 8.7-1.3z" fill="#FFD700"/><path d="M18 40h24M22 46h16" stroke="white" strokeWidth="2.5" strokeLinecap="round"/></svg>
+          </div>
+          <h2>Check your inbox</h2>
+          <p className="modal-subtitle">
+            We sent a verification link to <strong>{verificationEmail}</strong>. Verify your email before using platform features.
+          </p>
+          {verifyMessage && <div className="alert" style={{background:'#eef8f3',borderColor:'#c8ead9',color:'#1f6b52',marginBottom:12}}>{verifyMessage}</div>}
+          {verifyError && <div className="alert alert-error" style={{marginBottom:12}}>{verifyError}</div>}
+          <button type="button" className="btn btn-primary" style={{width:'100%',marginBottom:10}} onClick={checkEmailVerified} disabled={verifyChecking}>
+            {verifyChecking ? 'Checking...' : "I've verified, check again"}
+          </button>
+          <button type="button" className="btn btn-outline" style={{width:'100%'}} onClick={resendVerificationEmail} disabled={verifyResending || verifyCooldown}>
+            {verifyResending ? 'Sending...' : verifyCooldown ? 'Resend available in 60 seconds' : 'Resend verification email'}
+          </button>
+          <p style={{fontSize:'0.78rem',lineHeight:1.5,color:'var(--text-4)',margin:'16px 0 0',textAlign:'center'}}>
+            The link opens through Firebase and then sends you back to Irema. Check spam if it is not in your inbox.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   // Forgot password screen — shown as overlay within the same modal
   if (forgotMode) {

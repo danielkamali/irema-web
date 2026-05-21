@@ -16,6 +16,10 @@ import {
   updateProfile,
   sendPasswordResetEmail,
   sendEmailVerification,
+  applyActionCode,
+  checkActionCode,
+  reload,
+  getIdToken,
 } from 'firebase/auth';
 import {
   getFirestore,
@@ -96,7 +100,7 @@ export {
   signInWithEmailAndPassword, createUserWithEmailAndPassword,
   signInWithPopup, signInWithRedirect, getRedirectResult,
   signOut, onAuthStateChanged, updateProfile, sendPasswordResetEmail,
-  sendEmailVerification,
+  sendEmailVerification, applyActionCode, checkActionCode, reload, getIdToken,
   // Firestore
   collection, doc, getDoc, getDocs, setDoc, addDoc, updateDoc, deleteDoc,
   query, where, orderBy, limit, startAfter, serverTimestamp,

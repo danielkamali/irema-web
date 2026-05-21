@@ -1,7 +1,7 @@
 import Footer from '../components/Footer';
 import React, { useState, useEffect, useRef } from 'react';
 import { db, auth, collection, addDoc, serverTimestamp, getDocs, query, where, Timestamp } from '../firebase/config';
-import { signInWithEmailAndPassword, signOut, createUserWithEmailAndPassword, onAuthStateChanged, sendPasswordResetEmail, signInWithRedirect, signInWithPopup, updateProfile, browserLocalPersistence, setPersistence } from 'firebase/auth';
+import { signInWithEmailAndPassword, signOut, createUserWithEmailAndPassword, onAuthStateChanged, sendPasswordResetEmail, sendEmailVerification, signInWithRedirect, signInWithPopup, updateProfile, browserLocalPersistence, setPersistence } from 'firebase/auth';
 import { useAuthStore } from '../store/authStore';
 import { googleProvider } from '../firebase/config';
 import { doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
@@ -10,7 +10,10 @@ import { useThemeStore } from '../store/themeStore';
 import { useTranslation } from 'react-i18next';
 import { LANGUAGES } from '../constants/languages';
 import { ensureUniqueSlug } from '../utils/slug';
+import { getEmailVerificationActionCodeSettings } from '../utils/emailVerification';
+import { getAuthErrorMessage } from '../utils/authErrors';
 import { resolveAuthFlow } from '../components/AuthRedirectHandler';
+import { isArchivedRecord } from '../utils/adminModeration';
 import './BusinessesPage.css';
 
 const CATS = [
@@ -72,6 +75,19 @@ export default function BusinessesPage() {
   const [claimErr, setClaimErr] = useState('');
   const [claimLoading, setClaimLoading] = useState(false);
   const [claimSuccess, setClaimSuccess] = useState(false);
+
+  // Pre-fill claim form when user is already signed in
+  useEffect(() => {
+    if (user && modal === 'claim') {
+      const parts = (user.displayName || '').split(' ');
+      setClaimForm(f => ({
+        ...f,
+        firstName: f.firstName || parts[0] || '',
+        lastName: f.lastName || parts.slice(1).join(' ') || '',
+        email: f.email || user.email || '',
+      }));
+    }
+  }, [user, modal]);
   const [trustPct, setTrustPct] = useState(89); // Computed from backend data
   const [heroAvg, setHeroAvg] = useState(4.8); // Loaded from backend
   const [businessCount, setBusinessCount] = useState(0); // Loaded from backend
@@ -93,7 +109,7 @@ export default function BusinessesPage() {
         setHeroAvg(parseFloat((ratings.reduce((s,r) => s+r, 0) / total).toFixed(1)));
       }
       // Get business count
-      setBusinessCount(bizSnap.docs.length);
+      setBusinessCount(bizSnap.docs.filter(d => !isArchivedRecord(d.data())).length);
     }).catch(err => {
       if (import.meta.env.DEV) console.warn('[BusinessesPage] stats load failed:', err);
     });
@@ -215,7 +231,7 @@ export default function BusinessesPage() {
         return;
       }
     } catch (err) {
-      setLoginErr(err?.message || 'Google sign-in failed.');
+      setLoginErr(getAuthErrorMessage(err));
     } finally { setLoginLoading(false); }
   }
 
@@ -238,8 +254,7 @@ export default function BusinessesPage() {
         setLoginErr('No business found for this account. Please register or claim a business.');
       }
     } catch(err) {
-      setLoginErr(err.code==='auth/invalid-credential'||err.code==='auth/wrong-password'
-        ? 'Invalid email or password.' : err.message);
+      setLoginErr(getAuthErrorMessage(err));
     }
     setLoginLoading(false);
   }
@@ -253,7 +268,7 @@ export default function BusinessesPage() {
       };
       await sendPasswordResetEmail(auth, loginForm.email, actionCodeSettings);
       setResetSent(true);
-    } catch(e) { setLoginErr(e.message); }
+    } catch(e) { setLoginErr(getAuthErrorMessage(e)); }
   }
 
   // REGISTER NEW BUSINESS
@@ -296,6 +311,7 @@ export default function BusinessesPage() {
         uid = cred.user.uid;
         userEmail = regForm.email;
         await updateProfile(cred.user, { displayName: `${regForm.firstName} ${regForm.lastName}` });
+        await sendEmailVerification(cred.user, getEmailVerificationActionCodeSettings());
       }
 
       // Write user doc (merge so we don't overwrite existing Google profile data)
@@ -305,7 +321,12 @@ export default function BusinessesPage() {
           ? (regGoogleUser.displayName || `${regForm.firstName} ${regForm.lastName}`)
           : `${regForm.firstName} ${regForm.lastName}`,
         firstName: regForm.firstName, lastName: regForm.lastName,
-        role: 'company_admin', createdAt: serverTimestamp()
+        role: 'company_admin',
+        authProvider: regGoogleUser ? 'google' : 'password',
+        emailVerificationRequired: !regGoogleUser,
+        emailVerified: !!regGoogleUser,
+        ...(!regGoogleUser && { emailVerificationRequiredAt: serverTimestamp() }),
+        createdAt: serverTimestamp()
       }, { merge: true });
 
       const fullAddress = [regForm.address, regForm.city, regForm.district].filter(Boolean).join(', ');
@@ -361,8 +382,7 @@ export default function BusinessesPage() {
       navigate('/company-dashboard', { replace: true });
     } catch(err) {
       isRegisteringRef.current = false;
-      setRegErr(err.code==='auth/email-already-in-use'
-        ? 'This email is already registered. Try logging in.' : err.message);
+      setRegErr(getAuthErrorMessage(err));
     }
     setRegLoading(false);
   }
@@ -378,6 +398,7 @@ export default function BusinessesPage() {
       const q = claimSearch.toLowerCase().trim();
       snap.docs.forEach(d => {
         const data = d.data();
+        if (isArchivedRecord(data)) return;
         const n = (data.companyName||data.name||'').toLowerCase();
         const cat = (data.category||'').toLowerCase();
         if (n.includes(q) || cat.includes(q)) results.push({id:d.id,...data});
@@ -389,45 +410,76 @@ export default function BusinessesPage() {
 
   async function handleClaimSubmit(e) {
     e.preventDefault(); setClaimErr(''); setClaimLoading(true);
-    isClaimingRef.current = true; // block auth signOut during claim
+    isClaimingRef.current = true;
     if (!claimSelected) { setClaimErr('Please select a business first.'); setClaimLoading(false); return; }
     if (!claimForm.firstName?.trim()) { setClaimErr('First name is required.'); setClaimLoading(false); return; }
     if (!claimForm.lastName?.trim()) { setClaimErr('Last name is required.'); setClaimLoading(false); return; }
-    if (!claimForm.email?.trim()) { setClaimErr('Email is required.'); setClaimLoading(false); return; }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(claimForm.email)) { setClaimErr('Enter a valid email address.'); setClaimLoading(false); return; }
-    if (!claimForm.password) { setClaimErr('Password is required.'); setClaimLoading(false); return; }
-    if (claimForm.password.length < 6) { setClaimErr('Password must be at least 6 characters.'); setClaimLoading(false); return; }
-    try {
-      let uid, userEmail = claimForm.email;
+    if (!claimForm.phone?.trim()) { setClaimErr('Phone number is required.'); setClaimLoading(false); return; }
 
-      // Try to create account, fall back to sign in if email exists
-      await setPersistence(auth, browserLocalPersistence);
-      try {
-        const cred = await createUserWithEmailAndPassword(auth, claimForm.email, claimForm.password);
-        uid = cred.user.uid;
-        await updateProfile(cred.user, { displayName: `${claimForm.firstName} ${claimForm.lastName}` });
-        await setDoc(doc(db,'users',uid), {
-          uid, email: claimForm.email,
-          displayName: `${claimForm.firstName} ${claimForm.lastName}`,
-          role: 'company_admin', createdAt: serverTimestamp(),
-          pendingClaimId: null, // Will be set after claim is created
-        });
-      } catch(authErr) {
-        if (authErr.code === 'auth/email-already-in-use') {
-          // Sign in with existing credentials
-          try {
-            const cred = await signInWithEmailAndPassword(auth, claimForm.email, claimForm.password);
-            uid = cred.user.uid;
-          } catch(loginErr) {
-            setClaimErr('Email already registered. Please enter your correct password, or use a different email.');
-            setClaimLoading(false); return;
-          }
-        } else {
-          throw authErr;
+    // Only validate email/password when not already signed in
+    if (!user) {
+      if (!claimForm.email?.trim()) { setClaimErr('Email is required.'); setClaimLoading(false); return; }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(claimForm.email)) { setClaimErr('Enter a valid email address.'); setClaimLoading(false); return; }
+      if (!claimForm.password) { setClaimErr('Password is required.'); setClaimLoading(false); return; }
+      if (claimForm.password.length < 6) { setClaimErr('Password must be at least 6 characters.'); setClaimLoading(false); return; }
+    }
+
+    try {
+      let uid, userEmail;
+
+      if (user) {
+        // Already signed in — use existing account directly
+        uid = user.uid;
+        userEmail = user.email;
+      } else {
+        // Not signed in — create account or sign in
+        await setPersistence(auth, browserLocalPersistence);
+        userEmail = claimForm.email;
+        try {
+          const cred = await createUserWithEmailAndPassword(auth, claimForm.email, claimForm.password);
+          uid = cred.user.uid;
+          await updateProfile(cred.user, { displayName: `${claimForm.firstName} ${claimForm.lastName}` });
+          await sendEmailVerification(cred.user, getEmailVerificationActionCodeSettings());
+          await setDoc(doc(db,'users',uid), {
+            uid, email: claimForm.email,
+            displayName: `${claimForm.firstName} ${claimForm.lastName}`,
+            role: 'company_admin',
+            authProvider: 'password',
+            emailVerificationRequired: true,
+            emailVerified: false,
+            emailVerificationRequiredAt: serverTimestamp(),
+            createdAt: serverTimestamp(),
+            pendingClaimId: null,
+          });
+        } catch(authErr) {
+          if (authErr.code === 'auth/email-already-in-use') {
+            try {
+              const cred = await signInWithEmailAndPassword(auth, claimForm.email, claimForm.password);
+              uid = cred.user.uid;
+            } catch {
+              setClaimErr('Email already registered. Please enter your correct password, or use a different email.');
+              setClaimLoading(false); return;
+            }
+          } else { throw authErr; }
         }
       }
 
-      // Submit claim request for admin review (whether claimed or not)
+      // Duplicate claim guard — one pending claim per user per business
+      const existingSnap = await getDocs(
+        query(collection(db, 'claims'), where('claimantUserId', '==', uid))
+      );
+      const duplicate = existingSnap.docs.find(d => {
+        const data = d.data();
+        return data.companyId === claimSelected.id && (!data.status || data.status === 'pending');
+      });
+      if (duplicate) {
+        setClaimErr('You already have a pending claim for this business. Please wait for our team to review it.');
+        setClaimLoading(false);
+        isClaimingRef.current = false;
+        return;
+      }
+
+      // Submit claim
       const claimRef = await addDoc(collection(db,'claims'), {
         companyId: claimSelected.id,
         companyName: claimSelected.name||claimSelected.companyName,
@@ -441,18 +493,15 @@ export default function BusinessesPage() {
         createdAt: serverTimestamp(),
       });
 
-      // Link the claim ID to the user so we can clean up if claim is rejected
-      await updateDoc(doc(db,'users',uid), { pendingClaimId: claimRef.id }).catch(e=>{
+      // Link claim to user for status tracking
+      await updateDoc(doc(db,'users',uid), { pendingClaimId: claimRef.id }).catch(e => {
         console.error('Failed to link claim to user:', e);
       });
 
-      // Always require admin approval — never auto-assign
-      // (even for unclaimed businesses, admin must verify ownership)
       setClaimSuccess(true);
-      // Do NOT navigate to company-dashboard — wait for admin approval
     } catch(err) {
       console.error('Claim error:', err);
-      setClaimErr(err.message || 'Something went wrong. Please try again.');
+      setClaimErr(getAuthErrorMessage(err));
     } finally {
       setClaimLoading(false);
       isClaimingRef.current = false;
@@ -616,9 +665,85 @@ export default function BusinessesPage() {
           <h2>{t('biz.plans_fit')}</h2>
           <div className="bp-pricing-grid">
             {[
-              {nameKey:'plan_starter', price:'Free', priceUsd:null, subKey:'plan_starter_sub', features:['1 business listing','Unlimited reviews from customers','Respond to up to 50 reviews','Email notifications','Community badge','14-day free trial on signup'], analytics:['Avg Rating','Total Reviews','Response Rate','Top Complaint','Rating Distribution','Review Count This Month'], ctaKey:'start_free_plan', primary:false, isEnt:false},
-              {nameKey:'plan_pro', price:'25,000 RWF/mo', priceUsd:'≈ $19/mo USD', subKey:'plan_pro_sub', features:['1 business listing','Unlimited reviews','Unlimited responses to reviews','Verified badge','QR code downloads','Priority support','Competitor insights'], analytics:['Everything in Starter analytics','Sentiment score & analysis','Positive / Negative % breakdown','Competitor benchmarking & rank','Trend forecasting & growth rate','Price perception score','Product Quality Score','Review velocity','Top praised & complaint themes'], ctaKey:'start_trial', primary:true, isEnt:false},
-              {nameKey:'plan_ent', price:'75,000 RWF/mo', priceUsd:'≈ $58/mo USD', subKey:'plan_ent_sub', features:['Up to 5 business listings','Unlimited everything','Unlimited responses','AI sentiment analysis','Dedicated account manager','Custom integrations','White-label widgets','API access','SLA support','Product listings on your page'], analytics:['Everything in Professional analytics','AI-powered recommendations','Revenue forecasting','Executive reports','Full premium metrics dashboard'], ctaKey:'contact_sales', primary:false, isEnt:true},
+              {
+                nameKey:'plan_starter',
+                price:'Free',
+                subKey:'plan_starter_sub',
+                features:[
+                  '1 business listing',
+                  'Unlimited reviews from customers',
+                  'Respond to up to 50 reviews',
+                  'Email notifications',
+                  'Community badge',
+                  '14-day free trial on signup',
+                ],
+                analyticsFeatures:[
+                  'Avg Rating',
+                  'Total Reviews',
+                  'Response Rate',
+                  'Top Complaint',
+                  'Rating Distribution',
+                  'Review Count This Month',
+                ],
+                ctaKey:'start_free_plan',
+                primary:false,
+                isEnt:false
+              },
+              {
+                nameKey:'plan_pro',
+                price:'25,000 RWF',
+                subKey:'plan_pro_sub',
+                features:[
+                  '1 business listing',
+                  'Unlimited reviews',
+                  'Unlimited responses to reviews',
+                  'Verified badge',
+                  'QR code downloads',
+                  'Priority support',
+                  'Competitor insights',
+                ],
+                analyticsFeatures:[
+                  'Everything in Starter analytics',
+                  'Sentiment score & analysis',
+                  'Positive / Negative % breakdown',
+                  'Competitor benchmarking & rank',
+                  'Trend forecasting & growth rate',
+                  'Price perception score',
+                  'Product Quality Score',
+                  'Review velocity',
+                  'Top praised & complaint themes',
+                ],
+                ctaKey:'start_trial',
+                primary:true,
+                isEnt:false
+              },
+              {
+                nameKey:'plan_ent',
+                price:'75,000 RWF',
+                subKey:'plan_ent_sub',
+                features:[
+                  'Up to 5 business listings',
+                  'Unlimited everything',
+                  'Unlimited responses',
+                  'AI sentiment analysis',
+                  'Dedicated account manager',
+                  'Custom integrations',
+                  'White-label widgets',
+                  'API access',
+                  'SLA support',
+                  'Product listings on your page',
+                ],
+                analyticsFeatures:[
+                  'Everything in Professional analytics',
+                  'AI-powered recommendations',
+                  'Revenue forecasting',
+                  'Executive reports',
+                  'Full premium metrics dashboard',
+                ],
+                ctaKey:'contact_sales',
+                primary:false,
+                isEnt:true
+              },
             ].map(plan=>(
               <div key={plan.nameKey} className={`bp-price-card${plan.primary?' bp-price-highlight':''}`}>
                 {plan.primary && <div className="bp-price-pop">{t('biz.most_popular')}</div>}
@@ -629,15 +754,16 @@ export default function BusinessesPage() {
                 <ul>
                   {plan.features.map(f=><li key={f}><span>✓</span>{f}</li>)}
                 </ul>
-                <div className="bp-analytics-label">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-                  Analytics Included
-                </div>
-                <ul className="bp-analytics-list">
-                  {plan.analytics.map(a=><li key={a}><span>✓</span>{a}</li>)}
-                </ul>
+                {plan.analyticsFeatures?.length > 0 && (
+                  <>
+                    <div className="bp-price-analytics-label">📊 Analytics Included</div>
+                    <ul>
+                      {plan.analyticsFeatures.map(f=><li key={f}><span>✓</span>{f}</li>)}
+                    </ul>
+                  </>
+                )}
                 <button className={plan.primary?'bp-btn-primary':'bp-btn-outline'}
-                  onClick={()=>plan.isEnt ? window.open('mailto:business@irema.rw','_blank') : setModal('register')}>
+                  onClick={()=>setModal('register')}>
                   {t(`biz.${plan.ctaKey}`)}
                 </button>
               </div>
@@ -865,24 +991,36 @@ export default function BusinessesPage() {
                       <button className="bp-switch" onClick={()=>{setClaimSelected(null);setClaimResults([]); setClaimSearch('');}}>← Change</button>
                     </div>
                     {claimErr && <div className="bp-error">{claimErr}</div>}
+                    {/* Show who we're claiming as when already signed in */}
+                    {user && (
+                      <div style={{display:'flex',alignItems:'center',gap:10,padding:'10px 14px',background:'#f0faf6',borderRadius:10,border:'1px solid #bbf7d0',marginBottom:12}}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1f6b52" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        <span style={{fontSize:'0.83rem',color:'#1f6b52',fontWeight:600}}>
+                          Claiming as {user.displayName || user.email}
+                        </span>
+                      </div>
+                    )}
                     <form onSubmit={handleClaimSubmit}>
                       <div className="bp-form-grid">
                         <input className="bp-input" placeholder="First name *" required value={claimForm.firstName} onChange={e=>setClaimForm(p=>({...p,firstName:e.target.value}))}/>
                         <input className="bp-input" placeholder="Last name *" required value={claimForm.lastName} onChange={e=>setClaimForm(p=>({...p,lastName:e.target.value}))}/>
-                        <input className="bp-input" type="email" placeholder="Your work email *" required value={claimForm.email} onChange={e=>setClaimForm(p=>({...p,email:e.target.value}))}/>
-                        <div style={{position:'relative'}}>
-                          <input className="bp-input" type={showClaimPw ? 'text' : 'password'} placeholder="Create password *" required minLength="6" value={claimForm.password} onChange={e=>setClaimForm(p=>({...p,password:e.target.value}))} style={{paddingRight:40}}/>
-                          <button type="button" onClick={()=>setShowClaimPw(v=>!v)} style={{position:'absolute',right:10,top:'50%',transform:'translateY(-50%)',background:'none',border:'none',cursor:'pointer',color:'var(--text-3)',padding:0,display:'flex',alignItems:'center'}}>
-                            {showClaimPw ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg> : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>}
-                          </button>
-                        </div>
+                        {/* Only show email + password when not signed in */}
+                        {!user && (<>
+                          <input className="bp-input" type="email" placeholder="Your work email *" required value={claimForm.email} onChange={e=>setClaimForm(p=>({...p,email:e.target.value}))}/>
+                          <div style={{position:'relative'}}>
+                            <input className="bp-input" type={showClaimPw ? 'text' : 'password'} placeholder="Create password *" required minLength="6" value={claimForm.password} onChange={e=>setClaimForm(p=>({...p,password:e.target.value}))} style={{paddingRight:40}}/>
+                            <button type="button" onClick={()=>setShowClaimPw(v=>!v)} style={{position:'absolute',right:10,top:'50%',transform:'translateY(-50%)',background:'none',border:'none',cursor:'pointer',color:'var(--text-3)',fontSize:'0.9rem',padding:0}}>
+                              {showClaimPw ? '🙈' : '👁️'}
+                            </button>
+                          </div>
+                        </>)}
                         <input className="bp-input" type="tel" placeholder="Phone number *" required value={claimForm.phone} onChange={e=>setClaimForm(p=>({...p,phone:e.target.value}))} style={{gridColumn:'1/-1'}}/>
                         <input className="bp-input" placeholder="Your role (e.g. Owner, Manager)" value={claimForm.role} onChange={e=>setClaimForm(p=>({...p,role:e.target.value}))} style={{gridColumn:'1/-1'}}/>
                       </div>
                       <p style={{fontSize:'0.78rem',color:'#9aada7',margin:'10px 0 16px'}}>
                         {claimSelected.adminUserId
                           ? '⚠️ This business is already claimed. We will verify your ownership and transfer access within 24 hours.'
-                          : '✅ This business is unclaimed and will be transferred to you immediately after verification.'}
+                          : '✅ This business is unclaimed and will be transferred to you after verification.'}
                       </p>
                       <button className="bp-btn-primary" type="submit" style={{width:'100%'}} disabled={claimLoading}>
                         {claimLoading?'Submitting claim…':'Submit Ownership Claim'}

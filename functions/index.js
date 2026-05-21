@@ -102,3 +102,8 @@ exports.sendNewsletter = newsletter.sendNewsletter;
 const momoPayments = require('./momoPayments');
 exports.initiateMoMoPayment     = momoPayments.initiateMoMoPayment;
 exports.checkMoMoPaymentStatus  = momoPayments.checkMoMoPaymentStatus;
+
+// Import and export admin moderation functions
+const adminModeration = require('./adminModeration');
+exports.deleteUserData = adminModeration.deleteUserData;
+exports.deleteBusinessData = adminModeration.deleteBusinessData;
