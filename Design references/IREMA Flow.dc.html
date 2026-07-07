@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Figtree:wght@400;500;600;700;800;900&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  body { font-family:'Figtree',system-ui,sans-serif; -webkit-font-smoothing:antialiased; }
+  app-phone-b, web-frame-b, dash-frame, pwa-install, pwa-app, pwa-phone { display:contents; }
+</style>
+</helmet>
+
+<!-- ===== Header ===== -->
+<div style="position:absolute; left:64px; top:48px; width:1700px;">
+  <div data-drags-parent="1" style="font-size:12px; font-weight:800; letter-spacing:.18em; text-transform:uppercase; color:#8A9B96;">IREMA · Full app — bubble-chat flow</div>
+  <h1 style="font-family:'Space Grotesk',sans-serif; font-size:40px; font-weight:700; letter-spacing:-.03em; color:#0C2C26; margin:8px 0 8px;">Honest reviews. Zero noise.</h1>
+  <p style="font-size:15.5px; line-height:1.6; color:#54655F; max-width:900px; margin:0;">The whole product walked through <strong style="color:#0C2C26;">in the order a real user meets it</strong>, per device. Built on the locked teal &amp; white system with the chosen <strong style="color:#0C2C26;">speech-bubble review format</strong> — including reviews with photos. Three tracks side by side: <strong style="color:#0C2C26;">Mobile app · Desktop web · Installable PWA</strong>, each in light and dark. Tap an "owner replied" pill on any review to expand the reply.</p>
+</div>
+
+<div style="position:absolute; left:64px; top:230px; width:680px;"><div data-drags-parent="1" style="margin-bottom:24px;"><div style="font-size:12px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#3A4E48;">A — Mobile app · user journey</div><p style="font-size:13.5px;color:#54655F;margin:6px 0 0;max-width:520px;">New user installs IREMA, signs up & verifies, then browses, writes a photo review, and manages their profile. Light + dark.</p></div><div style="display:flex; gap:40px; align-items:flex-start;"><div style="width:300px;"><div style="font-size:13px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#3A4E48;margin-bottom:18px;">light</div><div style="margin-bottom:42px;"><div style="font-size:11.5px;font-weight:700;color:#54655F;margin-bottom:9px;"><span style="color:#0E8C73;">01</span> · Onboarding</div><app-phone-b screen="onboarding" theme="light"></app-phone-b></div><div style="margin-bottom:42px;"><div style="font-size:11.5px;font-weight:700;color:#54655F;margin-bottom:9px;"><span style="color:#0E8C73;">02</span> · Log in</div><app-phone-b screen="login" theme="light"></app-phone-b></div><div style="margin-bottom:42px;"><div style="font-size:11.5px;font-weight:700;color:#54655F;margin-bottom:9px;"><span style="color:#0E8C73;">03</span> · Sign up</div><app-phone-b screen="signup" theme="light"></app-phone-b></div><div style="margin-bottom:42px;"><div style="font-size:11.5px;font-weight:700;color:#54655F;margin-bottom:9px;"><span style="color:#0E8C73;">04</span> · Verify number</div><app-phone-b screen="verify" theme="light"></app-phone-b></div><div style="margin-bottom:42px;"><div style="font-size:11.5px;font-weight:700;color:#54655F;margin-bottom:9px;"><span style="color:#0E8C73;">05</span> · Pick interests</div><app-phone-b screen="interests" theme="light"></app-phone-b></div><div style="margin-bottom:42px;"><div style="font-size:11.5px;font-weight:700;color:#54655F;margin-bottom:9px;"><span style="color:#0E8C73;">06</span> · Home</div><app-phone-b screen="home" theme="light"></app-phone-b></div><div style="margin-bottom:42px;"><div style="font-size:11.5px;font-weight:700;color:#54655F;margin-bottom:9px;"><span style="color:#0E8C73;">07</span> · Search</div><app-phone-b screen="search" theme="light"></app-phone-b></div><div style="margin-bottom:42px;"><div style="font-size:11.5px;font-weight:700;color:#54655F;margin-bottom:9px;"><span style="color:#0E8C73;">08</span> · Business profile</div><app-phone-b screen="business" theme="light"></app-phone-b></div><div style="margin-bottom:42px;"><div style="font-size:11.5px;font-weight:700;color:#54655F;margin-bottom:9px;"><span style="color:#0E8C73;">09</span> · Write — rate</div><app-phone-b screen="write" theme="light"></app-phone-b></div><div style="margin-bottom:42px;"><div style="font-size:11.5px;font-weight:700;color:#54655F;margin-bottom:9px;"><span style="color:#0E8C73;">10</span> · Write — add photos</div><app-phone-b screen="writePhotos" theme="light"></app-phone-b></div><div style="margin-bottom:42px;"><div style="font-size:11.5px;font-weight:700;color:#54655F;margin-bottom:9px;"><span style="color:#0E8C73;">11</span> · Review posted</div><app-phone-b screen="posted" theme="light"></app-phone-b></div><div style="margin-bottom:42px;"><div style="font-size:11.5px;font-weight:700;color:#54655F;margin-bottom:9px;"><span style="color:#0E8C73;">12</span> · Feed</div><app-phone-b screen="feed" theme="light"></app-phone-b></div><div style="margin-bottom:42px;"><div style="font-size:11.5px;font-weight:700;color:#54655F;margin-bottom:9px;"><span style="color:#0E8C73;">13</span> · Profile</div><app-phone-b screen="you" theme="light"></app-phone-b></div></div><div style="width:300px;"><div style="font-size:13px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#3A4E48;margin-bottom:18px;">dark</div><div style="margin-bottom:42px;"><div style="font-size:11.5px;font-weight:700;color:#54655F;margin-bottom:9px;"><span style="color:#0E8C73;">01</span> · Onboarding</div><app-phone-b screen="onboarding" theme="dark"></app-phone-b></div><div style="margin-bottom:42px;"><div style="font-size:11.5px;font-weight:700;color:#54655F;margin-bottom:9px;"><span style="color:#0E8C73;">02</span> · Log in</div><app-phone-b screen="login" theme="dark"></app-phone-b></div><div style="margin-bottom:42px;"><div style="font-size:11.5px;font-weight:700;color:#54655F;margin-bottom:9px;"><span style="color:#0E8C73;">03</span> · Sign up</div><app-phone-b screen="signup" theme="dark"></app-phone-b></div><div style="margin-bottom:42px;"><div style="font-size:11.5px;font-weight:700;color:#54655F;margin-bottom:9px;"><span style="color:#0E8C73;">04</span> · Verify number</div><app-phone-b screen="verify" theme="dark"></app-phone-b></div><div style="margin-bottom:42px;"><div style="font-size:11.5px;font-weight:700;color:#54655F;margin-bottom:9px;"><span style="color:#0E8C73;">05</span> · Pick interests</div><app-phone-b screen="interests" theme="dark"></app-phone-b></div><div style="margin-bottom:42px;"><div style="font-size:11.5px;font-weight:700;color:#54655F;margin-bottom:9px;"><span style="color:#0E8C73;">06</span> · Home</div><app-phone-b screen="home" theme="dark"></app-phone-b></div><div style="margin-bottom:42px;"><div style="font-size:11.5px;font-weight:700;color:#54655F;margin-bottom:9px;"><span style="color:#0E8C73;">07</span> · Search</div><app-phone-b screen="search" theme="dark"></app-phone-b></div><div style="margin-bottom:42px;"><div style="font-size:11.5px;font-weight:700;color:#54655F;margin-bottom:9px;"><span style="color:#0E8C73;">08</span> · Business profile</div><app-phone-b screen="business" theme="dark"></app-phone-b></div><div style="margin-bottom:42px;"><div style="font-size:11.5px;font-weight:700;color:#54655F;margin-bottom:9px;"><span style="color:#0E8C73;">09</span> · Write — rate</div><app-phone-b screen="write" theme="dark"></app-phone-b></div><div style="margin-bottom:42px;"><div style="font-size:11.5px;font-weight:700;color:#54655F;margin-bottom:9px;"><span style="color:#0E8C73;">10</span> · Write — add photos</div><app-phone-b screen="writePhotos" theme="dark"></app-phone-b></div><div style="margin-bottom:42px;"><div style="font-size:11.5px;font-weight:700;color:#54655F;margin-bottom:9px;"><span style="color:#0E8C73;">11</span> · Review posted</div><app-phone-b screen="posted" theme="dark"></app-phone-b></div><div style="margin-bottom:42px;"><div style="font-size:11.5px;font-weight:700;color:#54655F;margin-bottom:9px;"><span style="color:#0E8C73;">12</span> · Feed</div><app-phone-b screen="feed" theme="dark"></app-phone-b></div><div style="margin-bottom:42px;"><div style="font-size:11.5px;font-weight:700;color:#54655F;margin-bottom:9px;"><span style="color:#0E8C73;">13</span> · Profile</div><app-phone-b screen="you" theme="dark"></app-phone-b></div></div></div></div>
+
+<div style="position:absolute; left:824px; top:230px; width:2640px;"><div data-drags-parent="1" style="margin-bottom:24px;"><div style="font-size:12px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#3A4E48;">B — Desktop web · user journey</div><p style="font-size:13.5px;color:#54655F;margin:6px 0 0;max-width:520px;">Same flow on the responsive web app — land, authenticate, search, open a business, post a review in a modal, and (for owners) the business dashboard. Light + dark.</p></div><div style="display:flex; gap:40px; align-items:flex-start;"><div style="width:1280px;"><div style="font-size:13px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#3A4E48;margin-bottom:18px;">light</div><div style="margin-bottom:46px;"><div style="font-size:11.5px;font-weight:700;color:#54655F;margin-bottom:9px;"><span style="color:#0E8C73;">01</span> · Home</div><web-frame-b screen="home" theme="light"></web-frame-b></div><div style="margin-bottom:46px;"><div style="font-size:11.5px;font-weight:700;color:#54655F;margin-bottom:9px;"><span style="color:#0E8C73;">02</span> · Log in</div><web-frame-b screen="signin" theme="light"></web-frame-b></div><div style="margin-bottom:46px;"><div style="font-size:11.5px;font-weight:700;color:#54655F;margin-bottom:9px;"><span style="color:#0E8C73;">03</span> · Sign up</div><web-frame-b screen="signup" theme="light"></web-frame-b></div><div style="margin-bottom:46px;"><div style="font-size:11.5px;font-weight:700;color:#54655F;margin-bottom:9px;"><span style="color:#0E8C73;">04</span> · Search results</div><web-frame-b screen="search" theme="light"></web-frame-b></div><div style="margin-bottom:46px;"><div style="font-size:11.5px;font-weight:700;color:#54655F;margin-bottom:9px;"><span style="color:#0E8C73;">05</span> · Business profile</div><web-frame-b screen="business" theme="light"></web-frame-b></div><div style="margin-bottom:46px;"><div style="font-size:11.5px;font-weight:700;color:#54655F;margin-bottom:9px;"><span style="color:#0E8C73;">06</span> · Write a review</div><web-frame-b screen="write" theme="light"></web-frame-b></div><div style="margin-bottom:46px;"><div style="font-size:11.5px;font-weight:700;color:#54655F;margin-bottom:9px;"><span style="color:#0E8C73;">07</span> · Business dashboard</div><dash-frame theme="light"></dash-frame></div></div><div style="width:1280px;"><div style="font-size:13px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#3A4E48;margin-bottom:18px;">dark</div><div style="margin-bottom:46px;"><div style="font-size:11.5px;font-weight:700;color:#54655F;margin-bottom:9px;"><span style="color:#0E8C73;">01</span> · Home</div><web-frame-b screen="home" theme="dark"></web-frame-b></div><div style="margin-bottom:46px;"><div style="font-size:11.5px;font-weight:700;color:#54655F;margin-bottom:9px;"><span style="color:#0E8C73;">02</span> · Log in</div><web-frame-b screen="signin" theme="dark"></web-frame-b></div><div style="margin-bottom:46px;"><div style="font-size:11.5px;font-weight:700;color:#54655F;margin-bottom:9px;"><span style="color:#0E8C73;">03</span> · Sign up</div><web-frame-b screen="signup" theme="dark"></web-frame-b></div><div style="margin-bottom:46px;"><div style="font-size:11.5px;font-weight:700;color:#54655F;margin-bottom:9px;"><span style="color:#0E8C73;">04</span> · Search results</div><web-frame-b screen="search" theme="dark"></web-frame-b></div><div style="margin-bottom:46px;"><div style="font-size:11.5px;font-weight:700;color:#54655F;margin-bottom:9px;"><span style="color:#0E8C73;">05</span> · Business profile</div><web-frame-b screen="business" theme="dark"></web-frame-b></div><div style="margin-bottom:46px;"><div style="font-size:11.5px;font-weight:700;color:#54655F;margin-bottom:9px;"><span style="color:#0E8C73;">06</span> · Write a review</div><web-frame-b screen="write" theme="dark"></web-frame-b></div><div style="margin-bottom:46px;"><div style="font-size:11.5px;font-weight:700;color:#54655F;margin-bottom:9px;"><span style="color:#0E8C73;">07</span> · Business dashboard</div><dash-frame theme="dark"></dash-frame></div></div></div></div>
+
+<div style="position:absolute; left:3544px; top:230px; width:2440px;"><div data-drags-parent="1" style="margin-bottom:24px;"><div style="font-size:12px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#3A4E48;">C — Installable PWA</div><p style="font-size:13.5px;color:#54655F;margin:6px 0 0;max-width:520px;">IREMA installs to the home screen / desktop and runs standalone — no browser chrome, offline-ready, push alerts when a business replies. Light + dark.</p></div><div style="display:flex; gap:40px; align-items:flex-start;"><div style="width:1180px;"><div style="font-size:13px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#3A4E48;margin-bottom:18px;">light</div><div style="margin-bottom:46px;"><div style="font-size:11.5px;font-weight:700;color:#54655F;margin-bottom:9px;"><span style="color:#0E8C73;">01</span> · Install prompt (browser)</div><pwa-install theme="light"></pwa-install></div><div style="margin-bottom:46px;"><div style="font-size:11.5px;font-weight:700;color:#54655F;margin-bottom:9px;"><span style="color:#0E8C73;">02</span> · Installed — Home</div><pwa-app screen="home" theme="light"></pwa-app></div><div style="margin-bottom:46px;"><div style="font-size:11.5px;font-weight:700;color:#54655F;margin-bottom:9px;"><span style="color:#0E8C73;">03</span> · Installed — Business</div><pwa-app screen="business" theme="light"></pwa-app></div><div style="margin-bottom:46px;"><div style="font-size:11.5px;font-weight:700;color:#54655F;margin-bottom:9px;"><span style="color:#0E8C73;">04</span> · Phone install — Home</div><pwa-phone screen="home" theme="light"></pwa-phone></div><div style="margin-bottom:46px;"><div style="font-size:11.5px;font-weight:700;color:#54655F;margin-bottom:9px;"><span style="color:#0E8C73;">05</span> · Phone install — Profile</div><pwa-phone screen="you" theme="light"></pwa-phone></div></div><div style="width:1180px;"><div style="font-size:13px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#3A4E48;margin-bottom:18px;">dark</div><div style="margin-bottom:46px;"><div style="font-size:11.5px;font-weight:700;color:#54655F;margin-bottom:9px;"><span style="color:#0E8C73;">01</span> · Install prompt (browser)</div><pwa-install theme="dark"></pwa-install></div><div style="margin-bottom:46px;"><div style="font-size:11.5px;font-weight:700;color:#54655F;margin-bottom:9px;"><span style="color:#0E8C73;">02</span> · Installed — Home</div><pwa-app screen="home" theme="dark"></pwa-app></div><div style="margin-bottom:46px;"><div style="font-size:11.5px;font-weight:700;color:#54655F;margin-bottom:9px;"><span style="color:#0E8C73;">03</span> · Installed — Business</div><pwa-app screen="business" theme="dark"></pwa-app></div><div style="margin-bottom:46px;"><div style="font-size:11.5px;font-weight:700;color:#54655F;margin-bottom:9px;"><span style="color:#0E8C73;">04</span> · Phone install — Home</div><pwa-phone screen="home" theme="dark"></pwa-phone></div><div style="margin-bottom:46px;"><div style="font-size:11.5px;font-weight:700;color:#54655F;margin-bottom:9px;"><span style="color:#0E8C73;">05</span> · Phone install — Profile</div><pwa-phone screen="you" theme="dark"></pwa-phone></div></div></div></div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:6100,&quot;height&quot;:9900}}">
+class Component extends DCLogic {
+  componentDidMount() { Component.defineEls(); }
+  renderVals() { return {}; }
+
+  static defineEls() {
+    if (Component._def) return;
+    Component._def = true;
+
+    const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+    /* ---- themes ---- */
+    const T = {
+      light: { bg:'#F4F6F5', surf:'#FFFFFF', surf2:'#FAFBFB', ink:'#0C2C26', ink2:'#4F625C', mut:'#8A9B96', bd:'#E4EBE8', bd2:'#EEF2F0',
+        ac:'#0E8C73', acDeep:'#0A5E4D', acSoft:'#E3F3ED', hero:'#0E8C73', heroTx:'#FFFFFF', heroMut:'#BFE6DA',
+        btn:'#0C2C26', btnTx:'#FFFFFF', chip:'#EEF3F1', star:'#0E8C73' },
+      dark: { bg:'#06110E', surf:'#0F1F1B', surf2:'#0C1A16', ink:'#ECF4F1', ink2:'#A6BBB4', mut:'#6A7F79', bd:'#1E2F2A', bd2:'#172521',
+        ac:'#27B996', acDeep:'#1C9577', acSoft:'#10271F', hero:'#0C5A49', heroTx:'#EAF6F2', heroMut:'#8FCBBC',
+        btn:'#27B996', btnTx:'#06231C', chip:'#13241F', star:'#27B996' }
+    };
+
+    /* ---- icons ---- */
+    const IC = {
+      home:'M3 9.6L12 3l9 6.6V20a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z',
+      search:'M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14z|M20 20l-3.6-3.6',
+      plus:'M12 5v14|M5 12h14',
+      bell:'M18 8.5a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9|M13.5 21a2 2 0 0 1-3 0',
+      user:'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8z|M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1',
+      heart:'M12 21s-7-4.5-9.4-9A5 5 0 0 1 12 6a5 5 0 0 1 9.4 6C19 16.5 12 21 12 21z',
+      menu:'M3 6h18|M3 12h18|M3 18h18',
+      camera:'M3 8.5a2 2 0 0 1 2-2h2L8.5 4.5h7L17 6.5h2a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z|M12 16.5a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4z',
+      check:'M5 12l4 4L19 7',
+      chev:'M9 6l6 6-6 6',
+      bookmark:'M6 3h12v18l-6-4-6 4z',
+      grid:'M3 3h7v7H3z|M14 3h7v7h-7z|M3 14h7v7H3z|M14 14h7v7h-7z',
+      chart:'M5 21V10|M12 21V4|M19 21v-7',
+      reply:'M9 17l-5-5 5-5|M4 12h11a4 4 0 0 1 4 4v2',
+      qr:'M3 3h7v7H3z|M14 3h7v7h-7z|M3 14h7v7H3z|M14 14h3|M21 14v3|M17 21h4|M14 17v3',
+      filter:'M3 5h18|M6 12h12|M10 19h4',
+      compass:'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z|M15.5 8.5l-2 5-5 2 2-5z',
+      tag:'M3 7v5l8 8 8-8-8-8H7a4 4 0 0 0-4 4z|M7.5 7.5h.01',
+      mail:'M3 6h18v12H3z|M3 7l9 6 9-6'
+    };
+    const icon = (name, sz=20, color='currentColor', sw=1.9) => {
+      const segs = (IC[name]||'').split('|').map(d=>`<path d="${d}"/>`).join('');
+      return `<svg width="${sz}" height="${sz}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round">${segs}</svg>`;
+    };
+    const av = (l, t, sz=36, c) => `<span style="width:${sz}px;height:${sz}px;border-radius:50%;flex-shrink:0;background:linear-gradient(140deg,${c||t.ac},${t.acDeep});color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center;font-size:${Math.round(sz*0.4)}px;">${esc(l)}</span>`;
+    const stars = (n, t, sz=13) => `<span style="font-size:${sz}px;letter-spacing:1.5px;color:${t.star};white-space:nowrap;line-height:1;">${'★'.repeat(n)}<span style="color:${t.mut};opacity:.35;">${'★'.repeat(5-n)}</span></span>`;
+    const blocks = (n, t) => `<span style="display:inline-flex;gap:4px;">${Array.from({length:5},(_,i)=>`<span style="width:16px;height:16px;border-radius:5px;background:${i<n?t.star:t.bd};"></span>`).join('')}</span>`;
+
+    const F_DISP="font-family:'Space Grotesk',sans-serif;";
+    const F_SER="font-family:'Newsreader',Georgia,serif;";
+    const F_MONO="font-family:'JetBrains Mono',monospace;";
+
+    /* ============ REVIEW CARDS ============ */
+    const reviewCard = (fmt, t, theme) => {
+      const sh = theme==='dark' ? 'rgba(0,0,0,.45)' : 'rgba(12,44,38,.07)';
+      const line = theme==='dark' ? t.ac : t.acDeep;
+      switch(fmt){
+        case 'bubble': return `<div style="width:340px;">
+          <div style="position:relative;background:${t.surf};border:2.5px solid ${line};border-radius:30px 30px 30px 30px;padding:22px 22px 20px;box-shadow:5px 6px 0 ${line};">
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;">${stars(5,t,16)}<span style="${F_DISP}margin-left:auto;font-weight:700;font-size:16px;color:${line};">5.0</span></div>
+            <p style="${F_SER}font-size:18px;line-height:1.4;color:${t.ink};margin:0;">"Excellent service and very fast delivery — friendly, professional staff the whole way through. My new go-to spot."</p>
+            <svg width="46" height="34" viewBox="0 0 46 34" style="position:absolute;left:34px;bottom:-30px;" fill="none"><path d="M6 2 C8 14, 14 22, 30 30 C18 26, 9 22, 4 16 Z" fill="${t.surf}" stroke="${line}" stroke-width="2.5" stroke-linejoin="round"/></svg>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;margin:38px 4px 0;">${av('A',t,38)}
+            <div style="flex:1;"><div style="font-weight:800;font-size:13.5px;color:${t.ink};">Aline U.</div><div style="${F_MONO}font-size:10.5px;color:${t.ac};">BOURBON-COFFEE · 2H</div></div>
+            <span style="border:2px solid ${line};color:${line};font-weight:700;font-size:11px;padding:5px 12px;border-radius:999px;">VERIFIED ✓</span></div></div>`;
+        case 'bubbleChat': return `<div style="width:340px;display:flex;flex-direction:column;gap:14px;">
+          <div style="display:flex;gap:11px;align-items:flex-end;">${av('E',t,36)}
+            <div style="flex:1;position:relative;background:${t.surf};border:2.5px solid ${line};border-radius:6px 22px 22px 22px;padding:15px 17px;">
+              <div style="display:flex;align-items:center;gap:7px;margin-bottom:6px;"><span style="font-weight:800;font-size:13px;color:${t.ink};">Eric N.</span>${stars(5,t,12)}<span style="${F_MONO}margin-left:auto;font-size:9.5px;color:${t.mut};">2D</span></div>
+              <p style="font-size:13.5px;line-height:1.5;color:${t.ink};margin:0;">Reliable network even outside Kigali, and support actually picks up. 👍</p></div></div>
+          <div style="display:flex;gap:11px;align-items:flex-end;flex-direction:row-reverse;">
+            <span style="width:36px;height:36px;border-radius:11px;background:${t.ink};color:${t.surf};${F_DISP}font-weight:700;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">MTN</span>
+            <div style="flex:1;background:${line};border:2.5px solid ${line};border-radius:22px 6px 22px 22px;padding:13px 16px;">
+              <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;"><span style="font-weight:800;font-size:12.5px;color:#fff;">MTN Rwanda</span><span style="${F_MONO}font-size:8px;font-weight:700;letter-spacing:.06em;color:${line};background:#fff;padding:2px 6px;border-radius:5px;">OWNER</span></div>
+              <p style="font-size:13px;line-height:1.5;color:rgba(255,255,255,.92);margin:0;">Murakoze cyane, Eric! Glad the upgrade is working for you. 💚</p></div></div></div>`;
+        case 'bold': return `<div style="width:340px;border-radius:18px;overflow:hidden;border:1px solid ${t.bd};box-shadow:0 10px 30px ${sh};">
+          <div style="background:${t.hero};padding:16px 18px;display:flex;align-items:center;gap:14px;">
+            <span style="background:${theme==='dark'?'#0A463A':'#fff'};color:${theme==='dark'?'#fff':t.acDeep};${F_DISP}font-weight:700;font-size:22px;border-radius:11px;width:54px;height:54px;display:flex;align-items:center;justify-content:center;">5.0</span>
+            <div style="flex:1;"><div style="color:${t.heroTx};font-weight:800;font-size:15px;">Aline U.</div><div style="color:${t.heroMut};font-size:12px;">2 hours ago</div></div>
+            <span style="${F_DISP}background:${theme==='dark'?'#06231C':'#0C2C26'};color:#fff;font-weight:700;font-size:10px;letter-spacing:.08em;padding:6px 10px;border-radius:7px;">TOP PICK</span>
+          </div>
+          <div style="background:${t.surf};padding:20px 18px;">
+            <p style="${F_DISP}font-weight:600;font-size:19px;line-height:1.3;letter-spacing:-.01em;color:${t.ink};margin:0 0 16px;">"Excellent service and very fast delivery — friendly, professional staff the whole way through."</p>
+            <div style="display:flex;align-items:center;gap:9px;padding-top:14px;border-top:1px solid ${t.bd};">
+              <span style="width:24px;height:24px;border-radius:7px;background:${t.ink};color:${t.surf};font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;">B</span>
+              <span style="font-size:13px;font-weight:700;color:${t.ink};">Bourbon Coffee</span>
+              <span style="margin-left:auto;border:1.5px solid ${t.ac};color:${t.ac};font-weight:700;font-size:11px;padding:5px 12px;border-radius:8px;">VERIFIED ✓</span>
+            </div>
+          </div></div>`;
+        case 'quote': return `<div style="width:340px;background:${t.surf};border:1px solid ${t.bd};border-radius:18px;padding:24px;box-shadow:0 10px 30px ${sh};">
+          <div style="${F_SER}font-size:46px;line-height:.1;height:24px;color:${t.ac};">"</div>
+          <p style="${F_SER}font-style:italic;font-size:21px;line-height:1.4;color:${t.ink};margin:10px 0 22px;">Clean rooms, a beautiful view over the city, and breakfast I'm still thinking about a week later.</p>
+          <div style="display:flex;align-items:center;gap:11px;border-top:1px solid ${t.bd};padding-top:16px;">${av('D',t,38)}
+            <div style="flex:1;"><div style="font-weight:700;font-size:13.5px;color:${t.ink};">Diane Mukamana</div><div style="font-size:11.5px;color:${t.mut};">Kigali Marriott · 3 days ago</div></div>
+            <div style="text-align:right;"><div style="${F_DISP}font-weight:700;font-size:20px;color:${t.ink};">5.0</div><div style="${F_MONO}font-size:8.5px;letter-spacing:.1em;color:${t.mut};">EXCEPTIONAL</div></div>
+          </div></div>`;
+        case 'social': return `<div style="width:340px;background:${t.surf};border:1px solid ${t.bd};border-radius:18px;padding:18px;box-shadow:0 10px 30px ${sh};">
+          <div style="display:flex;align-items:center;gap:11px;margin-bottom:13px;">${av('A',t,42)}
+            <div style="flex:1;"><div style="display:flex;align-items:center;gap:5px;"><span style="font-weight:800;font-size:14px;color:${t.ink};">Aline U.</span><span style="color:${t.ac};font-size:13px;">✓</span></div><div style="font-size:11.5px;color:${t.mut};">@aline · reviewed Bourbon Coffee · 2h</div></div>
+            <span style="color:${t.mut};font-weight:700;letter-spacing:1px;">···</span></div>
+          ${blocks(5,t)}
+          <div style="background:${t.acSoft};border-radius:14px;padding:13px 15px;margin:12px 0 14px;"><p style="font-size:13.5px;line-height:1.5;color:${t.ink};margin:0;">Excellent service and very fast delivery. Staff were friendly and professional — easily my new go-to spot. ☕</p></div>
+          <div style="display:flex;gap:9px;margin-bottom:14px;">
+            <span style="display:inline-flex;align-items:center;gap:6px;background:${t.chip};color:${t.ink};font-weight:700;font-size:12px;padding:7px 13px;border-radius:999px;">${icon('heart',13,t.ac,2.2)} 24</span>
+            <span style="background:${t.chip};color:${t.ink2};font-weight:700;font-size:12px;padding:7px 13px;border-radius:999px;">Helpful</span>
+            <span style="background:${t.chip};color:${t.ink2};font-weight:700;font-size:12px;padding:7px 13px;border-radius:999px;">Reply</span></div>
+          <div style="border-left:3px solid ${t.ac};padding:2px 0 2px 13px;"><div style="font-size:12.5px;font-weight:700;color:${t.ink};">Bourbon Coffee replied</div><div style="font-size:12.5px;color:${t.ink2};margin-top:2px;">Murakoze cyane, Aline! See you again soon. 💚</div></div></div>`;
+        case 'row': return `<div style="width:340px;background:${t.surf};border:1px solid ${t.bd};border-radius:16px;overflow:hidden;box-shadow:0 10px 30px ${sh};">
+          ${[['5.0','Aline U.','Excellent service and very fast delivery — friendly, professional staff throughout.','BOURBON-COFFEE · KIGALI','2h'],['4.5','Eric N.','Reliable network and the customer care line actually picks up.','MTN-RWANDA · TELECOM','2d']].map((r,i)=>`
+          <div style="display:flex;gap:13px;padding:16px;${i?`border-top:1px solid ${t.bd};`:''}">
+            <span style="${F_DISP}flex-shrink:0;width:46px;height:46px;border-radius:11px;background:${t.ac};color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1;"><span style="font-weight:700;font-size:17px;">${r[0]}</span><span style="font-size:7px;letter-spacing:.1em;opacity:.85;margin-top:2px;">RATED</span></span>
+            <div style="flex:1;min-width:0;"><div style="display:flex;align-items:baseline;"><span style="font-weight:700;font-size:13.5px;color:${t.ink};">${r[1]}</span><span style="${F_MONO}margin-left:auto;font-size:10px;color:${t.mut};">${r[4]}</span></div>
+            <div style="font-size:12.5px;color:${t.ink2};line-height:1.45;margin:4px 0 7px;">${r[2]}</div>
+            <div style="${F_MONO}font-size:10px;letter-spacing:.04em;color:${t.ac};">${r[3]}</div></div></div>`).join('')}</div>`;
+        case 'photo': return `<div style="width:340px;background:${t.surf};border:1px solid ${t.bd};border-radius:18px;overflow:hidden;box-shadow:0 10px 30px ${sh};">
+          <div style="height:170px;background:linear-gradient(140deg,${t.acDeep},${t.ac});position:relative;display:flex;align-items:center;justify-content:center;">
+            <span style="${F_MONO}font-size:11px;color:rgba(255,255,255,.7);letter-spacing:.05em;">[ guest photo ]</span>
+            <span style="position:absolute;top:13px;left:13px;background:#fff;color:${t.acDeep};${F_DISP}font-weight:700;font-size:13px;padding:5px 11px;border-radius:9px;">5.0 ★</span></div>
+          <div style="padding:17px;"><p style="font-size:14px;font-weight:500;line-height:1.45;color:${t.ink};margin:0 0 13px;">"Spotless room and the view of the hills at sunrise was unreal."</p>
+            <div style="display:flex;align-items:center;gap:9px;">${av('D',t,30)}<div style="flex:1;"><div style="font-size:12.5px;font-weight:700;color:${t.ink};">Divine M.</div></div><span style="display:inline-flex;align-items:center;gap:5px;color:${t.ac};font-weight:700;font-size:11.5px;">${icon('check',13,t.ac,2.4)} Verified stay</span></div></div></div>`;
+        case 'breakdown': return `<div style="width:340px;background:${t.surf};border:1px solid ${t.bd};border-radius:18px;padding:22px;box-shadow:0 10px 30px ${sh};">
+          <div style="display:flex;gap:20px;align-items:center;">
+            <div style="text-align:center;flex-shrink:0;"><div style="${F_DISP}font-weight:700;font-size:46px;color:${t.ink};line-height:1;">4.6</div>${stars(5,t,13)}<div style="${F_MONO}font-size:10px;color:${t.mut};margin-top:5px;">2,140</div></div>
+            <div style="flex:1;">${[['5',72],['4',18],['3',6],['2',2],['1',2]].map(([n,p])=>`<div style="display:flex;align-items:center;gap:8px;margin-bottom:7px;"><span style="${F_MONO}font-size:11px;color:${t.ink2};width:8px;">${n}</span><span style="flex:1;height:8px;border-radius:4px;background:${t.bd};overflow:hidden;"><span style="display:block;height:100%;width:${p}%;background:${t.ac};border-radius:4px;"></span></span><span style="${F_MONO}font-size:10px;color:${t.mut};width:28px;text-align:right;">${p}%</span></div>`).join('')}</div></div></div>`;
+      }
+      return '';
+    };
+
+    /* ============ PHONE CHROME ============ */
+    const statusbar = (t) => `<div style="display:flex;align-items:center;justify-content:space-between;padding:13px 22px 6px;${F_DISP}font-size:13px;font-weight:600;color:${t.ink};"><span>9:41</span><span style="display:flex;gap:6px;align-items:center;"><span style="letter-spacing:1px;font-size:9px;opacity:.7;">●●●</span><span style="display:inline-block;width:21px;height:11px;border:1.4px solid ${t.ink};border-radius:3px;opacity:.65;position:relative;"><span style="position:absolute;inset:1.5px;right:7px;background:${t.ink};border-radius:1px;"></span></span></span></div>`;
+    const tabbar = (t, active) => {
+      const items=[['home','Home'],['search','Search'],['plus',''],['bell','Alerts'],['user','You']];
+      return `<div style="display:flex;align-items:center;justify-content:space-around;padding:10px 12px 16px;border-top:1px solid ${t.bd};background:${t.surf};">${items.map((it,i)=>{
+        if(it[0]==='plus') return `<span style="width:46px;height:46px;border-radius:15px;background:${t.btn};color:${t.btnTx};display:flex;align-items:center;justify-content:center;box-shadow:0 8px 18px ${t.ac}40;">${icon('plus',22,t.btnTx,2.4)}</span>`;
+        const on=it[1]===active; const c=on?t.ac:t.mut;
+        return `<span style="display:flex;flex-direction:column;align-items:center;gap:3px;color:${c};">${icon(it[0],21,c,on?2.2:1.9)}<span style="font-size:9.5px;font-weight:${on?'700':'500'};">${it[1]}</span></span>`;
+      }).join('')}</div>`;
+    };
+    const appbar = (t, opts={}) => `<div style="display:flex;align-items:center;gap:9px;padding:4px 20px 10px;">
+      ${opts.back?`<span style="color:${t.ink};transform:rotate(180deg);display:flex;">${icon('chev',20,t.ink,2.2)}</span>`:''}
+      <span style="${F_DISP}font-size:20px;font-weight:700;letter-spacing:-.02em;color:${t.ink};">${opts.title||'irema'}</span>
+      ${opts.dot?`<span style="width:7px;height:7px;border-radius:50%;background:${t.ac};align-self:flex-end;margin-bottom:7px;"></span>`:''}
+      <span style="margin-left:auto;display:flex;align-items:center;gap:10px;">${opts.right||`<span style="width:34px;height:34px;border-radius:11px;background:${t.chip};color:${t.ink2};display:flex;align-items:center;justify-content:center;">${icon('bell',18,t.ink2,1.9)}</span>${av('A',t,34)}`}</span></div>`;
+    const chip = (t,l,on)=>`<span style="${on?`background:${t.ac};color:${t.btnTx};`:`background:${t.surf};color:${t.ink2};border:1px solid ${t.bd};`}font-weight:700;font-size:12.5px;padding:8px 15px;border-radius:999px;white-space:nowrap;">${l}</span>`;
+    const listRow = (t,score,name,meta,i)=>`<div style="display:flex;align-items:center;gap:13px;padding:14px 0;${i?`border-top:1px solid ${t.bd};`:''}">
+      <span style="${F_DISP}width:42px;height:42px;border-radius:11px;background:${t.acSoft};color:${t.acDeep};font-weight:700;font-size:15px;display:flex;align-items:center;justify-content:center;">${score}</span>
+      <div style="flex:1;"><div style="font-weight:700;font-size:14px;color:${t.ink};">${name}</div><div style="${F_MONO}font-size:10.5px;color:${t.mut};margin-top:2px;">${meta}</div></div>
+      <span style="color:${t.mut};">${icon('chev',17,t.mut,2)}</span></div>`;
+
+    const SCREENS = {
+      home: (t,theme)=>`
+        ${appbar(t,{dot:true})}
+        <div style="background:${t.hero};margin:0 16px;border-radius:20px;padding:22px 20px 20px;">
+          <h1 style="${F_DISP}font-weight:700;font-size:30px;line-height:1.04;letter-spacing:-.02em;color:${t.heroTx};margin:0 0 16px;">Honest reviews.<br>Zero noise.</h1>
+          <div style="background:${t.surf};border-radius:13px;display:flex;align-items:center;gap:9px;padding:11px 8px 11px 15px;">${icon('search',17,t.mut,2)}<span style="flex:1;font-size:13.5px;color:${t.mut};">Search services…</span><span style="width:34px;height:34px;border-radius:9px;background:${t.btn};color:${t.btnTx};display:flex;align-items:center;justify-content:center;">${icon('search',16,t.btnTx,2.4)}</span></div></div>
+        <div style="padding:18px 16px 0;">
+          <div style="display:flex;gap:9px;overflow:hidden;margin-bottom:16px;">${['All','Banks','Hotels','Food','Health'].map((c,i)=>chip(t,c,i===0)).join('')}</div>
+          <div style="background:${t.surf};border:1px solid ${t.bd};border-radius:16px;overflow:hidden;">
+            <div style="background:${t.acSoft};display:flex;align-items:center;gap:12px;padding:14px 16px;">
+              <span style="${F_DISP}background:${t.ac};color:#fff;font-weight:700;font-size:16px;border-radius:10px;width:46px;height:46px;display:flex;align-items:center;justify-content:center;">5.0</span>
+              <div style="flex:1;"><div style="font-weight:800;font-size:14px;color:${t.ink};">Grace I.</div><div style="font-size:11.5px;color:${t.acDeep};font-weight:600;">Kosmotive Pharmacy</div></div>
+              <span style="${F_DISP}background:${t.ink};color:${t.surf};font-weight:700;font-size:9px;letter-spacing:.06em;padding:5px 9px;border-radius:6px;">TOP PICK</span></div>
+            <div style="padding:15px 16px;"><p style="${F_DISP}font-weight:600;font-size:15.5px;line-height:1.32;color:${t.ink};margin:0 0 14px;">"Friendly pharmacists who took time to explain everything."</p>
+              <div style="display:flex;gap:9px;"><span style="flex:1;background:${t.btn};color:${t.btnTx};font-weight:700;font-size:13px;text-align:center;padding:12px;border-radius:11px;">Write a Review</span><span style="width:46px;border:1.5px solid ${t.ac};color:${t.ac};border-radius:11px;display:flex;align-items:center;justify-content:center;">${icon('bookmark',17,t.ac,2)}</span></div></div></div></div>`,
+      feed: (t,theme)=>`
+        ${appbar(t,{title:'Feed',right:`<span style="width:34px;height:34px;border-radius:11px;background:${t.chip};color:${t.ink2};display:flex;align-items:center;justify-content:center;">${icon('bell',18,t.ink2)}</span>`})}
+        <div style="padding:2px 16px 0;">
+          <div style="display:flex;gap:14px;margin-bottom:16px;">${[['+','You',true],['B','Bourbon'],['M','Marriott'],['V','Volcano']].map(s=>`<div style="display:flex;flex-direction:column;align-items:center;gap:5px;"><span style="width:52px;height:52px;border-radius:50%;${s[2]?`background:${t.ac};color:#fff;`:`background:${t.surf};border:2px solid ${t.ac};color:${t.ac};`}display:flex;align-items:center;justify-content:center;font-weight:700;font-size:${s[2]?'24':'17'}px;">${s[0]}</span><span style="font-size:10px;color:${t.mut};">${s[1]}</span></div>`).join('')}</div>
+          <div style="background:${t.surf};border:1px solid ${t.bd};border-radius:18px;padding:16px;">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:11px;">${av('E',t,38)}<div style="flex:1;"><div style="font-weight:800;font-size:13.5px;color:${t.ink};">Eric N.</div><div style="font-size:11px;color:${t.mut};">MTN Rwanda · 2d</div></div>${blocks(5,t)}</div>
+            <div style="background:${t.acSoft};border-radius:13px;padding:12px 14px;margin-bottom:12px;"><p style="font-size:13.5px;line-height:1.5;color:${t.ink};margin:0;">Reliable network and support that actually picks up. 👍</p></div>
+            <div style="display:flex;gap:9px;"><span style="display:inline-flex;align-items:center;gap:6px;background:${t.chip};color:${t.ink};font-weight:700;font-size:12px;padding:7px 13px;border-radius:999px;">${icon('heart',13,t.ac,2.2)} 18</span><span style="background:${t.chip};color:${t.ink2};font-weight:700;font-size:12px;padding:7px 13px;border-radius:999px;">Helpful</span><span style="background:${t.chip};color:${t.ink2};font-weight:700;font-size:12px;padding:7px 13px;border-radius:999px;">Reply</span></div>
+            <div style="border-left:3px solid ${t.ac};padding-left:12px;margin-top:13px;"><div style="font-size:12px;font-weight:700;color:${t.ink};">MTN Rwanda replied</div><div style="font-size:12px;color:${t.ink2};margin-top:2px;">Murakoze, Eric! 💚</div></div></div></div>`,
+      profile: (t,theme)=>`
+        ${appbar(t,{back:true,title:'',right:`<span style="display:flex;gap:10px;"><span style="width:34px;height:34px;border-radius:11px;background:${t.chip};color:${t.ink2};display:flex;align-items:center;justify-content:center;">${icon('bookmark',17,t.ink2,2)}</span></span>`})}
+        <div style="flex:1;overflow:hidden;padding:0 16px;">
+          <div style="display:flex;align-items:center;gap:13px;margin-bottom:14px;"><span style="width:54px;height:54px;border-radius:14px;background:${t.ink};color:${t.surf};${F_DISP}font-weight:700;font-size:20px;display:flex;align-items:center;justify-content:center;">BK</span>
+            <div style="flex:1;"><div style="${F_DISP}font-weight:700;font-size:19px;color:${t.ink};letter-spacing:-.01em;">Bank of Kigali</div><div style="${F_MONO}font-size:10.5px;color:${t.ac};margin-top:3px;">BANKS · KIGALI · VERIFIED</div></div></div>
+          <div style="background:${t.surf};border:1px solid ${t.bd};border-radius:16px;padding:16px;display:flex;gap:18px;align-items:center;margin-bottom:14px;">
+            <div style="text-align:center;"><div style="${F_DISP}font-weight:700;font-size:40px;color:${t.ink};line-height:1;">4.8</div>${stars(5,t,12)}<div style="${F_MONO}font-size:9.5px;color:${t.mut};margin-top:4px;">1,240</div></div>
+            <div style="flex:1;">${[['5',82],['4',12],['3',4],['2',1],['1',1]].map(([n,p])=>`<div style="display:flex;align-items:center;gap:7px;margin-bottom:5px;"><span style="${F_MONO}font-size:10px;color:${t.ink2};width:7px;">${n}</span><span style="flex:1;height:6px;border-radius:3px;background:${t.bd};overflow:hidden;"><span style="display:block;height:100%;width:${p}%;background:${t.ac};border-radius:3px;"></span></span></div>`).join('')}</div></div>
+          <div style="display:flex;gap:8px;margin-bottom:14px;">${['All','5★','With photos'].map((c,i)=>chip(t,c,i===0)).join('')}</div>
+          <div style="background:${t.surf};border:1px solid ${t.bd};border-radius:16px;padding:4px 16px;">
+            ${listRow(t,'5.0','Aline U.','MOBILE-MONEY · QUICK',0)}
+            ${listRow(t,'4.0','Jean P.','FOREX · HELPFUL',1)}</div></div>
+        <div style="padding:12px 16px;"><div style="background:${t.btn};color:${t.btnTx};font-weight:700;font-size:14px;text-align:center;padding:14px;border-radius:13px;">Write a Review</div></div>`,
+      write: (t,theme)=>`
+        ${appbar(t,{back:true,title:'',right:`<span style="font-size:13px;font-weight:700;color:${t.mut};">Cancel</span>`})}
+        <div style="flex:1;overflow:hidden;padding:0 18px;">
+          <div style="font-size:12.5px;color:${t.mut};margin-bottom:3px;">You're reviewing</div>
+          <div style="${F_DISP}font-weight:700;font-size:22px;color:${t.ink};letter-spacing:-.01em;margin-bottom:18px;">Bank of Kigali</div>
+          <div style="text-align:center;background:${t.acSoft};border-radius:16px;padding:20px;margin-bottom:18px;">
+            <div style="font-size:34px;letter-spacing:7px;color:${t.star};">★★★★<span style="color:${t.mut};opacity:.3;">★</span></div>
+            <div style="font-size:12.5px;font-weight:700;color:${t.acDeep};margin-top:8px;">Great — tap to rate</div></div>
+          <div style="font-size:12.5px;font-weight:700;color:${t.ink};margin-bottom:9px;">What stood out?</div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px;">${[['Quick',1],['Friendly',1],['Clean',0],['Good value',0],['Professional',1],['Long wait',0]].map(c=>`<span style="${c[1]?`background:${t.ac};color:${t.btnTx};`:`background:${t.surf};border:1px solid ${t.bd};color:${t.ink2};`}font-weight:600;font-size:12.5px;padding:8px 14px;border-radius:999px;">${c[1]?'✓ ':''}${c[0]}</span>`).join('')}</div>
+          <div style="background:${t.surf};border:1px solid ${t.bd};border-radius:14px;padding:14px;min-height:74px;margin-bottom:13px;"><div style="font-size:13.5px;color:${t.ink};">Fast service and friendly staff — in and out in five minutes.</div><div style="display:inline-block;width:1.5px;height:15px;background:${t.ac};vertical-align:middle;"></div></div>
+          <div style="border:1.5px dashed ${t.bd};border-radius:14px;padding:14px;display:flex;align-items:center;gap:10px;color:${t.mut};">${icon('camera',20,t.mut,1.9)}<span style="font-size:13px;font-weight:600;">Add photos</span></div></div>
+        <div style="padding:12px 18px;"><div style="background:${t.btn};color:${t.btnTx};font-weight:700;font-size:14px;text-align:center;padding:14px;border-radius:13px;">Post review</div></div>`,
+      search: (t,theme)=>`
+        ${appbar(t,{title:'irema',right:`<span style="${F_MONO}font-size:11px;color:${t.mut};">RW · v2</span>`})}
+        <div style="flex:1;overflow:hidden;padding:0 16px;">
+          <div style="background:${t.surf};border:1px solid ${t.bd};border-radius:13px;display:flex;align-items:center;gap:9px;padding:12px 15px;margin-bottom:16px;">${icon('search',17,t.mut,2)}<span style="flex:1;font-size:13.5px;color:${t.mut};">Search services…</span>${icon('filter',16,t.ac,2)}</div>
+          <div style="display:flex;border:1px solid ${t.bd};border-radius:14px;overflow:hidden;margin-bottom:16px;">${[['12.4K','REVIEWS'],['540','SERVICES'],['4.7','AVG']].map((s,i)=>`<div style="flex:1;text-align:center;padding:14px 0;${i?`border-left:1px solid ${t.bd};`:''}background:${t.surf};"><div style="${F_DISP}font-weight:700;font-size:20px;color:${i===2?t.ac:t.ink};">${s[0]}</div><div style="${F_MONO}font-size:9px;letter-spacing:.1em;color:${t.mut};margin-top:2px;">${s[1]}</div></div>`).join('')}</div>
+          <div style="display:flex;gap:8px;margin-bottom:8px;">${['All','Banks','Hotels','Food'].map((c,i)=>chip(t,c,i===0)).join('')}</div>
+          <div style="background:${t.surf};border:1px solid ${t.bd};border-radius:16px;padding:4px 16px;">
+            ${listRow(t,'4.8','Bank of Kigali','1,240 REVIEWS · BANKS',0)}
+            ${listRow(t,'4.9','Kigali Marriott','860 REVIEWS · HOTELS',1)}
+            ${listRow(t,'4.7','Bourbon Coffee','2,110 REVIEWS · FOOD',1)}
+            ${listRow(t,'4.6','Waka Fitness','410 REVIEWS · FITNESS',1)}</div></div>`,
+      you: (t,theme)=>`
+        ${appbar(t,{title:'Profile',right:`<span style="width:34px;height:34px;border-radius:11px;background:${t.chip};color:${t.ink2};display:flex;align-items:center;justify-content:center;">${icon('menu',18,t.ink2)}</span>`})}
+        <div style="flex:1;overflow:hidden;padding:0 16px;">
+          <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;">${av('A',t,58)}<div style="flex:1;"><div style="${F_DISP}font-weight:700;font-size:20px;color:${t.ink};">Aline Uwase</div><div style="${F_MONO}font-size:10.5px;color:${t.ac};margin-top:3px;">KIGALI · JOINED 2024</div></div></div>
+          <div style="display:flex;border:1px solid ${t.bd};border-radius:14px;overflow:hidden;margin-bottom:18px;">${[['12','REVIEWS'],['340','HELPFUL'],['8','PHOTOS']].map((s,i)=>`<div style="flex:1;text-align:center;padding:14px 0;${i?`border-left:1px solid ${t.bd};`:''}background:${t.surf};"><div style="${F_DISP}font-weight:700;font-size:20px;color:${t.ink};">${s[0]}</div><div style="${F_MONO}font-size:9px;letter-spacing:.1em;color:${t.mut};margin-top:2px;">${s[1]}</div></div>`).join('')}</div>
+          <div style="font-size:12.5px;font-weight:700;color:${t.ink};margin-bottom:10px;">Your reviews</div>
+          <div style="background:${t.surf};border:1px solid ${t.bd};border-radius:16px;padding:16px;margin-bottom:11px;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;"><span style="font-weight:700;font-size:13.5px;color:${t.ink};">Bank of Kigali</span><span style="margin-left:auto;">${stars(5,t,12)}</span></div>
+            <p style="font-size:12.5px;color:${t.ink2};line-height:1.45;margin:0;">Fast service and friendly staff — in and out in five.</p></div>
+          <div style="background:${t.surf};border:1px solid ${t.bd};border-radius:16px;padding:16px;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;"><span style="font-weight:700;font-size:13.5px;color:${t.ink};">Repub Lounge</span><span style="margin-left:auto;">${stars(4,t,12)}</span></div>
+            <p style="font-size:12.5px;color:${t.ink2};line-height:1.45;margin:0;">Great food, generous portions. Will return.</p></div></div>`
+    };
+    const tabActive = {home:'Home',feed:'Home',search:'Search',you:'You',profile:'',write:''};
+
+    const phone = (screen, theme) => {
+      const t = T[theme];
+      const showTab = ['home','feed','search','you'].includes(screen);
+      return `<div style="width:300px;background:#0A1714;border-radius:42px;padding:9px;box-shadow:0 30px 70px rgba(12,44,38,.32);flex-shrink:0;">
+        <div style="background:${t.bg};border-radius:33px;overflow:hidden;height:640px;display:flex;flex-direction:column;color:${t.ink};">
+          ${statusbar(t)}
+          <div style="flex:1;display:flex;flex-direction:column;overflow:hidden;">${SCREENS[screen](t,theme)}</div>
+          ${showTab?tabbar(t,tabActive[screen]):''}
+        </div></div>`;
+    };
+
+    /* ============ DESKTOP WEB ============ */
+    const webNav = (t,theme)=>`<div style="display:flex;align-items:center;gap:18px;padding:0 32px;height:66px;border-bottom:1px solid ${t.bd};background:${t.surf};">
+      <span style="${F_DISP}font-size:21px;font-weight:700;letter-spacing:-.02em;color:${t.ink};">irema</span><span style="width:7px;height:7px;border-radius:50%;background:${t.ac};align-self:flex-start;margin:24px 0 0 -14px;"></span>
+      <div style="flex:1;max-width:340px;height:40px;display:flex;align-items:center;gap:9px;padding:0 6px 0 15px;border:1px solid ${t.bd};border-radius:11px;background:${t.bg};margin-left:14px;">${icon('search',16,t.mut,2)}<span style="flex:1;font-size:13px;color:${t.mut};">Search businesses…</span></div>
+      <span style="margin-left:auto;display:flex;align-items:center;gap:8px;">
+        <span style="font-size:13px;font-weight:600;color:${t.ink2};">Categories</span>
+        <span style="font-size:13px;font-weight:600;color:${t.ink2};margin-right:6px;">For business</span>
+        <span style="background:${t.btn};color:${t.btnTx};font-weight:700;font-size:13px;padding:9px 16px;border-radius:10px;">Write a Review</span>
+        <span style="border:1px solid ${t.bd};color:${t.ink};font-weight:700;font-size:13px;padding:8px 15px;border-radius:10px;">Sign in</span></span></div>`;
+    const wReviewMini = (t,score,name,meta,text)=>`<div style="background:${t.surf};border:1px solid ${t.bd};border-radius:14px;padding:16px;display:flex;gap:13px;">
+      <span style="${F_DISP}width:46px;height:46px;border-radius:11px;background:${t.acSoft};color:${t.acDeep};font-weight:700;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">${score}</span>
+      <div style="flex:1;min-width:0;"><div style="font-weight:700;font-size:14px;color:${t.ink};">${name}</div><div style="font-size:13px;color:${t.ink2};line-height:1.45;margin:4px 0 6px;">${text}</div><div style="${F_MONO}font-size:10px;color:${t.ac};">${meta}</div></div></div>`;
+
+    const WEB = {
+      home:(t,theme)=>`${webNav(t,theme)}
+        <div style="background:${t.hero};padding:54px 40px;text-align:center;">
+          <h1 style="${F_DISP}font-weight:700;font-size:46px;line-height:1.02;letter-spacing:-.03em;color:${t.heroTx};margin:0 0 14px;">Honest reviews. Zero noise.</h1>
+          <p style="font-size:16px;color:${t.heroMut};max-width:480px;margin:0 auto 26px;">Real reviews from real Rwandans. Find services you can actually trust.</p>
+          <div style="max-width:540px;margin:0 auto;background:${t.surf};border-radius:14px;display:flex;align-items:center;gap:10px;padding:8px 8px 8px 18px;">${icon('search',18,t.mut,2)}<span style="flex:1;text-align:left;font-size:14px;color:${t.mut};">Try "best brochettes in Nyamirambo"…</span><span style="background:${t.btn};color:${t.btnTx};font-weight:700;font-size:14px;padding:11px 22px;border-radius:10px;">Search</span></div>
+          <div style="display:flex;justify-content:center;gap:40px;margin-top:32px;">${[['12.4K','Reviews'],['1.2K','Businesses'],['4.7','Avg rating'],['12','Categories']].map(s=>`<div><div style="${F_DISP}font-weight:700;font-size:24px;color:${t.heroTx};">${s[0]}</div><div style="font-size:12px;color:${t.heroMut};">${s[1]}</div></div>`).join('')}</div></div>
+        <div style="padding:40px;background:${t.bg};">
+          <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:20px;"><span style="${F_MONO}font-size:11px;color:${t.ac};">● LIVE</span><h2 style="${F_DISP}font-weight:700;font-size:24px;color:${t.ink};margin:0;letter-spacing:-.01em;">Recent reviews</h2></div>
+          <div style="display:grid;grid-template-columns:1.3fr 1fr;gap:18px;align-items:start;">
+            <div style="border-radius:18px;overflow:hidden;border:1px solid ${t.bd};">
+              <div style="background:${t.hero};padding:16px 20px;display:flex;align-items:center;gap:13px;"><span style="background:${theme==='dark'?'#0A463A':'#fff'};color:${theme==='dark'?'#fff':t.acDeep};${F_DISP}font-weight:700;font-size:20px;border-radius:11px;width:52px;height:52px;display:flex;align-items:center;justify-content:center;">5.0</span><div style="flex:1;"><div style="color:${t.heroTx};font-weight:800;font-size:15px;">Aline U.</div><div style="color:${t.heroMut};font-size:12px;">reviewed Bourbon Coffee</div></div><span style="${F_DISP}background:#0C2C26;color:#fff;font-weight:700;font-size:10px;padding:6px 10px;border-radius:7px;">TOP PICK</span></div>
+              <div style="background:${t.surf};padding:20px;"><p style="${F_DISP}font-weight:600;font-size:20px;line-height:1.3;color:${t.ink};margin:0 0 14px;">"Excellent service and very fast delivery — easily my new go-to spot."</p><div style="display:flex;align-items:center;gap:9px;padding-top:13px;border-top:1px solid ${t.bd};"><span style="border:1.5px solid ${t.ac};color:${t.ac};font-weight:700;font-size:11px;padding:5px 11px;border-radius:8px;">VERIFIED ✓</span><span style="${F_MONO}font-size:11px;color:${t.mut};margin-left:auto;">2 HOURS AGO</span></div></div></div>
+            <div style="display:flex;flex-direction:column;gap:12px;">
+              ${wReviewMini(t,'4.5','Eric N.','MTN-RWANDA · TELECOM','Reliable network and the customer care line actually picks up.')}
+              ${wReviewMini(t,'4.9','Olivier R.','VOLCANOES-SAFARIS · TRAVEL','Smooth booking and the guide knew every detail. Unforgettable.')}
+              <div style="background:${t.surf};border:1px solid ${t.bd};border-left:3px solid ${t.ac};border-radius:14px;padding:16px;"><p style="${F_SER}font-style:italic;font-size:16px;line-height:1.4;color:${t.ink};margin:0 0 8px;">"Clean rooms and breakfast I'm still thinking about a week later."</p><div style="font-size:12px;color:${t.mut};">Diane M. · Kigali Marriott</div></div></div></div></div>`,
+      business:(t,theme)=>`${webNav(t,theme)}
+        <div style="background:${t.surf};border-bottom:1px solid ${t.bd};padding:32px 40px;display:flex;align-items:center;gap:20px;">
+          <span style="width:72px;height:72px;border-radius:18px;background:${t.ink};color:${t.surf};${F_DISP}font-weight:700;font-size:26px;display:flex;align-items:center;justify-content:center;">BK</span>
+          <div style="flex:1;"><div style="display:flex;align-items:center;gap:10px;"><h1 style="${F_DISP}font-weight:700;font-size:28px;color:${t.ink};margin:0;letter-spacing:-.02em;">Bank of Kigali</h1><span style="border:1.5px solid ${t.ac};color:${t.ac};font-weight:700;font-size:11px;padding:4px 10px;border-radius:8px;">CLAIMED ✓</span></div><div style="${F_MONO}font-size:11px;color:${t.ac};margin-top:5px;">BANKS · KIGALI · OPEN NOW</div></div>
+          <div style="text-align:center;margin-right:8px;"><div style="${F_DISP}font-weight:700;font-size:36px;color:${t.ink};line-height:1;">4.8</div>${stars(5,t,13)}<div style="${F_MONO}font-size:10px;color:${t.mut};margin-top:3px;">1,240 REVIEWS</div></div>
+          <span style="background:${t.btn};color:${t.btnTx};font-weight:700;font-size:14px;padding:13px 22px;border-radius:11px;">Write a Review</span></div>
+        <div style="padding:32px 40px;background:${t.bg};display:grid;grid-template-columns:300px 1fr;gap:28px;align-items:start;">
+          <div style="background:${t.surf};border:1px solid ${t.bd};border-radius:16px;padding:20px;">
+            <div style="font-weight:700;font-size:14px;color:${t.ink};margin-bottom:14px;">Rating breakdown</div>
+            ${[['5',82],['4',12],['3',4],['2',1],['1',1]].map(([n,p])=>`<div style="display:flex;align-items:center;gap:8px;margin-bottom:9px;"><span style="${F_MONO}font-size:11px;color:${t.ink2};width:8px;">${n}</span><span style="flex:1;height:8px;border-radius:4px;background:${t.bd};overflow:hidden;"><span style="display:block;height:100%;width:${p}%;background:${t.ac};border-radius:4px;"></span></span><span style="${F_MONO}font-size:10px;color:${t.mut};width:26px;text-align:right;">${p}%</span></div>`).join('')}
+            <div style="border-top:1px solid ${t.bd};margin-top:14px;padding-top:14px;display:flex;flex-wrap:wrap;gap:7px;">${['Quick','Friendly','Clean','Professional'].map(c=>`<span style="${F_MONO}font-size:10px;color:${t.acDeep};background:${t.acSoft};padding:5px 10px;border-radius:7px;">${c}</span>`).join('')}</div></div>
+          <div>
+            <div style="display:flex;gap:8px;margin-bottom:16px;">${['All 1,240','5 star','With photos','Recent'].map((c,i)=>chip(t,c,i===0)).join('')}</div>
+            <div style="display:flex;flex-direction:column;gap:14px;">
+              <div style="background:${t.surf};border:1px solid ${t.bd};border-radius:16px;padding:18px;"><div style="display:flex;align-items:center;gap:11px;margin-bottom:11px;">${av('A',t,40)}<div style="flex:1;"><div style="font-weight:800;font-size:14px;color:${t.ink};">Aline U.</div><div style="font-size:11.5px;color:${t.mut};">Mobile money · 2 hours ago</div></div>${stars(5,t,14)}</div><p style="font-size:14px;line-height:1.55;color:${t.ink2};margin:0 0 12px;">Fast service and friendly staff. The mobile-money desk was quick — in and out in five minutes.</p><div style="border-left:3px solid ${t.ac};padding-left:12px;"><div style="font-size:12.5px;font-weight:700;color:${t.ink};">Bank of Kigali replied</div><div style="font-size:12.5px;color:${t.ink2};margin-top:2px;">Murakoze, Aline — see you next time!</div></div></div>
+              ${wReviewMini(t,'4.0','Jean P.','FOREX · HELPFUL','Helpful at the forex desk, though the queue was a little long at lunch.')}
+              ${wReviewMini(t,'5.0','Eric N.','APP · INSTANT','Mobile app keeps getting better. Transfers are instant now.')}</div></div></div>`,
+      search:(t,theme)=>`${webNav(t,theme)}
+        <div style="padding:28px 40px;background:${t.bg};">
+          <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:20px;"><h1 style="${F_DISP}font-weight:700;font-size:24px;color:${t.ink};margin:0;letter-spacing:-.01em;">Results in Kigali</h1><span style="${F_MONO}font-size:11px;color:${t.mut};">540 SERVICES</span></div>
+          <div style="display:grid;grid-template-columns:230px 1fr;gap:28px;align-items:start;">
+            <div style="background:${t.surf};border:1px solid ${t.bd};border-radius:16px;padding:18px;">
+              <div style="display:flex;align-items:center;gap:7px;font-weight:700;font-size:13px;color:${t.ink};margin-bottom:14px;">${icon('filter',16,t.ac,2)} Filters</div>
+              ${['Category','Rating 4.0+','Open now','Has photos','Verified only'].map((f,i)=>`<div style="display:flex;align-items:center;gap:10px;padding:9px 0;${i?`border-top:1px solid ${t.bd2};`:''}"><span style="width:17px;height:17px;border-radius:5px;${i===1||i===4?`background:${t.ac};`:`border:1.5px solid ${t.bd};`}display:flex;align-items:center;justify-content:center;">${i===1||i===4?icon('check',11,'#fff',3):''}</span><span style="font-size:13px;color:${t.ink2};font-weight:${i===1||i===4?'700':'500'};">${f}</span></div>`).join('')}</div>
+            <div style="background:${t.surf};border:1px solid ${t.bd};border-radius:16px;padding:6px 22px;">
+              ${[['4.9','Kigali Marriott','HOTELS · KIGALI · 860 REVIEWS','Beautiful view over the city and breakfast worth waking up for.'],['4.8','Bank of Kigali','BANKS · KIGALI · 1,240 REVIEWS','Fast service and friendly staff at the mobile-money desk.'],['4.7','Bourbon Coffee','FOOD · KIGALI · 2,110 REVIEWS','Excellent service and very fast delivery — new go-to spot.'],['4.6','Waka Fitness','FITNESS · KIGALI · 410 REVIEWS','Clean equipment, great trainers, never overcrowded.']].map((r,i)=>`
+              <div style="display:flex;align-items:center;gap:16px;padding:18px 0;${i?`border-top:1px solid ${t.bd};`:''}">
+                <span style="${F_DISP}width:58px;height:58px;border-radius:13px;background:${t.acSoft};color:${t.acDeep};font-weight:700;font-size:20px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">${r[0]}</span>
+                <div style="flex:1;min-width:0;"><div style="display:flex;align-items:center;gap:9px;"><span style="font-weight:700;font-size:16px;color:${t.ink};">${r[1]}</span>${stars(5,t,12)}</div><div style="font-size:13.5px;color:${t.ink2};margin:4px 0 5px;">${r[3]}</div><div style="${F_MONO}font-size:10.5px;color:${t.ac};">${r[2]}</div></div>
+                <span style="color:${t.mut};">${icon('chev',18,t.mut,2)}</span></div>`).join('')}</div></div></div>`
+    };
+
+    const webFrame = (screen, theme) => {
+      const t = T[theme];
+      return `<div style="width:1180px;border-radius:16px;overflow:hidden;border:1px solid ${t.bd};box-shadow:0 24px 60px rgba(12,44,38,.12);flex-shrink:0;">
+        <div style="height:38px;background:${theme==='dark'?'#0A1714':'#E9EEEC'};display:flex;align-items:center;gap:7px;padding:0 16px;">
+          ${['#ff5f57','#febc2e','#28c840'].map(c=>`<span style="width:11px;height:11px;border-radius:50%;background:${c};"></span>`).join('')}
+          <span style="margin:0 auto;${F_MONO}font-size:11px;color:${theme==='dark'?t.mut:'#8A9B96'};">irema.rw${screen==='business'?'/bank-of-kigali':screen==='search'?'/search?q=kigali':''}</span></div>
+        <div style="background:${t.bg};">${WEB[screen](t,theme)}</div></div>`;
+    };
+
+    /* ============ DASHBOARD ============ */
+    const dashFrame = (theme) => {
+      const t = T[theme];
+      const nav=[['grid','Overview',1],['chart','Reviews',0],['chart','Analytics',0],['compass','Market insights',0],['user','Business profile',0],['qr','QR code',0]];
+      const sh = theme==='dark'?'rgba(0,0,0,.4)':'rgba(12,44,38,.06)';
+      return `<div style="width:1280px;border-radius:16px;overflow:hidden;border:1px solid ${t.bd};box-shadow:0 24px 60px rgba(12,44,38,.12);background:${t.surf};">
+        <div style="height:60px;display:flex;align-items:center;gap:12px;padding:0 24px;border-bottom:1px solid ${t.bd};">
+          <span style="${F_DISP}font-size:17px;font-weight:700;color:${t.ink};">irema</span><span style="font-size:13px;font-weight:600;color:${t.ac};">Business</span>
+          <span style="margin-left:auto;display:flex;align-items:center;gap:12px;"><span style="width:36px;height:36px;border-radius:10px;background:${t.chip};color:${t.ink2};display:flex;align-items:center;justify-content:center;position:relative;">${icon('bell',18,t.ink2)}<span style="position:absolute;top:-3px;right:-3px;width:16px;height:16px;border-radius:50%;background:#E8554E;color:#fff;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;">3</span></span>
+          <span style="display:flex;align-items:center;gap:9px;border:1px solid ${t.bd};border-radius:10px;padding:5px 12px 5px 6px;">${av('BK',t,28,t.ink)}<span style="font-size:13px;font-weight:700;color:${t.ink};">Bank of Kigali</span>${icon('chev',14,t.mut,2)}</span></span></div>
+        <div style="display:flex;">
+          <div style="width:230px;flex-shrink:0;border-right:1px solid ${t.bd};padding:18px 14px;">
+            ${nav.map(n=>`<div style="display:flex;align-items:center;gap:11px;padding:11px 12px;border-radius:11px;margin-bottom:3px;${n[2]?`background:${t.acSoft};color:${t.ac};`:`color:${t.ink2};`}">${icon(n[0],18,n[2]?t.ac:t.mut,1.9)}<span style="font-size:13.5px;font-weight:${n[2]?'700':'600'};">${n[1]}</span></div>`).join('')}
+            <div style="margin-top:14px;background:${t.hero};border-radius:14px;padding:16px;"><div style="color:${t.heroTx};font-weight:700;font-size:13.5px;">Pro plan</div><div style="color:${t.heroMut};font-size:11.5px;margin:3px 0 11px;">Insights + replies unlocked</div><div style="background:${theme==='dark'?'#06231C':'#fff'};color:${theme==='dark'?'#fff':t.acDeep};font-weight:700;font-size:12px;text-align:center;padding:8px;border-radius:9px;">Manage</div></div></div>
+          <div style="flex:1;padding:26px;background:${t.bg};">
+            <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:20px;"><div><h2 style="${F_DISP}font-weight:700;font-size:24px;color:${t.ink};margin:0;letter-spacing:-.01em;">Overview</h2><p style="font-size:13px;color:${t.mut};margin:3px 0 0;">Welcome back — here's how your reviews are doing.</p></div><span style="background:${t.btn};color:${t.btnTx};font-weight:700;font-size:13px;padding:10px 18px;border-radius:11px;">Reply to reviews</span></div>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:16px;">
+              ${[['Average rating','4.8','+0.2','out of 5'],['Total reviews','1,240','+38','all time'],['New this month','124','+44%','vs 86 last'],['Response rate','92%','+5%','replies sent']].map(s=>`<div style="background:${t.surf};border:1px solid ${t.bd};border-radius:14px;padding:18px;box-shadow:0 6px 18px ${sh};"><div style="font-size:12px;color:${t.mut};font-weight:600;margin-bottom:9px;">${s[0]}</div><div style="display:flex;align-items:baseline;gap:8px;"><span style="${F_DISP}font-weight:700;font-size:30px;color:${t.ink};line-height:1;">${s[1]}</span><span style="${F_MONO}font-size:11px;font-weight:600;color:${t.ac};background:${t.acSoft};padding:2px 7px;border-radius:6px;">${s[2]}</span></div><div style="font-size:11px;color:${t.mut};margin-top:6px;">${s[3]}</div></div>`).join('')}</div>
+            <div style="display:grid;grid-template-columns:1fr 1.4fr;gap:14px;">
+              <div style="background:${t.surf};border:1px solid ${t.bd};border-radius:16px;padding:20px;">
+                <div style="font-weight:700;font-size:14px;color:${t.ink};margin-bottom:16px;">Reviews over time</div>
+                <div style="display:flex;align-items:flex-end;gap:7px;height:120px;">${[40,55,48,68,62,80,76,92,85,100,94,110].map((h,i)=>`<span style="flex:1;height:${h}%;border-radius:5px 5px 0 0;background:${i>8?t.ac:t.acSoft};"></span>`).join('')}</div>
+                <div style="display:flex;justify-content:space-between;${F_MONO}font-size:9px;color:${t.mut};margin-top:8px;"><span>JAN</span><span>JUN</span><span>DEC</span></div></div>
+              <div style="background:${t.surf};border:1px solid ${t.bd};border-radius:16px;padding:20px;">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;"><span style="font-weight:700;font-size:14px;color:${t.ink};">Latest reviews</span><span style="font-size:12px;font-weight:700;color:${t.ac};">View all →</span></div>
+                ${[['A','Aline U.',5,'Fast service and friendly staff. In and out in five minutes.',1],['J','Jean P.',4,'Helpful at the forex desk, though the queue was a little long.',0],['E','Eric N.',5,'Mobile app keeps getting better. Transfers are instant now.',1]].map((r,i)=>`<div style="display:flex;gap:11px;padding:12px 0;${i?`border-top:1px solid ${t.bd2};`:''}">${av(r[0],t,34)}<div style="flex:1;min-width:0;"><div style="display:flex;align-items:center;gap:8px;"><span style="font-weight:700;font-size:13px;color:${t.ink};">${r[1]}</span>${stars(r[2],t,11)}<span style="margin-left:auto;${F_MONO}font-size:9px;font-weight:700;padding:3px 9px;border-radius:999px;${r[4]?`color:${t.acDeep};background:${t.acSoft};`:`color:${t.btnTx};background:${t.btn};`}">${r[4]?'REPLIED':'REPLY'}</span></div><p style="font-size:12.5px;color:${t.ink2};line-height:1.45;margin:4px 0 0;">${r[3]}</p></div></div>`).join('')}</div></div></div></div></div>`;
+    };
+
+    /* ============ BUBBLE-CHAT FLOW ============ */
+    const cLine = (t,theme)=> theme==='dark' ? t.ac : t.acDeep;
+    if (!window.__irToggleReply) window.__irToggleReply = function(h){ const rep=h.parentElement.querySelector('[data-reply]'); if(!rep) return; const open=rep.style.display!=='none'; rep.style.display=open?'none':'block'; const lbl=h.querySelector('[data-lbl]'); if(lbl) lbl.textContent= open ? (h.getAttribute('data-c')||'replied') : 'Hide reply'; };
+    const photoStrip = (t,theme,n,h)=>`<div style="margin-top:9px;display:flex;gap:6px;">${Array.from({length:n}).map(()=>`<div style="flex:1;height:${h}px;border-radius:9px;background:linear-gradient(140deg,${t.acDeep},${t.ac});display:flex;align-items:center;justify-content:center;">${icon('camera',16,'rgba(255,255,255,.85)',2)}</div>`).join('')}</div>`;
+    const bizRow = (t,L,biz,sz)=>`<div style="display:flex;align-items:center;gap:5px;margin:-1px 0 7px;"><span style="width:${sz}px;height:${sz}px;border-radius:4px;background:${t.ink};color:${t.surf};font-size:${Math.round(sz*0.55)}px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">${biz[0]}</span><span style="${F_MONO}font-size:9px;letter-spacing:.05em;color:${L};font-weight:600;">${biz.toUpperCase()}</span></div>`;
+    const chatIn = (t,theme,name,meta,text,rating,img,biz)=>{const L=cLine(t,theme);return `<div style="display:flex;gap:9px;align-items:flex-end;margin-bottom:13px;">${av(name[0],t,32)}<div style="flex:1;background:${t.surf};border:2px solid ${L};border-radius:5px 18px 18px 18px;padding:12px 14px;"><div style="display:flex;align-items:center;gap:6px;margin-bottom:5px;"><span style="font-weight:800;font-size:12.5px;color:${t.ink};">${name}</span>${stars(rating,t,11)}<span style="${F_MONO}margin-left:auto;font-size:9px;color:${t.mut};">${meta}</span></div>${biz?bizRow(t,L,biz,15):''}<p style="font-size:12.5px;line-height:1.5;color:${t.ink};margin:0;">${text}</p>${img?photoStrip(t,theme,2,72):''}</div></div>`;};
+    const chatOut = (t,theme,name,text)=>{const L=cLine(t,theme);return `<div style="display:flex;gap:9px;align-items:flex-end;flex-direction:row-reverse;margin-bottom:13px;"><span style="width:32px;height:32px;border-radius:10px;background:${t.ink};color:${t.surf};${F_DISP}font-weight:700;font-size:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">${name.slice(0,2).toUpperCase()}</span><div style="flex:1;background:${L};border-radius:18px 5px 18px 18px;padding:11px 14px;"><div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;"><span style="font-weight:800;font-size:12px;color:#fff;">${name}</span><span style="${F_MONO}font-size:8px;font-weight:700;letter-spacing:.06em;color:${L};background:#fff;padding:2px 6px;border-radius:5px;">OWNER</span></div><p style="font-size:12px;line-height:1.5;color:rgba(255,255,255,.92);margin:0;">${text}</p></div></div>`;};
+    const chatReply = (t,theme,name,text)=>{const L=cLine(t,theme);return `<div style="margin-top:-4px;margin-bottom:13px;"><div onclick="window.__irToggleReply&&window.__irToggleReply(this)" data-c="${name} replied · tap to view" style="cursor:pointer;margin-left:41px;display:inline-flex;align-items:center;gap:6px;background:${t.acSoft};color:${L};font-weight:700;font-size:11px;padding:5px 11px;border-radius:999px;user-select:none;">${icon('reply',12,L,2)}<span data-lbl>${name} replied · tap to view</span></div><div data-reply style="display:none;margin-top:9px;">${chatOut(t,theme,name,text)}</div></div>`;};
+
+    /* ---- auth/journey field helpers ---- */
+    const field = (t,label,val,opts={})=>`<div style="margin-bottom:14px;">
+      <div style="font-size:11.5px;font-weight:700;color:${t.ink2};margin-bottom:6px;">${label}</div>
+      <div style="display:flex;align-items:center;gap:9px;background:${t.surf};border:1.5px solid ${opts.focus?t.ac:t.bd};border-radius:13px;padding:13px 14px;">
+        ${opts.icon?icon(opts.icon,17,t.mut,1.9):''}
+        ${opts.prefix?`<span style="${F_MONO}font-size:13px;color:${t.ink2};">${opts.prefix}</span>`:''}
+        <span style="flex:1;font-size:14px;color:${val?t.ink:t.mut};${opts.mono?F_MONO:''}">${val||opts.placeholder||''}</span>
+        ${opts.focus?`<span style="display:inline-block;width:1.5px;height:16px;background:${t.ac};"></span>`:''}
+        ${opts.right?opts.right:''}
+      </div></div>`;
+    const bigBtn = (t,label,kind)=>`<div style="background:${kind==='ghost'?'transparent':t.btn};color:${kind==='ghost'?t.ink2:t.btnTx};border:${kind==='ghost'?`1.5px solid ${t.bd}`:'none'};font-weight:700;font-size:14.5px;text-align:center;padding:15px;border-radius:14px;">${label}</div>`;
+
+    const M_AUTH = {
+      onboarding:(t,theme)=>`
+        <div style="flex:1;display:flex;flex-direction:column;background:${t.hero};padding:0 24px;">
+          <div style="display:flex;align-items:center;gap:7px;padding:14px 0 0;"><span style="${F_DISP}font-size:22px;font-weight:700;letter-spacing:-.02em;color:${t.heroTx};">irema</span><span style="width:7px;height:7px;border-radius:50%;background:${theme==='dark'?'#fff':'#0C2C26'};"></span></div>
+          <div style="flex:1;display:flex;flex-direction:column;justify-content:center;">
+            <h1 style="${F_DISP}font-weight:700;font-size:38px;line-height:1.04;letter-spacing:-.03em;color:${t.heroTx};margin:0 0 16px;">Honest reviews.<br>Zero noise.</h1>
+            <p style="font-size:15px;line-height:1.55;color:${t.heroMut};margin:0 0 28px;max-width:250px;">Real conversations between Rwandans and the businesses they actually use.</p>
+            <div style="display:flex;flex-direction:column;gap:13px;">
+              ${[['12.4K','reviews from verified locals'],['1.2K','businesses across Rwanda'],['4.7','average trust rating']].map(s=>`<div style="display:flex;align-items:center;gap:12px;"><span style="${F_DISP}font-weight:700;font-size:22px;color:${t.heroTx};min-width:62px;">${s[0]}</span><span style="font-size:12.5px;color:${t.heroMut};">${s[1]}</span></div>`).join('')}</div>
+          </div>
+          <div style="padding-bottom:26px;display:flex;flex-direction:column;gap:11px;">
+            <div style="background:${theme==='dark'?'#06231C':'#0C2C26'};color:#fff;font-weight:700;font-size:14.5px;text-align:center;padding:15px;border-radius:14px;">Create an account</div>
+            <div style="text-align:center;font-size:13.5px;color:${t.heroMut};">Already a member? <span style="color:${t.heroTx};font-weight:700;">Log in</span></div>
+          </div>
+        </div>`,
+      signup:(t,theme)=>`
+        ${appbar(t,{back:true,title:'',right:`<span style="${F_MONO}font-size:11px;color:${t.mut};">1 / 2</span>`})}
+        <div style="flex:1;overflow:hidden;padding:6px 22px 0;">
+          <h1 style="${F_DISP}font-weight:700;font-size:24px;letter-spacing:-.02em;color:${t.ink};margin:0 0 4px;">Create your account</h1>
+          <p style="font-size:13px;color:${t.mut};margin:0 0 22px;">Join the conversation in under a minute.</p>
+          ${field(t,'Full name','Aline Uwase',{icon:'user'})}
+          ${field(t,'Phone number','78 123 4567',{prefix:'+250',mono:true,focus:true})}
+          ${field(t,'Password','••••••••',{icon:'check',right:`<span style="font-size:11.5px;font-weight:700;color:${t.ac};">Show</span>`})}
+          <div style="display:flex;align-items:flex-start;gap:9px;margin-top:6px;"><span style="width:18px;height:18px;border-radius:6px;background:${t.ac};display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">${icon('check',12,'#fff',3)}</span><span style="font-size:11.5px;line-height:1.45;color:${t.mut};">I agree to the <span style="color:${t.ac};font-weight:700;">Terms</span> and <span style="color:${t.ac};font-weight:700;">Privacy Policy</span>.</span></div>
+        </div>
+        <div style="padding:12px 22px;">${bigBtn(t,'Continue')}</div>`,
+      verify:(t,theme)=>`
+        ${appbar(t,{back:true,title:'',right:`<span style="${F_MONO}font-size:11px;color:${t.mut};">2 / 2</span>`})}
+        <div style="flex:1;overflow:hidden;padding:6px 22px 0;">
+          <h1 style="${F_DISP}font-weight:700;font-size:24px;letter-spacing:-.02em;color:${t.ink};margin:0 0 4px;">Verify your number</h1>
+          <p style="font-size:13px;color:${t.mut};margin:0 0 26px;">We sent a 4-digit code to <span style="color:${t.ink};font-weight:600;">+250 78 123 4567</span>.</p>
+          <div style="display:flex;gap:12px;margin-bottom:22px;">${['4','1','',''].map((d,i)=>`<div style="flex:1;height:64px;border-radius:14px;border:1.5px solid ${i===2?t.ac:t.bd};background:${t.surf};display:flex;align-items:center;justify-content:center;${F_DISP}font-weight:700;font-size:26px;color:${t.ink};">${d||(i===2?`<span style="display:inline-block;width:2px;height:24px;background:${t.ac};"></span>`:'')}</div>`).join('')}</div>
+          <div style="text-align:center;font-size:13px;color:${t.mut};">Didn't get it? <span style="color:${t.ac};font-weight:700;">Resend in 0:24</span></div>
+        </div>
+        <div style="padding:12px 22px;">${bigBtn(t,'Verify & continue')}</div>`,
+      login:(t,theme)=>`
+        ${appbar(t,{back:true,title:'',right:''})}
+        <div style="flex:1;overflow:hidden;padding:6px 22px 0;">
+          <h1 style="${F_DISP}font-weight:700;font-size:26px;letter-spacing:-.02em;color:${t.ink};margin:0 0 4px;">Welcome back</h1>
+          <p style="font-size:13px;color:${t.mut};margin:0 0 24px;">Log in to pick up where you left off.</p>
+          ${field(t,'Phone number','78 123 4567',{prefix:'+250',mono:true})}
+          ${field(t,'Password','••••••••',{icon:'check',focus:true,right:`<span style="font-size:11.5px;font-weight:700;color:${t.ac};">Show</span>`})}
+          <div style="text-align:right;margin-top:-4px;margin-bottom:22px;"><span style="font-size:12.5px;font-weight:700;color:${t.ac};">Forgot password?</span></div>
+          ${bigBtn(t,'Log in')}
+          <div style="text-align:center;margin-top:18px;display:flex;align-items:center;gap:12px;"><span style="flex:1;height:1px;background:${t.bd};"></span><span style="font-size:11px;color:${t.mut};">OR</span><span style="flex:1;height:1px;background:${t.bd};"></span></div>
+          <div style="margin-top:18px;">${bigBtn(t,'Continue with Google','ghost')}</div>
+        </div>
+        <div style="padding:12px 22px;text-align:center;font-size:13px;color:${t.mut};">New here? <span style="color:${t.ac};font-weight:700;">Create an account</span></div>`,
+      interests:(t,theme)=>`
+        ${appbar(t,{back:true,title:'',right:`<span style="font-size:13px;font-weight:700;color:${t.mut};">Skip</span>`})}
+        <div style="flex:1;overflow:hidden;padding:6px 22px 0;">
+          <h1 style="${F_DISP}font-weight:700;font-size:24px;letter-spacing:-.02em;color:${t.ink};margin:0 0 4px;">What do you use most?</h1>
+          <p style="font-size:13px;color:${t.mut};margin:0 0 22px;">We'll tune your feed. Pick a few.</p>
+          <div style="display:flex;flex-wrap:wrap;gap:10px;">${[['Banks',1],['Hotels',1],['Food & cafés',1],['Telecom',0],['Health',0],['Fitness',1],['Travel',0],['Beauty',0],['Transport',0],['Shopping',0]].map(c=>`<span style="${c[1]?`background:${t.ac};color:${t.btnTx};`:`background:${t.surf};border:1.5px solid ${t.bd};color:${t.ink2};`}font-weight:600;font-size:13.5px;padding:11px 16px;border-radius:999px;">${c[1]?'✓ ':''}${c[0]}</span>`).join('')}</div>
+        </div>
+        <div style="padding:12px 22px;">${bigBtn(t,'Continue — 4 selected')}</div>`,
+      posted:(t,theme)=>`
+        <div style="flex:1;display:flex;flex-direction:column;padding:0 22px;">
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;">
+            <span style="width:74px;height:74px;border-radius:50%;background:${t.ac};display:flex;align-items:center;justify-content:center;margin-bottom:20px;box-shadow:0 12px 30px ${t.ac}55;">${icon('check',38,'#fff',3)}</span>
+            <h1 style="${F_DISP}font-weight:700;font-size:26px;letter-spacing:-.02em;color:${t.ink};margin:0 0 8px;">Review posted!</h1>
+            <p style="font-size:13.5px;color:${t.mut};margin:0 0 22px;max-width:240px;line-height:1.5;">Thanks for keeping Rwanda honest. Bank of Kigali can now reply.</p>
+            <div style="width:100%;background:${t.surf};border:2px solid ${cLine(t,theme)};border-radius:5px 18px 18px 18px;padding:13px 15px;text-align:left;">
+              <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;"><span style="font-weight:800;font-size:12.5px;color:${t.ink};">Aline U.</span>${stars(5,t,11)}<span style="${F_MONO}margin-left:auto;font-size:9px;color:${t.mut};">NOW</span></div>
+              <p style="font-size:12.5px;line-height:1.5;color:${t.ink};margin:0;">Fast service and friendly staff — in and out in five minutes.</p>
+              ${photoStrip(t,theme,2,68)}
+            </div>
+            <div style="display:inline-flex;align-items:center;gap:7px;margin-top:16px;background:${t.acSoft};color:${t.acDeep};font-weight:700;font-size:12.5px;padding:8px 14px;border-radius:999px;">${icon('heart',13,t.acDeep,2.2)} +12 helpful points earned</div>
+          </div>
+          <div style="padding-bottom:22px;display:flex;flex-direction:column;gap:11px;">${bigBtn(t,'Back to Bank of Kigali')}${bigBtn(t,'Share my review','ghost')}</div>
+        </div>`
+    };
+    const B_SCREENS = {
+      home:(t,theme)=>`
+        ${appbar(t,{dot:true})}
+        <div style="background:${t.hero};margin:0 16px 16px;border-radius:20px;padding:20px;">
+          <h1 style="${F_DISP}font-weight:700;font-size:27px;line-height:1.05;letter-spacing:-.02em;color:${t.heroTx};margin:0 0 14px;">Honest reviews.<br>Zero noise.</h1>
+          <div style="background:${t.surf};border-radius:12px;display:flex;align-items:center;gap:9px;padding:10px 8px 10px 14px;">${icon('search',16,t.mut,2)}<span style="flex:1;font-size:13px;color:${t.mut};">Search services…</span><span style="width:32px;height:32px;border-radius:9px;background:${t.btn};color:${t.btnTx};display:flex;align-items:center;justify-content:center;">${icon('search',15,t.btnTx,2.4)}</span></div></div>
+        <div style="flex:1;overflow:hidden;padding:0 16px;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:13px;"><span style="${F_MONO}font-size:10px;color:${t.ac};">● LIVE</span><span style="font-weight:700;font-size:13px;color:${t.ink};">Latest conversations</span></div>
+          ${chatIn(t,theme,'Aline U.','2H','Excellent service and very fast delivery — my new go-to spot! ☕',5,true,'Bourbon Coffee')}
+          ${chatReply(t,theme,'Bourbon Coffee','Murakoze cyane, Aline! See you soon 💚')}
+          ${chatIn(t,theme,'Eric N.','2D','Reliable network even outside Kigali.',5,false,'MTN Rwanda')}
+        </div>`,
+      feed:(t,theme)=>`
+        ${appbar(t,{title:'Feed',right:`<span style="width:34px;height:34px;border-radius:11px;background:${t.chip};color:${t.ink2};display:flex;align-items:center;justify-content:center;">${icon('bell',18,t.ink2)}</span>`})}
+        <div style="flex:1;overflow:hidden;padding:2px 16px 0;">
+          <div style="display:flex;gap:14px;margin-bottom:16px;">${[['+','You',true],['B','Bourbon'],['M','Marriott'],['V','Volcano']].map(s=>`<div style="display:flex;flex-direction:column;align-items:center;gap:5px;"><span style="width:50px;height:50px;border-radius:50%;${s[2]?`background:${t.ac};color:#fff;`:`background:${t.surf};border:2px solid ${t.ac};color:${t.ac};`}display:flex;align-items:center;justify-content:center;font-weight:700;font-size:${s[2]?'22':'16'}px;">${s[0]}</span><span style="font-size:10px;color:${t.mut};">${s[1]}</span></div>`).join('')}</div>
+          ${chatIn(t,theme,'Eric N.','2D','Reliable network even outside Kigali, and support actually picks up. 👍',5,false,'MTN Rwanda')}
+          ${chatReply(t,theme,'MTN Rwanda','Murakoze cyane, Eric! Glad the upgrade is working for you. 💚')}
+          ${chatIn(t,theme,'Jean P.','5H','Great food and atmosphere — generous portions.',4,true,'Repub Lounge')}
+        </div>`,
+      business:(t,theme)=>`
+        ${appbar(t,{back:true,title:'',right:`<span style="width:34px;height:34px;border-radius:11px;background:${t.chip};color:${t.ink2};display:flex;align-items:center;justify-content:center;">${icon('bookmark',17,t.ink2,2)}</span>`})}
+        <div style="flex:1;overflow:hidden;padding:0 16px;">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;"><span style="width:50px;height:50px;border-radius:13px;background:${t.ink};color:${t.surf};${F_DISP}font-weight:700;font-size:18px;display:flex;align-items:center;justify-content:center;">BK</span><div style="flex:1;"><div style="${F_DISP}font-weight:700;font-size:18px;color:${t.ink};">Bank of Kigali</div><div style="${F_MONO}font-size:10px;color:${t.ac};margin-top:2px;">★ 4.8 · 1,240 REVIEWS</div></div></div>
+          <div style="display:flex;gap:8px;margin-bottom:14px;">${['All','5★','Replied'].map((c,i)=>chip(t,c,i===0)).join('')}</div>
+          ${chatIn(t,theme,'Aline U.','2H','Fast service and friendly staff. In and out in five minutes.',5,true)}
+          ${chatReply(t,theme,'Bank of Kigali','Murakoze, Aline — see you next time!')}
+          ${chatIn(t,theme,'Jean P.','1D','Helpful at the forex desk, though the queue was long.',4)}
+        </div>
+        <div style="padding:12px 16px;"><div style="background:${t.btn};color:${t.btnTx};font-weight:700;font-size:14px;text-align:center;padding:14px;border-radius:13px;">Write a Review</div></div>`,
+      write: SCREENS.write,
+      writePhotos:(t,theme)=>`
+        ${appbar(t,{back:true,title:'',right:`<span style="font-size:13px;font-weight:700;color:${t.mut};">Cancel</span>`})}
+        <div style="flex:1;overflow:hidden;padding:0 18px;">
+          <div style="font-size:12.5px;color:${t.mut};margin-bottom:3px;">You're reviewing</div>
+          <div style="${F_DISP}font-weight:700;font-size:22px;color:${t.ink};letter-spacing:-.01em;margin-bottom:16px;">Bank of Kigali</div>
+          <div style="text-align:center;background:${t.acSoft};border-radius:16px;padding:16px;margin-bottom:16px;">
+            <div style="font-size:30px;letter-spacing:7px;color:${t.star};">★★★★★</div>
+            <div style="font-size:12.5px;font-weight:700;color:${t.acDeep};margin-top:6px;">Excellent</div></div>
+          <div style="background:${t.surf};border:1px solid ${t.bd};border-radius:14px;padding:14px;margin-bottom:13px;"><div style="font-size:13.5px;line-height:1.5;color:${t.ink};">Fast service and friendly staff — in and out in five minutes. The mobile-money desk was spotless.</div></div>
+          <div style="font-size:12.5px;font-weight:700;color:${t.ink};margin-bottom:9px;">Your photos</div>
+          <div style="display:flex;gap:9px;">
+            ${[0,1].map(()=>`<div style="flex:1;height:96px;border-radius:13px;background:linear-gradient(140deg,${t.acDeep},${t.ac});position:relative;display:flex;align-items:center;justify-content:center;">${icon('camera',20,'rgba(255,255,255,.9)',2)}<span style="position:absolute;top:6px;right:6px;width:20px;height:20px;border-radius:50%;background:rgba(0,0,0,.45);color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center;">×</span></div>`).join('')}
+            <div style="width:72px;height:96px;border:1.5px dashed ${t.bd};border-radius:13px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:${t.mut};">${icon('plus',20,t.mut,2)}<span style="font-size:10px;font-weight:600;">Add</span></div>
+          </div>
+        </div>
+        <div style="padding:12px 18px;">${bigBtn(t,'Post review')}</div>`,
+      search: SCREENS.search,
+      you: SCREENS.you,
+      ...M_AUTH
+    };
+    const tabActiveB = {home:'Home',feed:'Home',search:'Search',you:'You',business:'',write:''};
+    const phoneB = (screen,theme)=>{const t=T[theme];const showTab=['home','feed','search','you'].includes(screen);return `<div style="width:300px;background:#0A1714;border-radius:42px;padding:9px;box-shadow:0 30px 70px rgba(12,44,38,.32);flex-shrink:0;"><div style="background:${t.bg};border-radius:33px;overflow:hidden;height:640px;display:flex;flex-direction:column;color:${t.ink};">${statusbar(t)}<div style="flex:1;display:flex;flex-direction:column;overflow:hidden;">${B_SCREENS[screen](t,theme)}</div>${showTab?tabbar(t,tabActiveB[screen]):''}</div></div>`;};
+
+    const webChatIn = (t,theme,name,meta,text,rating,img)=>{const L=cLine(t,theme);return `<div style="display:flex;gap:12px;align-items:flex-end;margin-bottom:16px;">${av(name[0],t,40)}<div style="max-width:72%;background:${t.surf};border:2px solid ${L};border-radius:6px 20px 20px 20px;padding:14px 18px;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;"><span style="font-weight:800;font-size:14px;color:${t.ink};">${name}</span>${stars(rating,t,12)}<span style="${F_MONO}font-size:10px;color:${t.mut};">${meta}</span></div><p style="font-size:14px;line-height:1.5;color:${t.ink};margin:0;">${text}</p>${img?`<div style="margin-top:11px;display:flex;gap:8px;">${[0,1,2].map(()=>`<div style="width:112px;height:82px;border-radius:11px;background:linear-gradient(140deg,${t.acDeep},${t.ac});display:flex;align-items:center;justify-content:center;">${icon('camera',18,'rgba(255,255,255,.85)',2)}</div>`).join('')}</div>`:''}</div></div>`;};
+    const webChatOut = (t,theme,name,text)=>{const L=cLine(t,theme);return `<div style="display:flex;gap:12px;align-items:flex-end;flex-direction:row-reverse;margin-bottom:16px;"><span style="width:40px;height:40px;border-radius:12px;background:${t.ink};color:${t.surf};${F_DISP}font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">${name.slice(0,2).toUpperCase()}</span><div style="max-width:72%;background:${L};border-radius:20px 6px 20px 20px;padding:14px 18px;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;"><span style="font-weight:800;font-size:13.5px;color:#fff;">${name}</span><span style="${F_MONO}font-size:9px;font-weight:700;letter-spacing:.06em;color:${L};background:#fff;padding:2px 7px;border-radius:6px;">OWNER</span></div><p style="font-size:13.5px;line-height:1.5;color:rgba(255,255,255,.92);margin:0;">${text}</p></div></div>`;};
+    const webChatReply = (t,theme,name,text)=>{const L=cLine(t,theme);return `<div style="margin-top:-6px;margin-bottom:16px;"><div onclick="window.__irToggleReply&&window.__irToggleReply(this)" data-c="${name} replied · click to view" style="cursor:pointer;margin-left:52px;display:inline-flex;align-items:center;gap:7px;background:${t.acSoft};color:${L};font-weight:700;font-size:12px;padding:6px 13px;border-radius:999px;user-select:none;">${icon('reply',13,L,2)}<span data-lbl>${name} replied · click to view</span></div><div data-reply style="display:none;margin-top:10px;">${webChatOut(t,theme,name,text)}</div></div>`;};
+    const B_WEB = {
+      home:(t,theme)=>`${webNav(t,theme)}
+        <div style="background:${t.hero};padding:48px 40px;text-align:center;"><h1 style="${F_DISP}font-weight:700;font-size:42px;line-height:1.02;letter-spacing:-.03em;color:${t.heroTx};margin:0 0 12px;">Honest reviews. Zero noise.</h1><p style="font-size:15px;color:${t.heroMut};max-width:470px;margin:0 auto 22px;">Real conversations between Rwandans and the businesses they use.</p><div style="max-width:520px;margin:0 auto;background:${t.surf};border-radius:14px;display:flex;align-items:center;gap:10px;padding:8px 8px 8px 18px;">${icon('search',18,t.mut,2)}<span style="flex:1;text-align:left;font-size:14px;color:${t.mut};">Search businesses…</span><span style="background:${t.btn};color:${t.btnTx};font-weight:700;font-size:14px;padding:11px 22px;border-radius:10px;">Search</span></div></div>
+        <div style="padding:36px 40px;background:${t.bg};">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:22px;"><span style="${F_MONO}font-size:11px;color:${t.ac};">● LIVE</span><h2 style="${F_DISP}font-weight:700;font-size:22px;color:${t.ink};margin:0;letter-spacing:-.01em;">Latest conversations</h2></div>
+          <div style="max-width:700px;">
+            ${webChatIn(t,theme,'Aline U.','BOURBON COFFEE · 2H','Excellent service and very fast delivery — friendly, professional staff. My new go-to spot. ☕',5,true)}
+            ${webChatReply(t,theme,'Bourbon Coffee','Murakoze cyane, Aline! See you again soon 💚')}
+            ${webChatIn(t,theme,'Eric N.','MTN RWANDA · 2D','Reliable network even outside Kigali, and support actually picks up. 👍',5)}
+            ${webChatReply(t,theme,'MTN Rwanda','Glad the upgrade is working for you, Eric!')}
+          </div></div>`,
+      business:(t,theme)=>`${webNav(t,theme)}
+        <div style="background:${t.surf};border-bottom:1px solid ${t.bd};padding:30px 40px;display:flex;align-items:center;gap:20px;"><span style="width:68px;height:68px;border-radius:17px;background:${t.ink};color:${t.surf};${F_DISP}font-weight:700;font-size:24px;display:flex;align-items:center;justify-content:center;">BK</span><div style="flex:1;"><div style="display:flex;align-items:center;gap:10px;"><h1 style="${F_DISP}font-weight:700;font-size:26px;color:${t.ink};margin:0;letter-spacing:-.02em;">Bank of Kigali</h1><span style="border:1.5px solid ${t.ac};color:${t.ac};font-weight:700;font-size:11px;padding:4px 10px;border-radius:8px;">CLAIMED ✓</span></div><div style="${F_MONO}font-size:11px;color:${t.ac};margin-top:5px;">BANKS · KIGALI · OPEN NOW</div></div><div style="text-align:center;margin-right:8px;"><div style="${F_DISP}font-weight:700;font-size:34px;color:${t.ink};line-height:1;">4.8</div>${stars(5,t,13)}<div style="${F_MONO}font-size:10px;color:${t.mut};margin-top:3px;">1,240 REVIEWS</div></div><span style="background:${t.btn};color:${t.btnTx};font-weight:700;font-size:14px;padding:13px 22px;border-radius:11px;">Write a Review</span></div>
+        <div style="padding:30px 40px;background:${t.bg};">
+          <div style="display:flex;gap:8px;margin-bottom:20px;">${['All 1,240','5 star','Replied','Recent'].map((c,i)=>chip(t,c,i===0)).join('')}</div>
+          <div style="max-width:730px;">
+            ${webChatIn(t,theme,'Aline U.','MOBILE MONEY · 2H','Fast service and friendly staff. The mobile-money desk was quick — in and out in five minutes.',5,true)}
+            ${webChatReply(t,theme,'Bank of Kigali','Murakoze, Aline — see you next time!')}
+            ${webChatIn(t,theme,'Jean P.','FOREX · 1D','Helpful at the forex desk, though the queue was a little long at lunch.',4)}
+            ${webChatReply(t,theme,'Bank of Kigali','Thanks Jean — we’ve added a lunchtime teller!')}
+          </div></div>`,
+      search: WEB.search,
+      signin:(t,theme)=>`${webNav(t,theme)}
+        <div style="display:flex;min-height:540px;background:${t.bg};">
+          <div style="flex:1;background:${t.hero};padding:60px 56px;display:flex;flex-direction:column;justify-content:center;">
+            <h1 style="${F_DISP}font-weight:700;font-size:38px;line-height:1.06;letter-spacing:-.03em;color:${t.heroTx};margin:0 0 16px;">Welcome back to<br>honest reviews.</h1>
+            <p style="font-size:15px;line-height:1.6;color:${t.heroMut};max-width:340px;margin:0 0 32px;">Log in to reply to businesses, save your favourites, and pick up where you left off.</p>
+            <div style="display:flex;flex-direction:column;gap:16px;">${[['12.4K','reviews from verified locals'],['1.2K','businesses across Rwanda'],['4.7','average trust rating']].map(s=>`<div style="display:flex;align-items:center;gap:14px;"><span style="${F_DISP}font-weight:700;font-size:26px;color:${t.heroTx};min-width:72px;">${s[0]}</span><span style="font-size:13.5px;color:${t.heroMut};">${s[1]}</span></div>`).join('')}</div>
+          </div>
+          <div style="flex:1;display:flex;align-items:center;justify-content:center;padding:48px;">
+            <div style="width:360px;">
+              <h2 style="${F_DISP}font-weight:700;font-size:24px;letter-spacing:-.02em;color:${t.ink};margin:0 0 6px;">Log in</h2>
+              <p style="font-size:13px;color:${t.mut};margin:0 0 24px;">New here? <span style="color:${t.ac};font-weight:700;">Create an account</span></p>
+              ${field(t,'Phone number','78 123 4567',{prefix:'+250',mono:true})}
+              ${field(t,'Password','••••••••',{icon:'check',focus:true,right:`<span style="font-size:11.5px;font-weight:700;color:${t.ac};">Show</span>`})}
+              <div style="text-align:right;margin:-4px 0 20px;"><span style="font-size:12.5px;font-weight:700;color:${t.ac};">Forgot password?</span></div>
+              ${bigBtn(t,'Log in')}
+              <div style="text-align:center;margin:18px 0;display:flex;align-items:center;gap:12px;"><span style="flex:1;height:1px;background:${t.bd};"></span><span style="font-size:11px;color:${t.mut};">OR</span><span style="flex:1;height:1px;background:${t.bd};"></span></div>
+              ${bigBtn(t,'Continue with Google','ghost')}
+            </div>
+          </div>
+        </div>`,
+      signup:(t,theme)=>`${webNav(t,theme)}
+        <div style="display:flex;min-height:540px;background:${t.bg};">
+          <div style="flex:1;background:${t.hero};padding:60px 56px;display:flex;flex-direction:column;justify-content:center;">
+            <span style="${F_MONO}font-size:11px;letter-spacing:.12em;color:${t.heroMut};margin-bottom:14px;">JOIN IREMA</span>
+            <h1 style="${F_DISP}font-weight:700;font-size:38px;line-height:1.06;letter-spacing:-.03em;color:${t.heroTx};margin:0 0 16px;">Your voice keeps<br>Rwanda honest.</h1>
+            <p style="font-size:15px;line-height:1.6;color:${t.heroMut};max-width:340px;margin:0;">Create a free account to write reviews, add photos, and get replies from real businesses.</p>
+          </div>
+          <div style="flex:1;display:flex;align-items:center;justify-content:center;padding:48px;">
+            <div style="width:360px;">
+              <h2 style="${F_DISP}font-weight:700;font-size:24px;letter-spacing:-.02em;color:${t.ink};margin:0 0 6px;">Create your account</h2>
+              <p style="font-size:13px;color:${t.mut};margin:0 0 24px;">Already a member? <span style="color:${t.ac};font-weight:700;">Log in</span></p>
+              ${field(t,'Full name','Aline Uwase',{icon:'user'})}
+              ${field(t,'Phone number','78 123 4567',{prefix:'+250',mono:true,focus:true})}
+              ${field(t,'Password','••••••••',{icon:'check',right:`<span style="font-size:11.5px;font-weight:700;color:${t.ac};">Show</span>`})}
+              <div style="display:flex;align-items:flex-start;gap:9px;margin:4px 0 18px;"><span style="width:18px;height:18px;border-radius:6px;background:${t.ac};display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">${icon('check',12,'#fff',3)}</span><span style="font-size:11.5px;line-height:1.45;color:${t.mut};">I agree to the <span style="color:${t.ac};font-weight:700;">Terms</span> and <span style="color:${t.ac};font-weight:700;">Privacy Policy</span>.</span></div>
+              ${bigBtn(t,'Create account')}
+            </div>
+          </div>
+        </div>`,
+      write:(t,theme)=>`${webNav(t,theme)}
+        <div style="position:relative;background:${t.bg};padding:40px;min-height:560px;">
+          <div style="opacity:.5;filter:blur(1px);max-width:730px;margin:0 auto;">
+            ${webChatIn(t,theme,'Aline U.','MOBILE MONEY · 2H','Fast service and friendly staff.',5)}
+            ${webChatIn(t,theme,'Jean P.','FOREX · 1D','Helpful at the forex desk.',4)}
+          </div>
+          <div style="position:absolute;inset:0;background:rgba(6,17,14,.45);display:flex;align-items:center;justify-content:center;padding:32px;">
+            <div style="width:520px;background:${t.surf};border:1px solid ${t.bd};border-radius:20px;padding:28px;box-shadow:0 40px 90px rgba(0,0,0,.4);">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;"><div style="font-size:12.5px;color:${t.mut};">You're reviewing</div><span style="width:28px;height:28px;border-radius:9px;background:${t.chip};color:${t.ink2};display:flex;align-items:center;justify-content:center;font-size:15px;">×</span></div>
+              <div style="${F_DISP}font-weight:700;font-size:24px;color:${t.ink};letter-spacing:-.01em;margin-bottom:18px;">Bank of Kigali</div>
+              <div style="text-align:center;background:${t.acSoft};border-radius:16px;padding:18px;margin-bottom:18px;"><div style="font-size:34px;letter-spacing:9px;color:${t.star};">★★★★★</div><div style="font-size:12.5px;font-weight:700;color:${t.acDeep};margin-top:8px;">Excellent</div></div>
+              <div style="font-size:12.5px;font-weight:700;color:${t.ink};margin-bottom:9px;">What stood out?</div>
+              <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;">${[['Quick',1],['Friendly',1],['Clean',0],['Good value',0],['Professional',1],['Long wait',0]].map(c=>`<span style="${c[1]?`background:${t.ac};color:${t.btnTx};`:`background:${t.surf};border:1px solid ${t.bd};color:${t.ink2};`}font-weight:600;font-size:12.5px;padding:8px 14px;border-radius:999px;">${c[1]?'✓ ':''}${c[0]}</span>`).join('')}</div>
+              <div style="background:${t.bg};border:1px solid ${t.bd};border-radius:14px;padding:14px;margin-bottom:14px;font-size:13.5px;line-height:1.5;color:${t.ink};">Fast service and friendly staff — in and out in five minutes.<span style="display:inline-block;width:1.5px;height:15px;background:${t.ac};vertical-align:middle;margin-left:1px;"></span></div>
+              <div style="display:flex;gap:9px;margin-bottom:20px;">${[0,1].map(()=>`<div style="width:84px;height:84px;border-radius:12px;background:linear-gradient(140deg,${t.acDeep},${t.ac});display:flex;align-items:center;justify-content:center;">${icon('camera',18,'rgba(255,255,255,.9)',2)}</div>`).join('')}<div style="width:84px;height:84px;border:1.5px dashed ${t.bd};border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:${t.mut};">${icon('plus',18,t.mut,2)}<span style="font-size:10px;font-weight:600;">Add</span></div></div>
+              ${bigBtn(t,'Post review')}
+            </div>
+          </div>
+        </div>`
+    };
+    const webFrameB = (screen,theme)=>{const t=T[theme];return `<div style="width:1180px;border-radius:16px;overflow:hidden;border:1px solid ${t.bd};box-shadow:0 24px 60px rgba(12,44,38,.12);flex-shrink:0;"><div style="height:38px;background:${theme==='dark'?'#0A1714':'#E9EEEC'};display:flex;align-items:center;gap:7px;padding:0 16px;">${['#ff5f57','#febc2e','#28c840'].map(c=>`<span style="width:11px;height:11px;border-radius:50%;background:${c};"></span>`).join('')}<span style="margin:0 auto;${F_MONO}font-size:11px;color:${theme==='dark'?t.mut:'#8A9B96'};">irema.rw${screen==='business'?'/bank-of-kigali':screen==='search'?'/search?q=kigali':screen==='signin'?'/login':screen==='signup'?'/join':''}</span></div><div style="background:${t.bg};">${B_WEB[screen](t,theme)}</div></div>`;};
+
+    /* ============ PWA (installable) ============ */
+    /* install prompt — browser frame with native install dialog */
+    const pwaInstall = (theme)=>{const t=T[theme];return `<div style="width:1180px;border-radius:16px;overflow:hidden;border:1px solid ${t.bd};box-shadow:0 24px 60px rgba(12,44,38,.12);flex-shrink:0;position:relative;">
+      <div style="height:38px;background:${theme==='dark'?'#0A1714':'#E9EEEC'};display:flex;align-items:center;gap:7px;padding:0 16px;">${['#ff5f57','#febc2e','#28c840'].map(c=>`<span style="width:11px;height:11px;border-radius:50%;background:${c};"></span>`).join('')}
+        <span style="margin:0 auto 0 18px;flex:1;max-width:520px;${F_MONO}font-size:11px;color:${theme==='dark'?t.mut:'#8A9B96'};background:${theme==='dark'?'#0F1F1B':'#fff'};border-radius:8px;padding:5px 12px;display:flex;align-items:center;gap:8px;">irema.rw<span style="margin-left:auto;display:inline-flex;align-items:center;gap:5px;color:${t.ac};font-weight:700;">${icon('plus',12,t.ac,2.4)} Install</span></span>
+        <span style="width:40px;"></span></div>
+      <div style="background:${t.bg};">${B_WEB.home(t,theme)}</div>
+      <div style="position:absolute;top:46px;right:32px;width:340px;background:${t.surf};border:1px solid ${t.bd};border-radius:14px;box-shadow:0 24px 60px rgba(0,0,0,.35);padding:18px;">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;"><span style="width:46px;height:46px;border-radius:13px;background:${t.hero};color:${t.heroTx};${F_DISP}font-weight:700;font-size:20px;display:flex;align-items:center;justify-content:center;">i</span><div style="flex:1;"><div style="font-weight:700;font-size:14px;color:${t.ink};">Install IREMA</div><div style="${F_MONO}font-size:10.5px;color:${t.mut};margin-top:2px;">irema.rw</div></div></div>
+        <p style="font-size:12.5px;line-height:1.5;color:${t.ink2};margin:0 0 14px;">Installs as an app — opens in its own window, works offline, and sends review-reply alerts.</p>
+        <div style="display:flex;gap:9px;justify-content:flex-end;"><span style="font-size:13px;font-weight:700;color:${t.ink2};padding:9px 14px;">Not now</span><span style="background:${t.btn};color:${t.btnTx};font-weight:700;font-size:13px;padding:9px 18px;border-radius:10px;">Install</span></div>
+      </div></div>`;};
+    /* installed standalone window — minimal titlebar, no tabs/URL */
+    const pwaApp = (screen,theme)=>{const t=T[theme];return `<div style="width:1180px;border-radius:16px;overflow:hidden;border:1px solid ${t.bd};box-shadow:0 24px 60px rgba(12,44,38,.12);flex-shrink:0;">
+      <div style="height:42px;background:${t.surf};border-bottom:1px solid ${t.bd};display:flex;align-items:center;gap:9px;padding:0 14px;">${['#ff5f57','#febc2e','#28c840'].map(c=>`<span style="width:11px;height:11px;border-radius:50%;background:${c};"></span>`).join('')}
+        <span style="margin-left:8px;display:flex;align-items:center;gap:6px;"><span style="width:18px;height:18px;border-radius:6px;background:${t.hero};color:${t.heroTx};${F_DISP}font-weight:700;font-size:10px;display:flex;align-items:center;justify-content:center;">i</span><span style="${F_DISP}font-size:13px;font-weight:700;color:${t.ink};">IREMA</span></span>
+        <span style="margin:0 auto;${F_MONO}font-size:10px;letter-spacing:.08em;color:${t.mut};">INSTALLED · STANDALONE</span><span style="width:60px;"></span></div>
+      <div style="background:${t.bg};">${B_WEB[screen](t,theme)}</div></div>`;};
+
+    /* mobile PWA — installed on phone homescreen, standalone (no browser bar) */
+    const pwaPhone = (screen,theme)=>{const t=T[theme];const showTab=['home','feed','search','you'].includes(screen);return `<div style="width:300px;background:#0A1714;border-radius:42px;padding:9px;box-shadow:0 30px 70px rgba(12,44,38,.32);flex-shrink:0;"><div style="background:${t.bg};border-radius:33px;overflow:hidden;height:640px;display:flex;flex-direction:column;color:${t.ink};">${statusbar(t)}<div style="${F_MONO}font-size:9px;letter-spacing:.1em;color:${t.mut};text-align:center;padding:0 0 4px;">● STANDALONE · NO BROWSER BAR</div><div style="flex:1;display:flex;flex-direction:column;overflow:hidden;">${B_SCREENS[screen](t,theme)}</div>${showTab?tabbar(t,tabActiveB[screen]):''}</div></div>`;};
+
+    /* ---- register ---- */
+    const mk = (tag, fn) => { if (customElements.get(tag)) return; customElements.define(tag, class extends HTMLElement { connectedCallback(){ if(!this._d){ this._d=true; this.innerHTML = fn(this); } } }); };
+    mk('rev-card', el => {
+      const fmt = el.getAttribute('fmt');
+      return `<div style="display:flex;flex-direction:column;gap:11px;">
+        <div style="${F_MONO}font-size:10px;letter-spacing:.08em;color:#8A9B96;">${fmt.toUpperCase()}</div>
+        <div style="display:flex;gap:14px;align-items:flex-start;">
+          <div style="background:#EFEDE7;padding:16px;border-radius:18px;">${reviewCard(fmt,T.light,'light')}</div>
+          <div style="background:#06110E;padding:16px;border-radius:18px;">${reviewCard(fmt,T.dark,'dark')}</div></div></div>`;
+    });
+    mk('app-phone', el => phone(el.getAttribute('screen'), el.getAttribute('theme')));
+    mk('web-frame', el => webFrame(el.getAttribute('screen'), el.getAttribute('theme')));
+    mk('dash-frame', el => dashFrame(el.getAttribute('theme')));
+    mk('app-phone-b', el => phoneB(el.getAttribute('screen'), el.getAttribute('theme')));
+    mk('web-frame-b', el => webFrameB(el.getAttribute('screen'), el.getAttribute('theme')));
+    mk('pwa-install', el => pwaInstall(el.getAttribute('theme')));
+    mk('pwa-app', el => pwaApp(el.getAttribute('screen'), el.getAttribute('theme')));
+    mk('pwa-phone', el => pwaPhone(el.getAttribute('screen'), el.getAttribute('theme')));
+  }
+}
+</script>
+</body>
+</html>

@@ -177,6 +177,16 @@
 .lightbox-img { max-width:90vw; max-height:85vh; object-fit:contain; border-radius:8px; }
 .lightbox-counter { position:absolute; bottom:20px; left:50%; transform:translateX(-50%); color:rgba(255,255,255,0.7); font-size:0.85rem; }
 
+/* Redesign (Design.md) — bubble-chat accent border on review cards */
+.ir2 .review-widget {
+  border-radius: 5px 16px 16px 16px;
+  border: 2px solid var(--brand-dark);
+}
+[data-theme="dark"] .ir2 .review-widget { border-color: var(--brand); }
+.ir2 .rw-avatar { font-family: var(--font-display); }
+.ir2 .biz-info-card, .ir2 .rating-summary-card { border-radius: 16px; }
+.ir2 .company-verified-badge { font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.05em; }
+
 /* Dark mode */
 [data-theme="dark"] .review-widget { background:var(--surface); border-color:var(--border); }
 [data-theme="dark"] .review-widget:hover { box-shadow:0 6px 20px rgba(0,0,0,0.3); }

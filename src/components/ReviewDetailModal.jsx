@@ -59,6 +59,7 @@ export default function ReviewDetailModal({ review, onClose, onGoToBusiness }) {
     <>
       {lightbox && (
         <div
+          className="ir2"
           onClick={() => setLightbox(null)}
           style={{
             position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)',
@@ -75,6 +76,7 @@ export default function ReviewDetailModal({ review, onClose, onGoToBusiness }) {
       )}
 
       <div
+        className="ir2"
         onClick={e => e.target === e.currentTarget && onClose && onClose()}
         style={{
           position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',

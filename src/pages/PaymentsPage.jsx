@@ -94,7 +94,7 @@ export default function PaymentsPage() {
 
   if (loading) {
     return (
-      <div data-theme={theme} style={{ background: 'var(--bg)', minHeight: '100vh' }}>
+      <div data-theme={theme} className="ir2" style={{ background: 'var(--bg)', minHeight: '100vh' }}>
         <Navbar />
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
           <div>Loading...</div>
@@ -105,7 +105,7 @@ export default function PaymentsPage() {
   }
 
   return (
-    <div data-theme={theme} style={{ background: 'var(--bg)', minHeight: '100vh' }}>
+    <div data-theme={theme} className="ir2" style={{ background: 'var(--bg)', minHeight: '100vh' }}>
       <Navbar />
       <div className="container" style={{ maxWidth: 1100, padding: '60px 24px 80px' }}>
         <div style={{ textAlign: 'center', marginBottom: 60 }}>
@@ -173,8 +173,8 @@ export default function PaymentsPage() {
                 disabled={selectedPlan === plan.id}
                 style={{
                   width: '100%',
-                  background: plan.highlight ? 'var(--brand)' : 'var(--bg)',
-                  color: plan.highlight ? 'white' : 'var(--text-1)',
+                  background: plan.highlight ? 'var(--btn)' : 'var(--bg)',
+                  color: plan.highlight ? 'var(--btn-tx)' : 'var(--text-1)',
                   border: plan.highlight ? 'none' : '1px solid var(--border)',
                   padding: '12px 24px',
                   borderRadius: 10,
@@ -205,8 +205,8 @@ export default function PaymentsPage() {
           <p style={{ color: 'var(--text-2)', marginBottom: 20 }}>Our support team is here to help you choose the right plan for your business.</p>
           <a href="mailto:daniel.kamali@irema.rw" style={{
             display: 'inline-block',
-            background: 'var(--brand)',
-            color: 'white',
+            background: 'var(--btn)',
+            color: 'var(--btn-tx)',
             padding: '12px 32px',
             borderRadius: 10,
             textDecoration: 'none',

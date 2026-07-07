@@ -49,12 +49,14 @@
   height: 100%; display: flex; align-items: center; justify-content: space-between;
 }
 .biz-nav-brand {
-  display: flex; align-items: center; gap: 10px; text-decoration: none;
+  display: flex; align-items: center; text-decoration: none;
 }
-.biz-nav-brandname {
-  font-family: 'Sora', sans-serif; font-size: 1rem; font-weight: 700; color: var(--biz-text-1);
+.biz-logo-img {
+  height: 28px; width: auto; display: block; transition: filter var(--t-base);
 }
-.biz-nav-brandname span { color: var(--biz-brand); font-weight: 600; }
+[data-theme="dark"] .biz-logo-img {
+  filter: invert(1);
+}
 .biz-nav-right { display: flex; align-items: center; gap: 8px; }
 .biz-nav-btn {
   width: 34px; height: 34px; border-radius: 50%; border: none;
@@ -450,7 +452,7 @@
 
   /* Navbar */
   .biz-navbar-inner { padding: 0 12px; }
-  .biz-nav-brandname { font-size: 0.9rem; }
+  .biz-logo-img { height: 24px; }
   .biz-user-name { display: none; }
 }
 

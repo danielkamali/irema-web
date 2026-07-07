@@ -395,7 +395,7 @@ export default function CompanyPage() {
   const hasBackgroundImage = !!company?.backgroundImageUrl;
 
   return (
-    <div className="company-page">
+    <div className="company-page ir2">
       {/* ── Hero header (Yelp-style with photo banner) ── */}
       <div className="company-hero-header">
         {/* Photo banner */}

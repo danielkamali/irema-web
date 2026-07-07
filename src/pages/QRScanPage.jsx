@@ -97,7 +97,7 @@ export default function QRScanPage() {
   }
 
   return (
-    <div className="qrscan-page">
+    <div className="qrscan-page ir2">
       <div className="container container-sm">
         <div className="qrscan-header">
           <h1>📷 {t('home.scan_qr')}</h1>

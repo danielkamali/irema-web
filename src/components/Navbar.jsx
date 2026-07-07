@@ -188,14 +188,11 @@ export default function Navbar() {
 
   return (
     <>
-    <nav className={`navbar${scrolled ? ' scrolled' : ''}`} role="banner">
+    <nav className={`navbar ir2${scrolled ? ' scrolled' : ''}`} role="banner">
       <div className="navbar-inner">
         {/* Logo */}
         <Link to="/" className="navbar-logo" aria-label="Irema home">
-          <div className="navbar-logo-icon">
-            <IremaLogoMark />
-          </div>
-          <span className="logo-text">Irema</span>
+          <img src="/irema_logo.svg" alt="Irema Logo" className="navbar-logo-img" />
         </Link>
 
         {/* Search */}

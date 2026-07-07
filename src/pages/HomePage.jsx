@@ -7,7 +7,7 @@ import { useModalStore } from '../store/modalStore';
 import CompanyCard from '../components/CompanyCard';
 import StarRating from '../components/StarRating';
 import LoadingSpinner from '../components/LoadingSpinner';
-import { getCategoryLabel, formatRelativeTime, getRatingColor } from '../utils/helpers';
+import { getCategoryLabel } from '../utils/helpers';
 import { isArchivedRecord } from '../utils/adminModeration';
 import './HomePage.css';
 import StoriesSection from '../components/StoriesSection';
@@ -129,7 +129,7 @@ export default function HomePage() {
   const fmtNum = n => n >= 1000 ? (n / 1000).toFixed(1).replace('.0', '') + 'K' : n > 0 ? n.toString() : 'N/A';
 
   return (
-    <div className="homepage">
+    <div className="homepage ir2">
 
       {/* ── Hero ── */}
       <section className="hero">
@@ -166,13 +166,6 @@ export default function HomePage() {
               <div className="hero-stat">
                 <div className="hero-stat-num">4</div>
                 <div className="hero-stat-label">{t('home.languages_label')}</div>
-              </div>
-              <div className="hero-stat-divider" />
-              <div className="hero-stat">
-                <div className="hero-stat-num">
-                  <img src="/rwanda-flag.png" alt="Rwanda" width="36" height="24" style={{borderRadius:4,objectFit:'cover',display:'block'}}/>
-                </div>
-                <div className="hero-stat-label">Rwanda</div>
               </div>
             </div>
           </div>
@@ -366,7 +359,7 @@ export default function HomePage() {
 }
 
 function ReviewGrid({ reviews }) {
-  const [shown, setShown] = React.useState(16); // 4 cols × 4 rows
+  const [shown, setShown] = React.useState(4); // 2x2 — keep it short
   // Track which review the user wants to open in the detail modal. Clicking a
   // card no longer jumps straight to the business page — it opens this modal,
   // which contains an explicit "go to business" button.
@@ -376,9 +369,9 @@ function ReviewGrid({ reviews }) {
 
   return (
     <div className="review-grid-wrap">
-      <div className="review-grid">
+      <div className="ir2-review-mini-grid">
         {visible.map((rev, i) => (
-          <ReviewCard key={rev.id || i} review={rev} onOpen={() => setActiveReview(rev)} />
+          <ReviewMiniCard key={rev.id || i} review={rev} onOpen={() => setActiveReview(rev)} />
         ))}
       </div>
       <div style={{textAlign:'center', marginTop:32}}>
@@ -386,7 +379,7 @@ function ReviewGrid({ reviews }) {
           <button
             className="btn btn-outline"
             style={{padding:'10px 32px', fontSize:'0.9rem', fontWeight:600}}
-            onClick={() => setShown(s => s + 16)}
+            onClick={() => setShown(s => s + 4)}
           >
             Load More Reviews
           </button>
@@ -412,50 +405,26 @@ function ReviewPageControls({ reviews }) {
   return null; // Controls are inside ReviewGrid
 }
 
-function ReviewCard({ review, onOpen }) {
+// ── Compact review row — score chip + one-line comment + meta.
+function ReviewMiniCard({ review, onOpen }) {
   const name = review.companyName || 'Unknown Service';
   const userName = review.userName || 'Anonymous';
   const comment = review.comment || '';
   const rating = review.rating || 0;
-  const timeAgo = formatRelativeTime(review.createdAt);
-  const initial = userName[0]?.toUpperCase() || 'A';
-  const AVATAR_COLORS = ['#2d8f6f','#0ea5e9','#8b5cf6','#f59e0b','#ef4444','#14b8a6'];
-  const color = AVATAR_COLORS[userName.charCodeAt(0) % AVATAR_COLORS.length];
-  const firstImage = review.images?.[0];
 
-  // Card is now a button that opens the ReviewDetailModal rather than a
-  // Link that jumps straight to the business page.
   return (
     <button
       type="button"
       onClick={onOpen}
-      className="review-card-tp"
+      className="ir2-review-mini"
       style={{ textAlign: 'left', font: 'inherit', cursor: 'pointer' }}
       aria-label={`View review by ${userName}`}
     >
-      <div className="rct-header">
-        {review.userPhotoURL
-          ? <img src={review.userPhotoURL} alt={userName} className="rct-avatar rct-avatar-photo" />
-          : <div className="rct-avatar" style={{background: color}}>{initial}</div>
-        }
-        <div className="rct-user-info">
-          <div className="rct-username">{userName}</div>
-          <div className="rct-time">{timeAgo}</div>
-        </div>
-      </div>
-      <div className="rct-stars">
-        <StarRating rating={rating} size={16} />
-      </div>
-      <p className="rct-comment">{comment.length > 130 ? comment.slice(0,130)+'…' : comment}</p>
-      {firstImage && <img src={firstImage} alt="review photo" className="rct-review-img" />}
-      <div className="rct-company-row">
-        {review.companyLogoUrl
-          ? <img src={review.companyLogoUrl} alt={name} className="rct-company-logo" />
-          : <div className="rct-company-avatar">{name[0]?.toUpperCase()}</div>
-        }
-        <div>
-          <div className="rct-company-name">{name}</div>
-        </div>
+      <div className="ir2-rm-score">{rating > 0 ? rating.toFixed(1) : '—'}</div>
+      <div className="ir2-rm-body">
+        <div className="ir2-rm-name">{userName}</div>
+        <p className="ir2-rm-comment">{comment.length > 90 ? comment.slice(0,90)+'…' : comment}</p>
+        <div className="ir2-rm-meta">{name.toUpperCase()}</div>
       </div>
     </button>
   );

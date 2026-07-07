@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&family=Space+Grotesk:wght@400;500;600;700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Figtree:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  body { font-family:'Plus Jakarta Sans',system-ui,sans-serif; -webkit-font-smoothing:antialiased; }
+  dir-col, rev-pair { display:contents; }
+</style>
+</helmet>
+
+<!-- Header -->
+<div style="position:absolute; left:60px; top:44px; width:1500px;">
+  <div data-drags-parent="1" style="font-size:13px; font-weight:800; letter-spacing:.16em; text-transform:uppercase; color:#9499AE;">IREMA · Redesign explorations</div>
+  <h1 style="font-family:'Plus Jakarta Sans'; font-size:34px; font-weight:800; letter-spacing:-.02em; color:#1C1F30; margin:8px 0 6px;">Pick a direction — not a clone</h1>
+  <p style="font-size:15px; line-height:1.6; color:#5A5F76; max-width:760px; margin:0;">Four ways IREMA could look and feel, each with its own palette and type so it reads as an original product, not a Trustpilot grid. Every screen is shown in <strong style="color:#1C1F30;">light and dark</strong>. Below: a kit of <strong style="color:#1C1F30;">7 review formats</strong>. Tell me a direction number + the formats you like and I'll build the whole app in it.</p>
+</div>
+
+<!-- 01 · Directions -->
+<div style="position:absolute; left:60px; top:188px; width:2720px;">
+  <div data-drags-parent="1" style="display:flex; align-items:center; gap:10px; margin-bottom:22px;">
+    <span style="font-size:12px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:#3A3E52;">01 — Four directions</span>
+    <span style="font-size:12px; color:#9499AE;">light + dark · mobile home</span>
+  </div>
+  <div style="display:flex; gap:40px; align-items:flex-start;">
+    <dir-col dir="editorial"></dir-col>
+    <dir-col dir="bold"></dir-col>
+    <dir-col dir="calm"></dir-col>
+    <dir-col dir="playful"></dir-col>
+  </div>
+</div>
+
+<!-- 02 · Review formats -->
+<div style="position:absolute; left:60px; top:1112px; width:2320px;">
+  <div data-drags-parent="1" style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+    <span style="font-size:12px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:#3A3E52;">02 — Review format kit</span>
+    <span style="font-size:12px; color:#9499AE;">light + dark · accent follows your chosen direction</span>
+  </div>
+  <p style="font-size:13.5px; color:#5A5F76; margin:0 0 24px; max-width:680px;">Seven ways to present a single review. Shown here in a neutral indigo so the structure reads clearly — the final colour matches whichever direction you choose above.</p>
+  <div style="display:flex; flex-wrap:wrap; gap:32px 34px; align-items:flex-start;">
+    <rev-pair fmt="row"></rev-pair>
+    <rev-pair fmt="quote"></rev-pair>
+    <rev-pair fmt="photo"></rev-pair>
+    <rev-pair fmt="thread"></rev-pair>
+    <rev-pair fmt="breakdown"></rev-pair>
+    <rev-pair fmt="story"></rev-pair>
+    <rev-pair fmt="receipt"></rev-pair>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:2820,&quot;height&quot;:2600}}">
+class Component extends DCLogic {
+  componentDidMount() { Component.defineEls(); }
+
+  static defineEls() {
+    if (Component._def) return;
+    Component._def = true;
+    const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+    const av = (l, t, sz, ac) => `<span style="width:${sz}px;height:${sz}px;border-radius:50%;flex-shrink:0;background:linear-gradient(135deg,${ac||t.ac},${t.ac2});color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center;font-size:${Math.round(sz*0.4)}px;">${esc(l)}</span>`;
+    const srow = (t, n, sz) => `<span style="font-size:${sz||13}px;letter-spacing:1px;color:${t.ac};white-space:nowrap;">${'★'.repeat(n)}<span style="color:${t.mut};opacity:.4;">${'★'.repeat(5-n)}</span></span>`;
+
+    /* ============ DIRECTIONS ============ */
+    const DIRS = {
+      editorial: {
+        no:'01', name:'Editorial', tagline:'Magazine warmth. Serif headlines, pull-quotes, paper tones. Reviews read like stories.',
+        disp:"'Newsreader',Georgia,serif", body:"'Figtree',sans-serif", rad:'14px',
+        light:{bg:'#F3EDE2',surf:'#FFFDF8',ink:'#221C15',ink2:'#5B5246',mut:'#8C8273',bd:'#E5DBC9',ac:'#C2542F',ac2:'#2E5D4B',acSoft:'#F4E2D8'},
+        dark:{bg:'#15110B',surf:'#201B13',ink:'#F3ECDD',ink2:'#C8BDA9',mut:'#8C8270',bd:'#2F2819',ac:'#E27A4E',ac2:'#6BB18D',acSoft:'#2C2017'},
+        header:t=>`<div style="display:flex;align-items:baseline;justify-content:space-between;padding:6px 22px 10px;"><span style="font-family:${t.disp};font-size:22px;font-weight:600;letter-spacing:-.01em;color:${t.ink};">Irema</span><span style="font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:${t.ac};font-weight:700;">Kigali</span></div>`,
+        build:(t)=>`
+          <div style="font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:${t.mut};font-weight:700;margin:4px 0 8px;">The Review Journal</div>
+          <h1 style="font-family:${t.disp};font-weight:500;font-size:27px;line-height:1.1;letter-spacing:-.01em;color:${t.ink};margin:0 0 16px;">Stories worth <em style="color:${t.ac};font-style:italic;">trusting.</em></h1>
+          <div style="border-top:1px solid ${t.bd};padding-top:14px;">
+            <div style="font-family:${t.disp};font-size:16.5px;line-height:1.5;color:${t.ink};">"They treated my grandmother with such care — I left in tears, the good kind."</div>
+            <div style="display:flex;align-items:center;gap:9px;margin-top:13px;">${av('D',t,30)}<div style="flex:1;"><div style="font-size:12.5px;font-weight:600;color:${t.ink};">Divine M.</div><div style="font-size:11px;color:${t.mut};">King Faisal Hospital</div></div>${srow(t,5)}</div>
+          </div>
+          <div style="border-top:1px solid ${t.bd};margin-top:15px;padding-top:14px;">
+            <div style="font-family:${t.disp};font-size:15px;line-height:1.5;color:${t.ink};">"Best brochettes in Nyamirambo, hands down."</div>
+            <div style="display:flex;align-items:center;gap:9px;margin-top:11px;">${av('E',t,26,t.ac2)}<div style="flex:1;"><div style="font-size:12px;font-weight:600;color:${t.ink};">Eric N.</div></div>${srow(t,4,12)}</div>
+          </div>`,
+        nav:t=>`<div style="display:flex;justify-content:space-around;padding:13px 0 16px;border-top:1px solid ${t.bd};font-family:${t.disp};font-size:13px;"><span style="color:${t.ac};font-weight:600;">Read</span><span style="color:${t.mut};">Discover</span><span style="color:${t.mut};">Write</span><span style="color:${t.mut};">You</span></div>`
+      },
+      bold: {
+        no:'02', name:'Bold', tagline:'High-contrast and confident. Oversized grotesk type, big rating numerals, blocky cards.',
+        disp:"'Space Grotesk',sans-serif", body:"'DM Sans',sans-serif", rad:'12px',
+        light:{bg:'#F1F1F4',surf:'#FFFFFF',ink:'#0B0B0F',ink2:'#43434D',mut:'#8A8A95',bd:'#E3E3EA',ac:'#2742F0',ac2:'#0B0B0F',acSoft:'#E5E9FE'},
+        dark:{bg:'#08080B',surf:'#121219',ink:'#FFFFFF',ink2:'#B7B7C2',mut:'#70707C',bd:'#222029',ac:'#647BFF',ac2:'#FFFFFF',acSoft:'#191D33'},
+        header:t=>`<div style="display:flex;align-items:center;gap:7px;padding:4px 20px 8px;"><span style="font-family:${t.disp};font-size:21px;font-weight:700;letter-spacing:-.04em;color:${t.ink};">irema</span><span style="width:7px;height:7px;border-radius:50%;background:${t.ac};align-self:flex-end;margin-bottom:7px;"></span><span style="margin-left:auto;font-size:11px;font-weight:700;letter-spacing:.08em;color:${t.mut};">KIGALI</span></div>`,
+        build:(t)=>`
+          <h1 style="font-family:${t.disp};font-weight:700;font-size:35px;line-height:.95;letter-spacing:-.035em;color:${t.ink};margin:8px 0 5px;">RATED BY<br>RWANDA.</h1>
+          <p style="font-size:13px;color:${t.mut};margin:0 0 18px;font-weight:500;">8,412 reviews and counting.</p>
+          <div style="background:${t.surf};border:1px solid ${t.bd};border-radius:${t.rad};padding:18px;margin-bottom:12px;">
+            <div style="display:flex;align-items:flex-start;gap:14px;"><div style="font-family:${t.disp};font-weight:700;font-size:48px;line-height:.85;color:${t.ac};">4.8</div><div style="flex:1;padding-top:4px;"><div style="font-size:12px;font-weight:700;color:${t.ink};text-transform:uppercase;letter-spacing:.04em;">MTN Rwanda</div><div style="font-size:11px;color:${t.mut};margin-top:2px;">2,140 reviews</div></div></div>
+            <div style="height:6px;border-radius:3px;background:${t.bd};margin:14px 0 12px;overflow:hidden;"><div style="width:96%;height:100%;background:${t.ac};"></div></div>
+            <p style="font-size:13.5px;font-weight:500;line-height:1.45;color:${t.ink};margin:0;">"Network is reliable even outside Kigali. Support actually picks up."</p>
+            <div style="font-size:11px;color:${t.mut};margin-top:8px;font-weight:600;">ERIC N. · 2 DAYS AGO</div>
+          </div>
+          <div style="display:flex;gap:10px;">
+            <div style="flex:1;background:${t.ac};color:#fff;border-radius:${t.rad};padding:14px;"><div style="font-family:${t.disp};font-weight:700;font-size:23px;">1.2K</div><div style="font-size:11px;opacity:.88;font-weight:600;">businesses</div></div>
+            <div style="flex:1;background:${t.surf};border:1px solid ${t.bd};border-radius:${t.rad};padding:14px;"><div style="font-family:${t.disp};font-weight:700;font-size:23px;color:${t.ink};">12</div><div style="font-size:11px;color:${t.mut};font-weight:600;">categories</div></div>
+          </div>`,
+        nav:t=>`<div style="display:flex;justify-content:space-around;align-items:center;padding:14px 14px 16px;border-top:1px solid ${t.bd};">${['Home','Browse','Write','You'].map((l,i)=>`<span style="font-family:${t.disp};font-size:12px;font-weight:700;color:${i===0?t.ink:t.mut};${i===0?`border-bottom:2px solid ${t.ac};padding-bottom:3px;`:''}">${l}</span>`).join('')}</div>`
+      },
+      calm: {
+        no:'03', name:'Calm premium', tagline:'Fintech-grade restraint. Soft shadows, generous space, quiet indigo, tag chips.',
+        disp:"'Plus Jakarta Sans',sans-serif", body:"'Plus Jakarta Sans',sans-serif", rad:'18px',
+        light:{bg:'#F4F6FC',surf:'#FFFFFF',ink:'#171A2B',ink2:'#484E6A',mut:'#8A8FA8',bd:'#E8EAF3',ac:'#4F46E5',ac2:'#7C7AF0',acSoft:'#ECEBFB'},
+        dark:{bg:'#0B0D15',surf:'#141826',ink:'#EEF0F7',ink2:'#A9AFC7',mut:'#6E7390',bd:'#232838',ac:'#8B8CF9',ac2:'#A5A6FB',acSoft:'#1E2236'},
+        header:t=>`<div style="display:flex;align-items:center;gap:9px;padding:4px 20px 8px;"><span style="width:27px;height:27px;border-radius:9px;background:${t.ac};color:#fff;font-weight:800;display:flex;align-items:center;justify-content:center;font-size:14px;">i</span><span style="font-family:${t.disp};font-size:17px;font-weight:700;letter-spacing:-.01em;color:${t.ink};">Irema</span>${av('A',t,30)}<style></style></div>`,
+        build:(t,theme)=>{const sh=theme==='dark'?'rgba(0,0,0,.45)':'rgba(30,34,80,.07)';const chip=l=>`<span style="font-size:10.5px;font-weight:600;color:${t.ink2};background:${t.bg};border:1px solid ${t.bd};padding:3px 10px;border-radius:999px;">${l}</span>`;return `
+          <div style="font-size:13px;color:${t.mut};margin:6px 0 2px;">Good evening, Aline</div>
+          <h1 style="font-family:${t.disp};font-weight:700;font-size:23px;letter-spacing:-.02em;color:${t.ink};margin:0 0 16px;">Your trusted picks</h1>
+          <div style="background:${t.surf};border:1px solid ${t.bd};border-radius:${t.rad};padding:18px;box-shadow:0 8px 26px ${sh};margin-bottom:13px;">
+            <div style="display:flex;align-items:center;gap:11px;margin-bottom:12px;">${av('A',t,38)}<div style="flex:1;min-width:0;"><div style="font-size:13.5px;font-weight:700;color:${t.ink};">Aline U.</div><div style="font-size:11.5px;color:${t.mut};">Bank of Kigali</div></div><span style="display:inline-flex;align-items:center;gap:4px;background:${t.acSoft};color:${t.ac};font-weight:700;font-size:12px;padding:5px 11px;border-radius:999px;">★ 4.9</span></div>
+            <p style="font-size:13px;color:${t.ink2};line-height:1.55;margin:0 0 12px;">Fast service and friendly staff. The mobile-money desk was quick — in and out in five minutes.</p>
+            <div style="display:flex;gap:6px;">${chip('Quick')}${chip('Friendly')}${chip('Clean')}</div>
+          </div>
+          <div style="background:${t.surf};border:1px solid ${t.bd};border-radius:${t.rad};padding:16px;box-shadow:0 8px 26px ${sh};">
+            <div style="display:flex;align-items:center;gap:11px;">${av('J',t,32,t.ac2)}<div style="flex:1;"><div style="font-size:12.5px;font-weight:700;color:${t.ink};">Jean P.</div><div style="font-size:11px;color:${t.mut};">Repub Lounge · 5h</div></div><span style="display:inline-flex;align-items:center;gap:4px;background:${t.acSoft};color:${t.ac};font-weight:700;font-size:12px;padding:5px 11px;border-radius:999px;">★ 4.0</span></div>
+          </div>`;},
+        nav:t=>`<div style="display:flex;justify-content:space-around;padding:13px 0 16px;border-top:1px solid ${t.bd};">${['Home','Search','Write','Profile'].map((l,i)=>`<span style="font-size:11.5px;font-weight:${i===0?'700':'500'};color:${i===0?t.ac:t.mut};">${l}</span>`).join('')}</div>`
+      },
+      playful: {
+        no:'04', name:'Playful social', tagline:'Community feed energy. Rounded everything, stories, reactions, gradient avatars.',
+        disp:"'Bricolage Grotesque',sans-serif", body:"'Figtree',sans-serif", rad:'22px',
+        light:{bg:'#FBF5FB',surf:'#FFFFFF',ink:'#211626',ink2:'#5C4F64',mut:'#978C9F',bd:'#EFE5F1',ac:'#F5476F',ac2:'#7C5CFF',acSoft:'#FCE3EB'},
+        dark:{bg:'#140E19',surf:'#1E1726',ink:'#F6EEF8',ink2:'#CEBED4',mut:'#9484A0',bd:'#2D2336',ac:'#FF6E8E',ac2:'#9B82FF',acSoft:'#2B1B27'},
+        header:t=>`<div style="display:flex;align-items:center;gap:8px;padding:4px 18px 8px;"><span style="font-family:${t.disp};font-size:20px;font-weight:800;letter-spacing:-.01em;color:${t.ink};">Irema</span><span style="width:8px;height:8px;border-radius:50%;background:${t.ac};align-self:flex-end;margin-bottom:7px;"></span>${''}<span style="margin-left:auto;">${av('A',t,32)}</span></div>`,
+        build:(t)=>`
+          <div style="display:flex;gap:13px;margin:8px 0 16px;overflow:hidden;">${['Aline','Jean','Divine','Eric'].map(n=>`<div style="display:flex;flex-direction:column;align-items:center;gap:5px;flex-shrink:0;"><span style="width:54px;height:54px;border-radius:50%;padding:2.5px;background:linear-gradient(135deg,${t.ac},${t.ac2});display:flex;"><span style="flex:1;border-radius:50%;background:${t.surf};border:2px solid ${t.bg};display:flex;align-items:center;justify-content:center;font-weight:700;color:${t.ink2};font-size:15px;">${n[0]}</span></span><span style="font-size:10px;color:${t.mut};">${n}</span></div>`).join('')}</div>
+          <div style="background:${t.surf};border:1px solid ${t.bd};border-radius:${t.rad};padding:16px;">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:11px;">${av('A',t,40)}<div style="flex:1;"><div style="font-size:13.5px;font-weight:800;color:${t.ink};">Aline U.</div><div style="font-size:11px;color:${t.mut};">reviewed Bank of Kigali · 2h</div></div></div>
+            <div style="display:flex;gap:4px;margin-bottom:11px;">${[0,1,2,3,4].map(()=>`<span style="width:18px;height:18px;border-radius:6px;background:${t.ac};"></span>`).join('')}</div>
+            <p style="font-size:13px;color:${t.ink2};line-height:1.5;margin:0 0 14px;">Fast service and friendly staff — in and out in five minutes. The team actually smiled!</p>
+            <div style="display:flex;gap:8px;"><span style="background:${t.acSoft};color:${t.ac};font-weight:700;font-size:11.5px;padding:6px 13px;border-radius:999px;">Helpful · 24</span><span style="background:${t.bg};border:1px solid ${t.bd};color:${t.ink2};font-weight:700;font-size:11.5px;padding:6px 13px;border-radius:999px;">Loved · 12</span></div>
+          </div>`,
+        nav:t=>`<div style="display:flex;align-items:center;justify-content:space-around;padding:11px 18px 16px;border-top:1px solid ${t.bd};">${['Home','Explore'].map((l,i)=>`<span style="font-size:11.5px;font-weight:700;color:${i===0?t.ac:t.mut};">${l}</span>`).join('')}<span style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,${t.ac},${t.ac2});box-shadow:0 8px 20px ${t.ac}55;color:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:300;margin-top:-26px;">+</span>${['Saved','You'].map(l=>`<span style="font-size:11.5px;font-weight:700;color:${t.mut};">${l}</span>`).join('')}</div>`
+      }
+    };
+
+    const phone = (dir, theme) => {
+      const D = DIRS[dir]; const t = Object.assign({disp:D.disp, body:D.body, rad:D.rad}, D[theme]);
+      return `<div style="width:300px;background:#0B0B0F;border-radius:42px;padding:9px;box-shadow:0 28px 64px rgba(20,20,40,.30);flex-shrink:0;">
+        <div style="background:${t.bg};border-radius:33px;overflow:hidden;height:602px;display:flex;flex-direction:column;font-family:${t.body};color:${t.ink};">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:13px 22px 4px;font-size:12px;font-weight:700;color:${t.ink};"><span>9:41</span><span style="display:flex;gap:6px;align-items:center;"><span style="letter-spacing:1px;opacity:.7;">●●●</span><span style="display:inline-block;width:20px;height:10px;border:1.4px solid ${t.ink};border-radius:3px;opacity:.7;"></span></span></div>
+          ${D.header(t)}
+          <div style="flex:1;overflow:hidden;padding:2px 18px 14px;">${D.build(t, theme)}</div>
+          ${D.nav(t)}
+        </div>
+      </div>`;
+    };
+
+    const sw = c => `<span style="width:18px;height:18px;border-radius:5px;background:${c};display:inline-block;border:1px solid rgba(0,0,0,.06);"></span>`;
+    const colHTML = dir => {
+      const D = DIRS[dir]; const L = D.light;
+      return `<div style="display:flex;flex-direction:column;gap:16px;">
+        <div style="max-width:300px;min-height:104px;">
+          <div style="display:flex;align-items:center;gap:9px;"><span style="font-size:13px;font-weight:800;color:${L.ac};">${D.no}</span><span style="font-size:16px;font-weight:800;color:#22263A;letter-spacing:-.01em;">${D.name}</span></div>
+          <div style="font-size:12px;color:#6B6F86;margin-top:5px;line-height:1.5;">${D.tagline}</div>
+          <div style="display:flex;gap:6px;margin-top:10px;">${sw(L.ac)}${sw(L.ac2)}${sw(L.bg)}${sw(D.dark.bg)}</div>
+        </div>
+        <div style="display:flex;gap:16px;">${phone(dir,'light')}${phone(dir,'dark')}</div>
+      </div>`;
+    };
+
+    /* ============ REVIEW FORMAT KIT ============ */
+    const NEU = {
+      light:{bg:'#EDEFF6',surf:'#FFFFFF',ink:'#171A2B',ink2:'#494F6B',mut:'#8B90A8',bd:'#E6E9F2',ac:'#4F46E5',ac2:'#7C7AF0',acSoft:'#ECEBFB'},
+      dark:{bg:'#0B0D15',surf:'#161A26',ink:'#EEF0F7',ink2:'#AAB0C8',mut:'#6E7390',bd:'#262B3C',ac:'#8B8CF9',ac2:'#A5A6FB',acSoft:'#1E2236'}
+    };
+    const stripe = t => `background:repeating-linear-gradient(45deg, ${t.bd}, ${t.bd} 9px, ${t.surf} 9px, ${t.surf} 18px);`;
+    const F = 'font-family:\'Plus Jakarta Sans\',sans-serif;';
+    const card = (fmt, t, theme) => {
+      const sh = theme==='dark'?'rgba(0,0,0,.4)':'rgba(20,24,60,.06)';
+      switch(fmt){
+        case 'row': return `<div style="width:320px;${F}display:flex;align-items:center;gap:12px;background:${t.surf};border:1px solid ${t.bd};border-radius:14px;padding:14px;">${av('A',t,40)}<div style="flex:1;min-width:0;"><div style="display:flex;align-items:center;gap:6px;"><span style="font-size:13px;font-weight:700;color:${t.ink};">Aline U.</span><span style="font-size:11px;color:${t.mut};">· 2h</span><span style="margin-left:auto;color:${t.ac};font-weight:700;font-size:12.5px;">★ 4.8</span></div><div style="font-size:12.5px;color:${t.ink2};margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Fast service and friendly staff, in and out in five.</div><div style="font-size:11px;color:${t.mut};margin-top:3px;">Bank of Kigali</div></div></div>`;
+        case 'quote': return `<div style="width:320px;${F}background:${t.surf};border:1px solid ${t.bd};border-left:3px solid ${t.ac};border-radius:14px;padding:20px;box-shadow:0 8px 24px ${sh};"><div style="font-family:Georgia,serif;font-size:42px;line-height:.1;color:${t.ac};height:22px;">"</div><p style="font-size:16px;font-weight:600;line-height:1.45;color:${t.ink};margin:8px 0 18px;">They treated my grandmother with such care. I left in tears — the good kind.</p><div style="display:flex;align-items:center;gap:10px;">${av('D',t,34)}<div style="flex:1;"><div style="font-size:12.5px;font-weight:700;color:${t.ink};">Divine M.</div><div style="font-size:11px;color:${t.mut};">King Faisal Hospital</div></div>${srow(t,5)}</div></div>`;
+        case 'photo': return `<div style="width:320px;${F}background:${t.surf};border:1px solid ${t.bd};border-radius:14px;overflow:hidden;box-shadow:0 8px 24px ${sh};"><div style="height:158px;${stripe(t)}position:relative;display:flex;align-items:center;justify-content:center;"><span style="font-family:ui-monospace,monospace;font-size:11px;color:${t.mut};letter-spacing:.05em;">[ guest photo ]</span><span style="position:absolute;top:12px;left:12px;display:inline-flex;align-items:center;gap:4px;background:${t.ink};color:${t.surf};font-weight:700;font-size:11px;padding:5px 11px;border-radius:999px;">★ 5.0</span></div><div style="padding:16px;"><p style="font-size:13.5px;color:${t.ink};font-weight:500;line-height:1.45;margin:0 0 12px;">"Spotless room and the view of the hills at sunrise was unreal."</p><div style="display:flex;align-items:center;gap:9px;">${av('D',t,30)}<div style="flex:1;"><div style="font-size:12px;font-weight:700;color:${t.ink};">Divine M.</div></div><span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;color:${t.ac};">✓ Verified stay</span></div></div></div>`;
+        case 'thread': return `<div style="width:320px;${F}display:flex;flex-direction:column;gap:10px;"><div style="background:${t.surf};border:1px solid ${t.bd};border-radius:14px 14px 14px 4px;padding:15px;"><div style="display:flex;align-items:center;gap:9px;margin-bottom:9px;">${av('J',t,32)}<div style="flex:1;"><div style="font-size:12.5px;font-weight:700;color:${t.ink};">Jean P.</div><div style="font-size:11px;color:${t.mut};">2 days ago</div></div>${srow(t,4,12)}</div><p style="font-size:12.5px;color:${t.ink2};line-height:1.5;margin:0;">Helpful at the forex desk, though the queue was a little long at lunch.</p></div><div style="margin-left:30px;background:${t.acSoft};border-radius:14px 14px 4px 14px;padding:15px;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;"><span style="width:26px;height:26px;border-radius:7px;background:${t.ac};color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;">BK</span><span style="font-size:12.5px;font-weight:700;color:${t.ink};">Bank of Kigali</span><span style="font-size:9.5px;font-weight:800;letter-spacing:.06em;color:${t.ac};background:${t.surf};border:1px solid ${t.bd};padding:2px 7px;border-radius:6px;">OWNER</span></div><p style="font-size:12px;color:${t.ink2};line-height:1.5;margin:0;">Thanks Jean — we've added a lunchtime teller. Hope the next visit is quicker!</p></div></div>`;
+        case 'breakdown': return `<div style="width:320px;${F}background:${t.surf};border:1px solid ${t.bd};border-radius:14px;padding:18px;display:flex;gap:18px;align-items:center;box-shadow:0 8px 24px ${sh};"><div style="text-align:center;flex-shrink:0;"><div style="font-weight:800;font-size:42px;color:${t.ink};line-height:1;">4.6</div>${srow(t,5,12)}<div style="font-size:11px;color:${t.mut};margin-top:4px;">2,140</div></div><div style="flex:1;">${[['5',72],['4',18],['3',6],['2',2],['1',2]].map(([n,p])=>`<div style="display:flex;align-items:center;gap:7px;margin-bottom:6px;"><span style="font-size:11px;color:${t.ink2};width:8px;">${n}</span><span style="flex:1;height:7px;border-radius:4px;background:${t.bg};overflow:hidden;"><span style="display:block;height:100%;width:${p}%;background:${t.ac};border-radius:4px;"></span></span><span style="font-size:10px;color:${t.mut};width:26px;text-align:right;">${p}%</span></div>`).join('')}</div></div>`;
+        case 'story': return `<div style="width:300px;height:380px;${F}border-radius:22px;overflow:hidden;position:relative;background:linear-gradient(155deg,${t.ac},${t.ac2});padding:18px;display:flex;flex-direction:column;"><div style="display:flex;gap:5px;">${[1,1,1].map((x,i)=>`<span style="flex:1;height:3px;border-radius:2px;background:rgba(255,255,255,${i===0?'.95':'.35'});"></span>`).join('')}</div><div style="margin-top:auto;color:#fff;"><div style="display:flex;align-items:center;gap:9px;margin-bottom:14px;"><span style="width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.25);border:2px solid #fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;">A</span><div><div style="font-size:13px;font-weight:700;">Aline U.</div><div style="font-size:11px;opacity:.85;">★★★★★</div></div></div><p style="font-size:21px;font-weight:700;line-height:1.25;letter-spacing:-.01em;margin:0 0 16px;">"In and out in five minutes — and they actually smiled."</p><span style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.2);backdrop-filter:blur(4px);padding:7px 14px;border-radius:999px;font-size:12px;font-weight:700;">Bank of Kigali →</span></div></div>`;
+        case 'receipt': return `<div style="width:300px;background:${t.surf};border:1px solid ${t.bd};border-radius:14px;overflow:hidden;font-family:ui-monospace,SFMono-Regular,monospace;box-shadow:0 8px 24px ${sh};"><div style="padding:15px 18px;border-bottom:1.5px dashed ${t.bd};"><div style="display:flex;justify-content:space-between;align-items:center;"><span style="font-weight:700;color:${t.ink};font-size:12px;letter-spacing:.04em;">VERIFIED VISIT</span><span style="color:${t.ac};font-weight:700;font-size:13px;">✓</span></div><div style="font-size:11px;color:${t.mut};margin-top:4px;">Repub Lounge · 12 Jun 2026</div></div><div style="padding:14px 18px;">${[['Food',5],['Service',4],['Value',5]].map(([k,v])=>`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;"><span style="font-size:11.5px;color:${t.ink2};">${k}</span><span style="font-size:12px;color:${t.ac};letter-spacing:1px;">${'★'.repeat(v)}<span style="color:${t.mut};opacity:.4;">${'★'.repeat(5-v)}</span></span></div>`).join('')}<div style="display:flex;justify-content:space-between;margin-top:8px;padding-top:10px;border-top:1.5px dashed ${t.bd};"><span style="font-size:12px;font-weight:700;color:${t.ink};">OVERALL</span><span style="font-size:13px;font-weight:800;color:${t.ac};">4.7 ★</span></div><p style="font-size:11px;color:${t.mut};line-height:1.5;margin:10px 0 0;">"Best brochettes in town — worth the queue."</p></div></div>`;
+      }
+      return '';
+    };
+
+    const TITLES = {row:'Compact list row', quote:'Featured quote', photo:'Photo-forward', thread:'Review + owner reply', breakdown:'Rating breakdown', story:'Story card', receipt:'Verified receipt'};
+    const pairHTML = fmt => `<div style="display:flex;flex-direction:column;gap:11px;">
+      <div style="font-size:12px;font-weight:700;color:#3A3E52;${F}"><span style="color:#9499AE;font-weight:600;">Format</span> · ${TITLES[fmt]}</div>
+      <div style="display:flex;gap:14px;align-items:flex-start;">
+        <div style="background:${NEU.light.bg};padding:18px;border-radius:18px;">${card(fmt, NEU.light, 'light')}</div>
+        <div style="background:${NEU.dark.bg};padding:18px;border-radius:18px;">${card(fmt, NEU.dark, 'dark')}</div>
+      </div>
+    </div>`;
+
+    const mk = (tag, fn) => { if (customElements.get(tag)) return; customElements.define(tag, class extends HTMLElement { connectedCallback(){ if(!this._d){ this._d=true; this.innerHTML = fn(this); } } }); };
+    mk('dir-col', el => colHTML(el.getAttribute('dir')));
+    mk('rev-pair', el => pairHTML(el.getAttribute('fmt')));
+  }
+
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

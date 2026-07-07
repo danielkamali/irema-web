@@ -23,14 +23,13 @@ function FooterLogoMark() {
 export default function Footer() {
   const { t } = useTranslation();
   return (
-    <footer className="footer" role="contentinfo">
+    <footer className="footer ir2" role="contentinfo">
       <div className="container">
         <div className="footer-grid">
           {/* Brand */}
           <div className="footer-brand">
             <Link to="/" className="footer-logo" aria-label="Irema home">
-              <div className="footer-logo-icon"><FooterLogoMark /></div>
-              <span className="footer-logo-text">Irema</span>
+              <img src="/irema_logo.svg" alt="Irema Logo" className="footer-logo-img" />
             </Link>
             <p className="footer-tagline">
               {t('footer_tagline')}
