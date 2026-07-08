@@ -18,55 +18,30 @@ export default function CompanyCard({ company }) {
 
   const scoreLabel = rating > 0 ? getRatingLabel(rating, i18n.language) : null;
 
-  const bannerImg = company.photos?.[0] || null;
+  const location = [company.city, company.district].filter(Boolean).join(', ') || company.address || '';
+  const reviewsWord = reviews === 1 ? t('profile.review') : t('profile.reviews');
+  const metaParts = [getCategoryLabel(company.category, t), location, `${reviews.toLocaleString()} ${reviewsWord}`].filter(Boolean);
 
   return (
-    <Link to={companyPath(company)} className="company-card-link">
-      <article className="company-card card card-hover">
-        {/* Banner/cover image area */}
-        <div className="company-card-banner" style={bannerImg ? { backgroundImage: `url(${bannerImg})` } : {}}>
-          {!bannerImg && (
-            <div className="company-card-banner-placeholder">
-              <div className="company-card-initial">{initial}</div>
-            </div>
-          )}
-          {bannerImg && company.logoUrl && (
-            <div className="company-card-logo-badge">
-              <img src={company.logoUrl} alt={name} onError={e => e.target.style.display='none'} />
-            </div>
-          )}
-          {bannerImg && !company.logoUrl && (
-            <div className="company-card-logo-badge company-card-logo-initial">{initial}</div>
-          )}
+    <Link to={companyPath(company)} className="company-card-link company-row-link">
+      <article className="company-row">
+        <div className="company-row-score">
+          {company.logoUrl
+            ? <img src={company.logoUrl} alt={name} className="company-row-score-img" onError={e => { e.target.style.display = 'none'; }} />
+            : (rating > 0 ? rating.toFixed(1) : initial)
+          }
         </div>
-
-        <div className="company-card-body">
-          <div className="company-card-name">
-            <span className="company-card-name-text">{name}</span>
+        <div className="company-row-body">
+          <div className="company-row-top">
+            <span className="company-row-name">{name}</span>
             {company.isVerified && <span className="badge badge-verified" aria-label="Verified">✓</span>}
+            <StarRating rating={rating} size={14} />
           </div>
-
-          {(company.city || company.district || company.address) && (
-            <div className="company-card-location" style={{fontSize:'0.78rem',color:'var(--text-3)',marginBottom:4}}>
-              📍 {[company.city, company.district].filter(Boolean).join(', ') || company.address}
-            </div>
-          )}
-
-          <div className="company-card-meta">
-            <span className="category-chip">{getCategoryLabel(company.category, t)}</span>
-          </div>
-
-          <div className="company-card-rating">
-            <StarRating rating={rating} size={16} />
-            {scoreLabel && <span className="company-card-score-label" style={{ color: getRatingColor(rating) }}>{scoreLabel}</span>}
-            <span className="company-card-count">
-              {rating > 0 ? rating.toFixed(1) : '—'} ({reviews.toLocaleString()})
-            </span>
-          </div>
+          {scoreLabel && <p className="company-row-desc">{scoreLabel} · {rating > 0 ? rating.toFixed(1) : '—'}</p>}
+          <div className="company-row-meta">{metaParts.join(' · ').toUpperCase()}</div>
         </div>
-
-        <div className="company-card-arrow" aria-hidden="true">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+        <div className="company-row-arrow" aria-hidden="true">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
             <polyline points="9 18 15 12 9 6"/>
           </svg>
         </div>

@@ -1,0 +1,245 @@
+/* =====================================================================
+   IREMA REDESIGN — Dark teal & white system (see /Design.md)
+   Scoped under `.ir2` so it only affects the pages that opt in via that
+   class. Everything outside `.ir2` keeps the existing "Trustpilot Clean"
+   tokens in global.css untouched (admin, dashboard, etc.).
+
+   Strategy: re-point the SAME custom-property names global.css already
+   defines (--brand, --bg, --surface, --text-1..4, --border, --font-*,
+   etc.) to the Design.md palette. Every existing .btn/.card/.badge/.input
+   utility class already reads these vars, so most components restyle
+   automatically. A handful of new tokens (--hero*, --btn*, --chip) and
+   component classes (.ir2-*) cover patterns Design.md introduces that
+   didn't exist before (hero blocks, bubble-chat reviews, stat bars).
+   ===================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Figtree:wght@400;500;600;700;800;900&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+.ir2 {
+  /* ── Re-pointed shared tokens (Design.md light) ── */
+  --brand:        #0E8C73;
+  --brand-dark:   #0A5E4D;
+  --brand-deep:   #073F34;
+  --brand-light:  #BEE3D8;
+  --brand-xlight: #E3F3ED;
+  --brand-glow:   rgba(14,140,115,0.16);
+
+  --text-1: #0C2C26;
+  --text-2: #4F625C;
+  --text-3: #8A9B96;
+  --text-4: #8A9B96;
+  --text-inv: #FFFFFF;
+
+  --bg:      #F4F6F5;
+  --bg-2:    #FAFBFB;
+  --bg-3:    #EEF2F0;
+  --surface: #FFFFFF;
+
+  --border:   #E4EBE8;
+  --border-2: #D8E2DE;
+
+  --star:   #0E8C73;
+  --star-5: #0E8C73; --star-4: #0E8C73; --star-3: #0E8C73; --star-2: #0E8C73; --star-1: #0E8C73;
+
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-body:    'Figtree', system-ui, sans-serif;
+  --font-serif:   'Newsreader', Georgia, serif;
+  --font-mono:    'JetBrains Mono', monospace;
+
+  /* ── New Design.md-only tokens ── */
+  --hero: #0E8C73;
+  --hero-tx: #FFFFFF;
+  --hero-mut: #BFE6DA;
+  --btn: #0C2C26;
+  --btn-tx: #FFFFFF;
+  --chip: #EEF3F1;
+  --err: #C0392B;
+  --err-soft: #FBEAE7;
+  --ok: #0E8C73;
+  --ok-soft: #E3F3ED;
+  --warn: #B7791F;
+  --warn-soft: #FBF3E2;
+
+  background: var(--bg);
+  color: var(--text-1);
+  font-family: var(--font-body);
+}
+
+[data-theme="dark"] .ir2 {
+  --brand:        #27B996;
+  --brand-dark:   #1C9577;
+  --brand-deep:   #123F32;
+  --brand-light:  #1E4035;
+  --brand-xlight: #10271F;
+  --brand-glow:   rgba(39,185,150,0.18);
+
+  --text-1: #ECF4F1;
+  --text-2: #A6BBB4;
+  --text-3: #6A7F79;
+  --text-4: #6A7F79;
+  --text-inv: #06231C;
+
+  --bg:      #06110E;
+  --bg-2:    #0C1A16;
+  --bg-3:    #172521;
+  --surface: #0F1F1B;
+
+  --border:   #1E2F2A;
+  --border-2: #24382F;
+
+  --star:   #27B996;
+  --star-5: #27B996; --star-4: #27B996; --star-3: #27B996; --star-2: #27B996; --star-1: #27B996;
+
+  --hero: #0C5A49;
+  --hero-tx: #EAF6F2;
+  --hero-mut: #8FCBBC;
+  --btn: #27B996;
+  --btn-tx: #06231C;
+  --chip: #13241F;
+  --err: #F08379;
+  --err-soft: #2A1714;
+  --ok: #27B996;
+  --ok-soft: #10271F;
+  --warn: #E0B25A;
+  --warn-soft: #241C0E;
+}
+
+/* ── Typography baseline ── */
+.ir2 h1, .ir2 h2, .ir2 h3, .ir2 h4, .ir2 h5, .ir2 h6 {
+  font-family: var(--font-display); color: var(--text-1); letter-spacing: -0.02em;
+}
+.ir2 p { color: var(--text-2); }
+
+/* ── Primary buttons — Design.md: dark-ink fill in light, teal fill in dark ── */
+.ir2 .btn-primary {
+  background: var(--btn); border-color: var(--btn); color: var(--btn-tx);
+  box-shadow: none;
+}
+.ir2 .btn-primary:hover { background: var(--btn); opacity: 0.9; border-color: var(--btn); color: var(--btn-tx); }
+.ir2 .btn { border-radius: 12px; font-family: var(--font-display); font-weight: 700; }
+.ir2 .btn-outline, .ir2 .btn-ghost { color: var(--brand); border-color: var(--brand); }
+
+/* ── Cards ── */
+.ir2 .card { border-radius: 16px; }
+
+/* ── Stars — override the hardcoded global !important gold stars inside scope ── */
+.ir2 .star.filled,
+.ir2 .star-filled,
+.ir2 .rsc-star,
+.ir2 .rsc-star-fill,
+.ir2 .tp-star-fill { color: var(--star) !important; }
+.ir2 .star.empty,
+.ir2 .star-empty,
+.ir2 .rsc-star-empty,
+.ir2 .tp-star-empty { color: var(--border) !important; }
+
+/* ── Chips / pills ── */
+.ir2-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: var(--font-body); font-weight: 700; font-size: 12px;
+  padding: 7px 13px; border-radius: 999px; white-space: nowrap;
+  background: var(--surface); color: var(--text-2); border: 1px solid var(--border);
+  cursor: pointer; transition: all 0.15s;
+}
+.ir2-chip.active { background: var(--brand); color: #fff; border-color: var(--brand); }
+
+/* ── Badges ── */
+.ir2-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-family: var(--font-mono); font-size: 9px; font-weight: 700; letter-spacing: 0.06em;
+  padding: 3px 8px; border-radius: 6px; text-transform: uppercase;
+}
+.ir2-badge.ok { color: var(--ok); background: var(--ok-soft); }
+.ir2-badge.err { color: var(--err); background: var(--err-soft); }
+.ir2-badge.warn { color: var(--warn); background: var(--warn-soft); }
+.ir2-badge.neutral { color: var(--text-2); background: var(--chip); }
+
+/* ── Hero block ── */
+.ir2-hero {
+  background: var(--hero); color: var(--hero-tx);
+  padding: 52px 40px; text-align: center;
+}
+.ir2-hero h1 { color: var(--hero-tx); font-size: clamp(27px, 4vw, 44px); font-weight: 700; line-height: 1.05; letter-spacing: -0.03em; margin: 0 0 12px; }
+.ir2-hero p { color: var(--hero-mut); font-size: 15px; max-width: 460px; margin: 0 auto 20px; }
+.ir2-stat-bar { display: flex; gap: 28px; justify-content: center; flex-wrap: wrap; padding: 6px 0; }
+.ir2-stat { text-align: center; }
+.ir2-stat-val { font-family: var(--font-display); font-weight: 700; font-size: 24px; color: var(--hero-tx); }
+.ir2-stat-label { font-size: 11px; color: var(--hero-mut); }
+
+/* ── Bubble-chat review format ── */
+.ir2-review { margin-bottom: 14px; }
+.ir2-review-row { display: flex; gap: 9px; align-items: flex-end; }
+.ir2-review-avatar {
+  width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0;
+  background: linear-gradient(140deg, var(--brand), var(--brand-dark));
+  color: #fff; font-weight: 700; font-family: var(--font-display);
+  display: flex; align-items: center; justify-content: center; font-size: 14px;
+}
+.ir2-review-bubble {
+  flex: 1; background: var(--surface); border: 2px solid var(--brand-dark);
+  border-radius: 5px 16px 16px 16px; padding: 12px 14px;
+}
+[data-theme="dark"] .ir2-review-bubble { border-color: var(--brand); }
+.ir2-review-head { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; flex-wrap: wrap; }
+.ir2-review-name { font-weight: 800; font-size: 12.5px; color: var(--text-1); }
+.ir2-review-stars { font-size: 11px; letter-spacing: 1.5px; color: var(--star); white-space: nowrap; }
+.ir2-review-biz { display: flex; align-items: center; gap: 4px; margin-bottom: 5px; font-family: var(--font-mono); font-size: 9px; color: var(--brand-dark); font-weight: 600; }
+[data-theme="dark"] .ir2-review-biz { color: var(--brand); }
+.ir2-review-text { font-size: 12.5px; line-height: 1.55; color: var(--text-1); margin: 0; }
+.ir2-review-reply-pill {
+  margin-left: 39px; margin-top: 6px; display: inline-flex; align-items: center; gap: 5px;
+  background: var(--brand-xlight); color: var(--brand-dark); font-weight: 700; font-size: 10px;
+  padding: 4px 10px; border-radius: 999px; cursor: pointer; border: none; font-family: var(--font-body);
+}
+[data-theme="dark"] .ir2-review-reply-pill { color: var(--brand); }
+
+/* ── Compact review row ── */
+.ir2-review-mini-grid {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; align-items: stretch;
+}
+@media (max-width: 560px) { .ir2-review-mini-grid { grid-template-columns: 1fr; } }
+.ir2-review-mini {
+  display: flex; gap: 12px; align-items: flex-start; width: 100%; height: 100%; text-align: left;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+  padding: 14px; cursor: pointer; transition: border-color 0.15s, box-shadow 0.15s;
+}
+.ir2-review-mini:hover { border-color: var(--brand-light); box-shadow: 0 6px 20px rgba(0,0,0,0.08); }
+.ir2-rm-score {
+  width: 38px; height: 38px; border-radius: 10px; flex-shrink: 0;
+  background: var(--brand-xlight); color: var(--brand-dark);
+  font-family: var(--font-display); font-weight: 700; font-size: 14px;
+  display: flex; align-items: center; justify-content: center;
+}
+.ir2-rm-body { flex: 1; min-width: 0; }
+.ir2-rm-name { font-weight: 700; font-size: 13px; color: var(--text-1); }
+.ir2-rm-comment { font-size: 12.5px; line-height: 1.5; color: var(--text-2); margin: 3px 0 6px; }
+.ir2-rm-meta { font-family: var(--font-mono); font-size: 9.5px; color: var(--brand); letter-spacing: 0.04em; }
+
+/* ── Category / grid tiles ── */
+.ir2-cat-tile {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+  padding: 14px 8px; display: flex; flex-direction: column; align-items: center; gap: 7px;
+  color: var(--brand); text-decoration: none; cursor: pointer; transition: all 0.15s;
+}
+.ir2-cat-tile:hover { border-color: var(--brand); transform: translateY(-2px); }
+.ir2-cat-tile span { font-size: 11px; font-weight: 700; color: var(--text-2); }
+
+/* ── Score / avatar chip (business initials + score) ── */
+.ir2-score-chip {
+  border-radius: 11px; background: var(--brand-xlight); color: var(--brand-dark);
+  font-family: var(--font-display); font-weight: 700;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+
+/* ── Section heading ── */
+.ir2-section-title {
+  font-family: var(--font-display); font-weight: 700; font-size: 18px;
+  color: var(--text-1); letter-spacing: -0.01em;
+}
+.ir2-eyebrow {
+  font-family: var(--font-mono); font-size: 10px; font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase; color: var(--brand);
+}
+
+/* ── Serif editorial (quotes, blog headlines) ── */
+.ir2-serif-italic { font-family: var(--font-serif); font-style: italic; }

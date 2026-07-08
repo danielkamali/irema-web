@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Figtree:wght@400;500;600;700;800;900&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  body { font-family:'Figtree',system-ui,sans-serif; -webkit-font-smoothing:antialiased; }
+  p1-row, p1-legend { display:contents; }
+</style>
+</helmet>
+
+<!-- Header -->
+<div style="position:absolute; left:64px; top:48px; width:1500px;">
+  <div data-drags-parent="1" style="font-size:12px; font-weight:800; letter-spacing:.18em; text-transform:uppercase; color:#8A9B96;">IREMA · Phase 1 — Public / Guest</div>
+  <h1 style="font-family:'Space Grotesk',sans-serif; font-size:38px; font-weight:700; letter-spacing:-.03em; color:#0C2C26; margin:8px 0 8px;">14 public pages, three breakpoints, light &amp; dark</h1>
+  <p style="font-size:15px; line-height:1.6; color:#54655F; max-width:880px; margin:0;">Each page is shown <strong style="color:#0C2C26;">Mobile 375 · Tablet 768 · Desktop 1920</strong> in light, with Mobile + Desktop in dark alongside for comparison. Built on the locked teal &amp; white system (Space Grotesk · Figtree · Newsreader · JetBrains Mono), 8px grid, conversational reviews. Interactive states are shown inline where they matter and catalogued in the legend below.</p>
+</div>
+
+<!-- Legend / states + responsive -->
+<div style="position:absolute; left:64px; top:210px; width:1860px;">
+  <p1-legend></p1-legend>
+</div>
+
+<!-- 14 page rows (tops set generously; adjusted after render) -->
+<div style="position:absolute; left:64px; top:640px;"><p1-row page="home" no="01" name="Homepage" note="Hero + search · 12 categories · featured · recent reviews · stats"></p1-row></div>
+<div style="position:absolute; left:64px; top:1620px;"><p1-row page="search" no="02" name="Search Results" note="Sticky search · filters · grid/list toggle · pagination · empty state"></p1-row></div>
+<div style="position:absolute; left:64px; top:2600px;"><p1-row page="business" no="03" name="Business Profile" note="Header · tabs · rating breakdown · reviews + reply · review modal"></p1-row></div>
+<div style="position:absolute; left:64px; top:3580px;"><p1-row page="register" no="04" name="Directory / Register" note="Multi-step registration · claim · validation states"></p1-row></div>
+<div style="position:absolute; left:64px; top:4560px;"><p1-row page="toprated" no="05" name="Top Rated" note="Category filters · rating sort · ranked cards"></p1-row></div>
+<div style="position:absolute; left:64px; top:5540px;"><p1-row page="qr" no="06" name="QR Scanner" note="Camera permission · live detection · fallback · success"></p1-row></div>
+<div style="position:absolute; left:64px; top:6520px;"><p1-row page="blog" no="07" name="Blog" note="Article list · featured · detail · view tracking"></p1-row></div>
+<div style="position:absolute; left:64px; top:7500px;"><p1-row page="newsletter" no="08" name="Newsletter" note="Email signup · success · duplicate handling"></p1-row></div>
+<div style="position:absolute; left:64px; top:8480px;"><p1-row page="about" no="09" name="About" note="Mission · platform stats · team"></p1-row></div>
+<div style="position:absolute; left:64px; top:9460px;"><p1-row page="contact" no="10" name="Contact" note="Contact form · info cards · validation"></p1-row></div>
+<div style="position:absolute; left:64px; top:10440px;"><p1-row page="tos" no="11" name="Terms of Service" note="10 sections · in-page nav · scroll"></p1-row></div>
+<div style="position:absolute; left:64px; top:11420px;"><p1-row page="privacy" no="12" name="Privacy Policy" note="10 sections · GDPR + Rwanda law"></p1-row></div>
+<div style="position:absolute; left:64px; top:12400px;"><p1-row page="auth" no="13" name="Auth Action" note="Email verification · valid / expired link states"></p1-row></div>
+<div style="position:absolute; left:64px; top:13380px;"><p1-row page="notfound" no="14" name="404 Not Found" note="Error message · navigation options"></p1-row></div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:4400,&quot;height&quot;:14600}}">
+class Component extends DCLogic {
+  componentDidMount() { Component.defineEls(); }
+  renderVals() { return {}; }
+
+  static defineEls() {
+    if (Component._def) return;
+    Component._def = true;
+    const esc = s => String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+    const T = {
+      light:{ bg:'#F4F6F5', surf:'#FFFFFF', surf2:'#FAFBFB', ink:'#0C2C26', ink2:'#4F625C', mut:'#8A9B96', bd:'#E4EBE8', bd2:'#EEF2F0',
+        ac:'#0E8C73', acDeep:'#0A5E4D', acSoft:'#E3F3ED', hero:'#0E8C73', heroTx:'#FFFFFF', heroMut:'#BFE6DA',
+        btn:'#0C2C26', btnTx:'#FFFFFF', chip:'#EEF3F1', star:'#0E8C73', err:'#C0392B', errSoft:'#FBEAE7', ok:'#0E8C73', okSoft:'#E3F3ED', warn:'#B7791F', warnSoft:'#FBF3E2' },
+      dark:{ bg:'#06110E', surf:'#0F1F1B', surf2:'#0C1A16', ink:'#ECF4F1', ink2:'#A6BBB4', mut:'#6A7F79', bd:'#1E2F2A', bd2:'#172521',
+        ac:'#27B996', acDeep:'#1C9577', acSoft:'#10271F', hero:'#0C5A49', heroTx:'#EAF6F2', heroMut:'#8FCBBC',
+        btn:'#27B996', btnTx:'#06231C', chip:'#13241F', star:'#27B996', err:'#F08379', errSoft:'#2A1714', ok:'#27B996', okSoft:'#10271F', warn:'#E0B25A', warnSoft:'#241C0E' }
+    };
+    const F_DISP="font-family:'Space Grotesk',sans-serif;", F_SER="font-family:'Newsreader',Georgia,serif;", F_MONO="font-family:'JetBrains Mono',monospace;";
+
+    const IC = {
+      search:'M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14z|M20 20l-3.6-3.6', menu:'M3 6h18|M3 12h18|M3 18h18', chev:'M9 6l6 6-6 6',
+      chevd:'M6 9l6 6 6-6', star:'M12 3l2.7 5.8 6.3.7-4.7 4.3 1.3 6.2L12 17l-5.6 3.3 1.3-6.2L3 9.5l6.3-.7z',
+      home:'M3 9.6L12 3l9 6.6V20a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z', user:'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8z|M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1',
+      bell:'M18 8.5a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9|M13.5 21a2 2 0 0 1-3 0', plus:'M12 5v14|M5 12h14', check:'M5 12l4 4L19 7',
+      camera:'M3 8.5a2 2 0 0 1 2-2h2L8.5 4.5h7L17 6.5h2a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z|M12 16.5a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4z',
+      filter:'M3 5h18|M6 12h12|M10 19h4', grid:'M3 3h7v7H3z|M14 3h7v7h-7z|M3 14h7v7H3z|M14 14h7v7h-7z', list:'M8 6h13|M8 12h13|M8 18h13|M3 6h.01|M3 12h.01|M3 18h.01',
+      mail:'M3 6h18v12H3z|M3 7l9 6 9-6', phone:'M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L19 18l-2 4a16 16 0 0 1-12-12z',
+      pin:'M12 21s7-6 7-11a7 7 0 0 0-14 0c0 5 7 11 7 11z|M12 10m-2.5 0a2.5 2.5 0 1 0 5 0 2.5 2.5 0 1 0-5 0', alert:'M12 3l9 16H3z|M12 10v4|M12 17h.01',
+      doc:'M6 2h8l4 4v16H6z|M14 2v4h4|M9 13h6|M9 17h6', heart:'M12 21s-7-4.5-9.4-9A5 5 0 0 1 12 6a5 5 0 0 1 9.4 6C19 16.5 12 21 12 21z',
+      reply:'M9 17l-5-5 5-5|M4 12h11a4 4 0 0 1 4 4v2', qr:'M3 3h7v7H3z|M14 3h7v7h-7z|M3 14h7v7H3z|M14 14h3|M21 14v3|M17 21h4|M14 17v3',
+      bank:'M3 22h18M6 18v-7M10 18v-7M14 18v-7M18 18v-7M12 2L2 7h20L12 2z', hotel:'M3 22V8l9-6 9 6v14|M9 22V12h6v10', food:'M3 2v7a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2V2|M7 2v20|M21 15V2a5 5 0 0 0-5 5v6a2 2 0 0 0 2 2h3z',
+      health:'M22 12h-4l-3 9L9 3l-3 9H2', edu:'M22 10v6M2 10l10-5 10 5-10 5z|M6 12v5c3 3 9 3 12 0v-5', shop:'M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z|M3 6h18|M16 10a4 4 0 0 1-8 0',
+      arrow:'M5 12h14|M13 6l6 6-6 6'
+    };
+    const icon=(n,sz=18,c='currentColor',sw=1.9)=>`<svg width="${sz}" height="${sz}" viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round">${(IC[n]||'').split('|').map(d=>`<path d="${d}"/>`).join('')}</svg>`;
+    const av=(l,t,sz=36,c)=>`<span style="width:${sz}px;height:${sz}px;border-radius:50%;flex-shrink:0;background:linear-gradient(140deg,${c||t.ac},${t.acDeep});color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center;font-size:${Math.round(sz*0.4)}px;">${esc(l)}</span>`;
+    const stars=(n,t,sz=13)=>`<span style="font-size:${sz}px;letter-spacing:1.5px;color:${t.star};white-space:nowrap;line-height:1;">${'★'.repeat(n)}<span style="color:${t.mut};opacity:.35;">${'★'.repeat(5-n)}</span></span>`;
+    const btn=(t,label,kind)=>{const s=kind==='ghost'?`background:transparent;border:1.5px solid ${t.ac};color:${t.ac};`:kind==='soft'?`background:${t.chip};color:${t.ink};`:kind==='disabled'?`background:${t.bd};color:${t.mut};`:`background:${t.btn};color:${t.btnTx};`;return `<span style="${F_DISP}display:inline-flex;align-items:center;justify-content:center;gap:6px;font-weight:700;font-size:13px;padding:10px 18px;border-radius:10px;${s}white-space:nowrap;">${label}</span>`;};
+    const chip=(t,l,on)=>`<span style="${on?`background:${t.ac};color:#fff;`:`background:${t.surf};color:${t.ink2};border:1px solid ${t.bd};`}font-weight:700;font-size:12px;padding:7px 13px;border-radius:999px;white-space:nowrap;">${l}</span>`;
+    const badge=(t,l,kind)=>{const m={ok:[t.ok,t.okSoft],err:[t.err,t.errSoft],warn:[t.warn,t.warnSoft],neutral:[t.ink2,t.chip]}[kind||'ok'];return `<span style="${F_MONO}font-size:9px;font-weight:700;letter-spacing:.06em;color:${m[0]};background:${m[1]};padding:3px 8px;border-radius:6px;">${l}</span>`;};
+    const field=(t,label,val,state)=>{const c=state==='err'?t.err:state==='ok'?t.ok:state==='focus'?t.ac:t.bd;const msg=state==='err'?`<div style="font-size:10.5px;color:${t.err};margin-top:5px;">⚠ Please enter a valid value</div>`:state==='ok'?`<div style="font-size:10.5px;color:${t.ok};margin-top:5px;">✓ Looks good</div>`:'';return `<div style="margin-bottom:11px;"><div style="font-size:11px;font-weight:600;color:${t.ink2};margin-bottom:5px;">${label}</div><div style="border:1.5px solid ${c};${state==='focus'?`box-shadow:0 0 0 3px ${t.acSoft};`:''}background:${t.surf};border-radius:10px;padding:11px 13px;font-size:13px;color:${val?t.ink:t.mut};">${val||'Placeholder'}</div>${msg}</div>`;};
+    const skel=(t,w,h,r)=>`<span style="display:block;width:${w};height:${h}px;border-radius:${r||6}px;background:linear-gradient(90deg,${t.bd2},${t.bd},${t.bd2});"></span>`;
+
+    // ---- chrome ----
+    const navbar=(t,bp)=>{
+      if(bp==='m') return `<div style="display:flex;align-items:center;gap:10px;padding:13px 16px;border-bottom:1px solid ${t.bd};background:${t.surf};">${icon('menu',20,t.ink,2)}<span style="${F_DISP}font-size:18px;font-weight:700;letter-spacing:-.02em;color:${t.ink};">irema</span><span style="width:6px;height:6px;border-radius:50%;background:${t.ac};align-self:flex-start;margin-top:6px;"></span><span style="margin-left:auto;display:flex;gap:8px;">${icon('search',20,t.ink2,2)}${av('A',t,30)}</span></div>`;
+      const links = bp==='t' ? `<span style="font-size:13px;font-weight:600;color:${t.ink2};">Categories</span>` : `<span style="font-size:13px;font-weight:600;color:${t.ink2};">Categories</span><span style="font-size:13px;font-weight:600;color:${t.ink2};">Top rated</span><span style="font-size:13px;font-weight:600;color:${t.ink2};">Blog</span><span style="font-size:13px;font-weight:600;color:${t.ink2};">For business</span>`;
+      return `<div style="display:flex;align-items:center;gap:16px;padding:0 ${bp==='d'?'32':'22'}px;height:62px;border-bottom:1px solid ${t.bd};background:${t.surf};">
+        <span style="${F_DISP}font-size:20px;font-weight:700;letter-spacing:-.02em;color:${t.ink};">irema</span><span style="width:6px;height:6px;border-radius:50%;background:${t.ac};align-self:flex-start;margin-top:20px;margin-left:-13px;"></span>
+        <div style="flex:1;max-width:${bp==='d'?'360':'240'}px;height:38px;display:flex;align-items:center;gap:8px;padding:0 14px;border:1px solid ${t.bd};border-radius:10px;background:${t.bg};margin-left:10px;">${icon('search',15,t.mut,2)}<span style="font-size:12.5px;color:${t.mut};">Search businesses…</span></div>
+        <span style="margin-left:auto;display:flex;align-items:center;gap:${bp==='d'?'14':'10'}px;">${links}${btn(t,'Write a Review')}<span style="font-size:13px;font-weight:700;color:${t.ink};">Sign in</span></span></div>`;
+    };
+    const footer=(t,bp)=>`<div style="padding:${bp==='m'?'22px 16px':'30px 32px'};background:${t.surf2};border-top:1px solid ${t.bd};display:flex;${bp==='m'?'flex-direction:column;gap:14px;':'align-items:center;'}">
+      <div><span style="${F_DISP}font-size:16px;font-weight:700;color:${t.ink};">irema</span><div style="font-size:11px;color:${t.mut};margin-top:4px;">Honest reviews. Zero noise. · Kigali, Rwanda 🇷🇼</div></div>
+      <div style="${bp==='m'?'':'margin-left:auto;'}display:flex;gap:16px;font-size:11.5px;color:${t.ink2};">${['About','Contact','Terms','Privacy','Blog'].map(l=>`<span>${l}</span>`).join('')}</div></div>`;
+    const langbar=(t)=>`<div style="display:flex;gap:6px;align-items:center;">${['EN','FR','RW','SW'].map((l,i)=>`<span style="${F_MONO}font-size:9px;font-weight:700;padding:3px 7px;border-radius:6px;${i===0?`background:${t.ac};color:#fff;`:`color:${t.mut};border:1px solid ${t.bd};`}">${l}</span>`).join('')}</div>`;
+
+    // shared content atoms
+    const bizCard=(t,name,cat,score,rev,bp)=>`<div style="background:${t.surf};border:1px solid ${t.bd};border-radius:14px;padding:14px;display:flex;gap:12px;align-items:center;">
+      <span style="width:46px;height:46px;border-radius:11px;background:${t.acSoft};color:${t.acDeep};${F_DISP}font-weight:700;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">${score}</span>
+      <div style="flex:1;min-width:0;"><div style="font-weight:700;font-size:13.5px;color:${t.ink};">${name}</div><div style="display:flex;align-items:center;gap:6px;margin-top:3px;">${stars(5,t,11)}<span style="${F_MONO}font-size:9.5px;color:${t.mut};">${rev}</span></div><div style="${F_MONO}font-size:9px;color:${t.ac};margin-top:3px;">${cat}</div></div></div>`;
+    const catGrid=(t,bp)=>{const cats=[['bank','Banks'],['hotel','Hotels'],['food','Food'],['health','Health'],['edu','Education'],['shop','Shops'],['qr','Telecom'],['pin','Travel'],['heart','Pharmacy'],['star','Fitness'],['doc','Real estate'],['grid','More']];const cols=bp==='m'?3:bp==='t'?4:6;return `<div style="display:grid;grid-template-columns:repeat(${cols},1fr);gap:9px;">${cats.map(c=>`<div style="background:${t.surf};border:1px solid ${t.bd};border-radius:12px;padding:14px 8px;display:flex;flex-direction:column;align-items:center;gap:7px;">${icon(c[0],22,t.ac,1.8)}<span style="font-size:11px;font-weight:700;color:${t.ink2};">${c[1]}</span></div>`).join('')}</div>`;};
+    const reviewBubble=(t,theme,name,biz,text,rating,replied)=>{const L=theme==='dark'?t.ac:t.acDeep;return `<div style="margin-bottom:10px;"><div style="display:flex;gap:9px;align-items:flex-end;">${av(name[0],t,30)}<div style="flex:1;background:${t.surf};border:2px solid ${L};border-radius:5px 16px 16px 16px;padding:11px 13px;"><div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;"><span style="font-weight:800;font-size:12px;color:${t.ink};">${name}</span>${stars(rating,t,10)}</div><div style="display:flex;align-items:center;gap:4px;margin-bottom:5px;"><span style="width:13px;height:13px;border-radius:3px;background:${t.ink};color:${t.surf};font-size:8px;font-weight:700;display:flex;align-items:center;justify-content:center;">${biz[0]}</span><span style="${F_MONO}font-size:8px;color:${L};font-weight:600;">${biz.toUpperCase()}</span></div><p style="font-size:12px;line-height:1.5;color:${t.ink};margin:0;">${text}</p></div></div>${replied?`<div style="margin-left:39px;margin-top:6px;display:inline-flex;align-items:center;gap:5px;background:${t.acSoft};color:${L};font-weight:700;font-size:10px;padding:4px 10px;border-radius:999px;">${icon('reply',11,L,2)} ${biz} replied · tap to view</div>`:''}</div>`;};
+    const statBar=(t,bp)=>`<div style="display:flex;${bp==='m'?'flex-wrap:wrap;gap:10px;':'gap:28px;'}justify-content:center;padding:6px 0;">${[['12.4K','Reviews'],['1.2K','Businesses'],['4.7','Avg rating'],['12','Categories']].map(s=>`<div style="text-align:center;${bp==='m'?'flex:1;min-width:60px;':''}"><div style="${F_DISP}font-weight:700;font-size:${bp==='m'?'19':'24'}px;color:${t.heroTx};">${s[0]}</div><div style="font-size:11px;color:${t.heroMut};">${s[1]}</div></div>`).join('')}</div>`;
+    const legalDoc=(t,bp,title,kicker)=>{const secs=['1. Introduction','2. Acceptance of Terms','3. User Accounts','4. Reviews & Content','5. Acceptable Use','6. Intellectual Property','7. Privacy & Data','8. Liability','9. Governing Law (Rwanda)','10. Contact'];const body=`<div style="flex:1;"><div style="${F_MONO}font-size:10px;color:${t.ac};margin-bottom:6px;">${kicker}</div><h1 style="${F_DISP}font-weight:700;font-size:${bp==='m'?'24':'30'}px;color:${t.ink};margin:0 0 6px;letter-spacing:-.02em;">${title}</h1><div style="font-size:11px;color:${t.mut};margin-bottom:18px;">Last updated 12 June 2026 · v2.1</div>${secs.slice(0,5).map((s,i)=>`<div style="margin-bottom:16px;"><div style="${F_DISP}font-weight:700;font-size:14px;color:${t.ink};margin-bottom:6px;">${s}</div><div style="font-size:12px;line-height:1.65;color:${t.ink2};">Irema provides a platform for honest, verified reviews of Rwandan businesses. By using the service you agree to these terms in full. ${i===0?'These terms apply to all visitors, users, and businesses.':'This section is governed by the laws of the Republic of Rwanda and applicable data-protection regulation.'}</div></div>`).join('')}</div>`;const nav=bp==='m'?'':`<div style="width:${bp==='t'?'180':'220'}px;flex-shrink:0;position:sticky;top:0;align-self:flex-start;"><div style="${F_MONO}font-size:9px;letter-spacing:.1em;color:${t.mut};margin-bottom:10px;">ON THIS PAGE</div>${secs.map((s,i)=>`<div style="font-size:11.5px;padding:7px 11px;border-radius:8px;margin-bottom:2px;${i===0?`background:${t.acSoft};color:${t.ac};font-weight:700;`:`color:${t.ink2};`}">${s}</div>`).join('')}</div>`;return `<div style="display:flex;gap:30px;padding:${bp==='m'?'20px 16px':'32px'};background:${t.bg};">${nav}${body}</div>`;};
+
+    // ---- PAGES: (t, bp, theme) => inner html (without device chrome) ----
+    const PAGES = {
+      home:(t,bp,theme)=>`${navbar(t,bp)}
+        <div style="background:${t.hero};padding:${bp==='m'?'26px 16px':bp==='t'?'38px 28px':'52px 40px'};text-align:center;">
+          <h1 style="${F_DISP}font-weight:700;font-size:${bp==='m'?'27':bp==='t'?'36':'44'}px;line-height:1.04;letter-spacing:-.03em;color:${t.heroTx};margin:0 0 12px;">Honest reviews. Zero noise.</h1>
+          <p style="font-size:${bp==='m'?'13':'15'}px;color:${t.heroMut};max-width:460px;margin:0 auto 20px;">Find services you can actually trust across Rwanda.</p>
+          <div style="max-width:520px;margin:0 auto;background:${t.surf};border-radius:13px;display:flex;align-items:center;gap:9px;padding:7px 7px 7px 16px;">${icon('search',17,t.mut,2)}<span style="flex:1;text-align:left;font-size:13px;color:${t.mut};">Try "best brochettes in Nyamirambo"…</span>${btn(t,'Search')}</div>
+          <div style="margin-top:24px;">${statBar(t,bp)}</div></div>
+        <div style="padding:${bp==='m'?'20px 16px':'30px 32px'};background:${t.bg};">
+          <div style="${F_DISP}font-weight:700;font-size:18px;color:${t.ink};margin-bottom:14px;letter-spacing:-.01em;">Browse categories</div>${catGrid(t,bp)}
+          <div style="display:flex;align-items:center;gap:8px;margin:26px 0 14px;"><span style="${F_MONO}font-size:10px;color:${t.ac};">● LIVE</span><span style="${F_DISP}font-weight:700;font-size:18px;color:${t.ink};letter-spacing:-.01em;">Recent reviews</span></div>
+          <div style="${bp==='m'?'':'columns:'+(bp==='t'?2:2)+';column-gap:14px;'}">${reviewBubble(t,theme,'Aline U.','Bourbon Coffee','Excellent service and very fast delivery — my new go-to spot! ☕',5,true)}${reviewBubble(t,theme,'Eric N.','MTN Rwanda','Reliable network even outside Kigali.',5,false)}</div></div>
+        ${footer(t,bp)}`,
+
+      search:(t,bp,theme)=>{const filters=`<div style="background:${t.surf};border:1px solid ${t.bd};border-radius:14px;padding:16px;"><div style="display:flex;align-items:center;gap:7px;font-weight:700;font-size:13px;color:${t.ink};margin-bottom:12px;">${icon('filter',16,t.ac,2)} Filters</div>${['Category','Rating 4.0+','Open now','Has photos','Verified only'].map((f,i)=>`<div style="display:flex;align-items:center;gap:9px;padding:8px 0;${i?`border-top:1px solid ${t.bd2};`:''}"><span style="width:16px;height:16px;border-radius:5px;${i===1||i===4?`background:${t.ac};`:`border:1.5px solid ${t.bd};`}display:flex;align-items:center;justify-content:center;">${i===1||i===4?icon('check',10,'#fff',3):''}</span><span style="font-size:12.5px;color:${t.ink2};font-weight:${i===1||i===4?'700':'500'};">${f}</span></div>`).join('')}</div>`;
+        const results=`<div style="background:${t.surf};border:1px solid ${t.bd};border-radius:14px;padding:6px 16px;">${[['4.9','Kigali Marriott','HOTELS · 860 REVIEWS'],['4.8','Bank of Kigali','BANKS · 1,240 REVIEWS'],['4.7','Bourbon Coffee','FOOD · 2,110 REVIEWS']].map((r,i)=>`<div style="display:flex;align-items:center;gap:13px;padding:14px 0;${i?`border-top:1px solid ${t.bd};`:''}"><span style="${F_DISP}width:48px;height:48px;border-radius:12px;background:${t.acSoft};color:${t.acDeep};font-weight:700;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">${r[0]}</span><div style="flex:1;min-width:0;"><div style="display:flex;align-items:center;gap:8px;"><span style="font-weight:700;font-size:14px;color:${t.ink};">${r[1]}</span>${stars(5,t,11)}</div><div style="${F_MONO}font-size:9.5px;color:${t.ac};margin-top:4px;">${r[2]}</div></div>${icon('chev',16,t.mut,2)}</div>`).join('')}</div>`;
+        return `${navbar(t,bp)}
+        <div style="position:sticky;top:0;background:${t.surf};border-bottom:1px solid ${t.bd};padding:12px ${bp==='m'?'16':'32'}px;display:flex;align-items:center;gap:10px;"><div style="flex:1;height:38px;display:flex;align-items:center;gap:8px;padding:0 14px;border:1.5px solid ${t.ac};box-shadow:0 0 0 3px ${t.acSoft};border-radius:10px;background:${t.bg};">${icon('search',15,t.ac,2)}<span style="flex:1;font-size:12.5px;color:${t.ink};">kigali</span><span style="width:1.5px;height:15px;background:${t.ac};"></span></div><span style="${F_MONO}font-size:9px;color:${t.mut};">STICKY</span><span style="display:flex;gap:3px;border:1px solid ${t.bd};border-radius:9px;padding:3px;">${icon('list',16,t.ac,2)}${icon('grid',16,t.mut,2)}</span></div>
+        <div style="padding:${bp==='m'?'14px 16px':'22px 32px'};background:${t.bg};">
+          <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:14px;"><span style="${F_DISP}font-weight:700;font-size:18px;color:${t.ink};">540 results</span><span style="${F_MONO}font-size:10px;color:${t.mut};">in Kigali</span></div>
+          ${bp==='m'?`<div style="display:flex;gap:7px;margin-bottom:14px;overflow:hidden;">${['Filters','Rating 4+','Open now','Verified'].map((c,i)=>chip(t,c,i===1)).join('')}</div>${results}`:`<div style="display:grid;grid-template-columns:${bp==='t'?'200px 1fr':'230px 1fr'};gap:24px;align-items:start;">${filters}${results}</div>`}
+          <div style="display:flex;justify-content:center;gap:6px;margin-top:18px;">${['‹','1','2','3','›'].map((p,i)=>`<span style="width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;${i===1?`background:${t.ac};color:#fff;`:`border:1px solid ${t.bd};color:${t.ink2};`}">${p}</span>`).join('')}</div>
+          <div style="margin-top:18px;border:1px dashed ${t.bd};border-radius:14px;padding:24px;text-align:center;"><div style="font-size:13px;font-weight:700;color:${t.ink};margin-bottom:4px;">Empty state</div><div style="font-size:11.5px;color:${t.mut};">No results for "xyz" — try fewer filters or another spelling.</div></div></div>`;},
+
+      business:(t,bp,theme)=>{const L=theme==='dark'?t.ac:t.acDeep;return `${navbar(t,bp)}
+        <div style="background:${t.surf};border-bottom:1px solid ${t.bd};padding:${bp==='m'?'18px 16px':'26px 32px'};display:flex;align-items:center;gap:${bp==='m'?'12':'18'}px;${bp==='m'?'flex-wrap:wrap;':''}"><span style="width:${bp==='m'?'50':'64'}px;height:${bp==='m'?'50':'64'}px;border-radius:15px;background:${t.ink};color:${t.surf};${F_DISP}font-weight:700;font-size:${bp==='m'?'18':'24'}px;display:flex;align-items:center;justify-content:center;">BK</span><div style="flex:1;min-width:140px;"><div style="display:flex;align-items:center;gap:9px;"><h1 style="${F_DISP}font-weight:700;font-size:${bp==='m'?'20':'26'}px;color:${t.ink};margin:0;letter-spacing:-.02em;">Bank of Kigali</h1>${badge(t,'CLAIMED ✓','ok')}</div><div style="${F_MONO}font-size:10px;color:${t.ac};margin-top:5px;">BANKS · KIGALI · OPEN NOW</div></div><div style="text-align:center;"><div style="${F_DISP}font-weight:700;font-size:${bp==='m'?'28':'34'}px;color:${t.ink};line-height:1;">4.8</div>${stars(5,t,12)}</div>${bp!=='m'?btn(t,'Write a Review'):''}</div>
+        <div style="display:flex;gap:18px;padding:0 ${bp==='m'?'16':'32'}px;border-bottom:1px solid ${t.bd};background:${t.surf};">${['Overview','Reviews','Products','Stories','QR Code'].map((tb,i)=>`<span style="font-size:12.5px;font-weight:${i===1?'700':'600'};color:${i===1?t.ac:t.ink2};padding:13px 0;${i===1?`border-bottom:2px solid ${t.ac};`:''}">${tb}</span>`).join('')}</div>
+        <div style="padding:${bp==='m'?'16px':'24px 32px'};background:${t.bg};${bp==='d'?'display:grid;grid-template-columns:300px 1fr;gap:26px;align-items:start;':''}">
+          <div style="background:${t.surf};border:1px solid ${t.bd};border-radius:14px;padding:18px;${bp!=='d'?'margin-bottom:16px;':''}"><div style="font-weight:700;font-size:13px;color:${t.ink};margin-bottom:12px;">Rating breakdown</div>${[['5',82],['4',12],['3',4],['2',1],['1',1]].map(([n,p])=>`<div style="display:flex;align-items:center;gap:8px;margin-bottom:7px;"><span style="${F_MONO}font-size:10px;color:${t.ink2};width:7px;">${n}</span><span style="flex:1;height:7px;border-radius:4px;background:${t.bd};overflow:hidden;"><span style="display:block;height:100%;width:${p}%;background:${t.ac};border-radius:4px;"></span></span><span style="${F_MONO}font-size:9px;color:${t.mut};width:24px;text-align:right;">${p}%</span></div>`).join('')}</div>
+          <div>${reviewBubble(t,theme,'Aline U.','Bank of Kigali','Fast service and friendly staff. The mobile-money desk was quick — in and out in five minutes.',5,true)}${reviewBubble(t,theme,'Jean P.','Bank of Kigali','Helpful at the forex desk, though the queue was a little long.',4,false)}
+            <div style="margin-top:14px;background:${t.surf};border:1px solid ${t.bd};border-radius:14px;padding:14px;box-shadow:0 12px 30px rgba(12,44,38,.12);"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;"><span style="${F_MONO}font-size:9px;color:${t.mut};">REVIEW MODAL</span><span style="color:${t.mut};">✕</span></div><div style="display:flex;align-items:center;gap:9px;margin-bottom:8px;">${av('A',t,32)}<div><div style="font-weight:700;font-size:12.5px;color:${t.ink};">Aline U.</div>${stars(5,t,11)}</div></div><p style="font-size:12px;color:${t.ink2};line-height:1.5;margin:0;">Expanded review detail with owner reply, helpful votes and report option.</p></div></div></div>`;},
+
+      register:(t,bp,theme)=>`${navbar(t,bp)}
+        <div style="padding:${bp==='m'?'20px 16px':'34px'};background:${t.bg};${bp==='d'?'display:flex;justify-content:center;':''}">
+          <div style="width:100%;max-width:${bp==='d'?'620':'100%'}px;background:${t.surf};border:1px solid ${t.bd};border-radius:16px;padding:${bp==='m'?'20px':'28px'};">
+            <div style="${F_MONO}font-size:10px;color:${t.ac};margin-bottom:6px;">LIST YOUR BUSINESS</div><h1 style="${F_DISP}font-weight:700;font-size:${bp==='m'?'22':'26'}px;color:${t.ink};margin:0 0 18px;letter-spacing:-.02em;">Register a business</h1>
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:22px;">${['Details','Category','Verify','Done'].map((s,i)=>`<div style="display:flex;align-items:center;gap:6px;${i<3?'flex:1;':''}"><span style="width:24px;height:24px;border-radius:50%;${i===0?`background:${t.ac};color:#fff;`:i<3?`border:1.5px solid ${t.bd};color:${t.mut};`:`border:1.5px solid ${t.bd};color:${t.mut};`}font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;">${i===0?icon('check',12,'#fff',3):i+1}</span><span style="font-size:10.5px;font-weight:${i===0?'700':'500'};color:${i===0?t.ink:t.mut};${bp==='m'&&i!==0?'display:none;':''}">${s}</span>${i<3?`<span style="flex:1;height:1.5px;background:${t.bd};"></span>`:''}</div>`).join('')}</div>
+            ${field(t,'Business name','Bank of Kigali','ok')}
+            ${field(t,'Email','invalid-email','err')}
+            ${field(t,'Phone','+250 7..','focus')}
+            <div style="display:flex;gap:10px;margin-top:8px;">${btn(t,'Back','soft')}<span style="flex:1;"></span>${btn(t,'Continue →')}</div>
+            <div style="margin-top:14px;padding-top:14px;border-top:1px solid ${t.bd};font-size:11.5px;color:${t.mut};text-align:center;">Already listed? <span style="color:${t.ac};font-weight:700;">Claim your business</span> · <span style="color:${t.ac};font-weight:700;">Sign in</span></div>
+          </div></div>`,
+
+      toprated:(t,bp,theme)=>`${navbar(t,bp)}
+        <div style="padding:${bp==='m'?'18px 16px':'28px 32px'};background:${t.bg};">
+          <div style="${F_MONO}font-size:10px;color:${t.ac};margin-bottom:6px;">★ HIGHEST RATED</div><h1 style="${F_DISP}font-weight:700;font-size:${bp==='m'?'24':'30'}px;color:${t.ink};margin:0 0 16px;letter-spacing:-.02em;">Top rated in Rwanda</h1>
+          <div style="display:flex;gap:7px;margin-bottom:18px;overflow:hidden;flex-wrap:${bp==='m'?'nowrap':'wrap'};">${['All','Banks','Hotels','Food','Health','Telecom'].map((c,i)=>chip(t,c,i===0)).join('')}</div>
+          <div style="display:grid;grid-template-columns:repeat(${bp==='m'?1:bp==='t'?2:3},1fr);gap:12px;">${[['1','4.9','Kigali Marriott','HOTELS'],['2','4.9','Volcanoes Safaris','TRAVEL'],['3','4.8','Bank of Kigali','BANKS'],['4','4.8','Bourbon Coffee','FOOD'],['5','4.7','Kosmotive','PHARMACY'],['6','4.7','Waka Fitness','FITNESS']].map(r=>`<div style="background:${t.surf};border:1px solid ${t.bd};border-radius:14px;padding:14px;display:flex;gap:12px;align-items:center;"><span style="${F_DISP}font-weight:700;font-size:22px;color:${t.mut};width:24px;">${r[0]}</span><span style="width:44px;height:44px;border-radius:11px;background:${t.acSoft};color:${t.acDeep};${F_DISP}font-weight:700;font-size:15px;display:flex;align-items:center;justify-content:center;">${r[1]}</span><div style="flex:1;min-width:0;"><div style="font-weight:700;font-size:13px;color:${t.ink};">${r[2]}</div><div style="${F_MONO}font-size:9px;color:${t.ac};margin-top:3px;">${r[3]}</div></div></div>`).join('')}</div></div>`,
+
+      qr:(t,bp,theme)=>`${navbar(t,bp)}
+        <div style="padding:${bp==='m'?'20px 16px':'34px'};background:${t.bg};display:flex;${bp==='d'?'gap:30px;justify-content:center;':'flex-direction:column;gap:18px;'}align-items:${bp==='d'?'flex-start':'stretch'};">
+          <div style="${bp==='d'?'width:360px;':''}background:#0A1714;border-radius:18px;padding:18px;text-align:center;">
+            <div style="position:relative;height:${bp==='m'?'240':'300'}px;border-radius:12px;background:linear-gradient(140deg,#0C2C26,#0A5E4D);display:flex;align-items:center;justify-content:center;overflow:hidden;">
+              <span style="position:absolute;width:150px;height:150px;border-radius:14px;border:3px solid rgba(255,255,255,.9);"></span>
+              ${['top:24px;left:24px;border-right:none;border-bottom:none','top:24px;right:24px;border-left:none;border-bottom:none','bottom:24px;left:24px;border-right:none;border-top:none','bottom:24px;right:24px;border-left:none;border-top:none'].map(p=>`<span style="position:absolute;${p};width:34px;height:34px;border:4px solid ${t.ac};border-radius:4px;"></span>`).join('')}
+              <span style="${F_MONO}position:absolute;bottom:14px;font-size:10px;color:rgba(255,255,255,.7);">● DETECTING…</span></div>
+            <div style="color:#fff;font-size:12px;margin-top:12px;font-weight:600;">Point your camera at an Irema QR</div></div>
+          <div style="${bp==='d'?'width:300px;':''}display:flex;flex-direction:column;gap:12px;">
+            <div style="background:${t.warnSoft};border:1px solid ${t.warn}44;border-radius:12px;padding:13px;display:flex;gap:9px;align-items:center;">${icon('camera',18,t.warn,2)}<span style="font-size:11.5px;color:${t.ink2};">Camera permission needed — <span style="color:${t.ac};font-weight:700;">Allow</span></span></div>
+            <div style="background:${t.surf};border:1px solid ${t.bd};border-radius:12px;padding:14px;"><div style="font-size:11px;font-weight:600;color:${t.ink2};margin-bottom:7px;">Or enter a business code</div><div style="display:flex;gap:8px;"><div style="flex:1;border:1.5px solid ${t.bd};border-radius:9px;padding:9px 11px;font-size:12px;color:${t.mut};">IR-•••••</div>${btn(t,'Go')}</div></div>
+            <div style="background:${t.okSoft};border:1px solid ${t.ok}44;border-radius:12px;padding:14px;display:flex;gap:9px;align-items:center;">${icon('check',18,t.ok,2.4)}<div><div style="font-size:12px;font-weight:700;color:${t.ink};">Match found — Bank of Kigali</div><div style="font-size:10.5px;color:${t.mut};">Opening review screen…</div></div></div></div></div>`,
+
+      blog:(t,bp,theme)=>`${navbar(t,bp)}
+        <div style="padding:${bp==='m'?'18px 16px':'28px 32px'};background:${t.bg};">
+          <div style="${F_MONO}font-size:10px;color:${t.ac};margin-bottom:6px;">IREMA JOURNAL</div><h1 style="${F_DISP}font-weight:700;font-size:${bp==='m'?'24':'30'}px;color:${t.ink};margin:0 0 16px;letter-spacing:-.02em;">Stories &amp; guides</h1>
+          <div style="background:${t.surf};border:1px solid ${t.bd};border-radius:16px;overflow:hidden;margin-bottom:16px;${bp==='d'?'display:flex;':''}"><div style="${bp==='d'?'width:300px;':'height:150px;'}background:linear-gradient(140deg,${t.acDeep},${t.ac});flex-shrink:0;"></div><div style="padding:18px;"><div style="${F_MONO}font-size:9px;color:${t.ac};">FEATURED · 4 MIN READ</div><h2 style="${F_SER}font-style:italic;font-size:${bp==='m'?'18':'22'}px;color:${t.ink};margin:8px 0;line-height:1.3;">How verified reviews are changing Rwandan small business</h2><div style="font-size:11px;color:${t.mut};">👁 2,140 views · 12 Jun 2026</div></div></div>
+          <div style="display:grid;grid-template-columns:repeat(${bp==='m'?1:bp==='t'?2:3},1fr);gap:12px;">${[['Choosing a bank in Kigali','3 MIN'],['Top brochette spots, ranked','5 MIN'],['What "verified" really means','2 MIN']].map(a=>`<div style="background:${t.surf};border:1px solid ${t.bd};border-radius:14px;overflow:hidden;"><div style="height:96px;background:${t.acSoft};"></div><div style="padding:13px;"><h3 style="font-weight:700;font-size:13px;color:${t.ink};margin:0 0 6px;line-height:1.35;">${a[0]}</h3><div style="${F_MONO}font-size:9px;color:${t.mut};">${a[1]} · 👁 tracked</div></div></div>`).join('')}</div></div>`,
+
+      newsletter:(t,bp,theme)=>`${navbar(t,bp)}
+        <div style="padding:${bp==='m'?'30px 16px':'56px 32px'};background:${t.hero};display:flex;justify-content:center;"><div style="width:100%;max-width:460px;text-align:center;"><div style="${F_MONO}font-size:10px;color:${t.heroMut};margin-bottom:8px;">STAY IN THE LOOP</div><h1 style="${F_DISP}font-weight:700;font-size:${bp==='m'?'26':'34'}px;color:${t.heroTx};margin:0 0 10px;letter-spacing:-.02em;">The best of Irema, monthly</h1><p style="font-size:13px;color:${t.heroMut};margin:0 0 20px;">Top-rated businesses, new guides and product updates.</p><div style="background:${t.surf};border-radius:13px;display:flex;gap:8px;padding:7px;"><div style="flex:1;border:none;padding:9px 12px;font-size:13px;color:${t.mut};text-align:left;">you@email.com</div>${btn(t,'Subscribe')}</div><div style="margin-top:12px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap;"><span style="display:inline-flex;align-items:center;gap:6px;background:${t.okSoft};color:${t.ok};font-size:11px;font-weight:700;padding:6px 12px;border-radius:999px;">${icon('check',12,t.ok,3)} Subscribed! Check your inbox</span><span style="display:inline-flex;align-items:center;gap:6px;background:${t.warnSoft};color:${t.warn};font-size:11px;font-weight:700;padding:6px 12px;border-radius:999px;">Already subscribed</span></div></div></div>`,
+
+      about:(t,bp,theme)=>`${navbar(t,bp)}
+        <div style="padding:${bp==='m'?'24px 16px':'44px 32px'};background:${t.bg};text-align:center;"><div style="${F_MONO}font-size:10px;color:${t.ac};margin-bottom:8px;">ABOUT IREMA</div><h1 style="${F_SER}font-style:italic;font-size:${bp==='m'?'26':'38'}px;color:${t.ink};margin:0 auto 14px;max-width:640px;line-height:1.2;">We believe Rwandans deserve reviews they can trust.</h1><p style="font-size:14px;color:${t.ink2};max-width:520px;margin:0 auto;line-height:1.6;">Irema is a homegrown platform connecting people with the best local businesses through honest, verified reviews — and giving businesses a fair way to listen and respond.</p></div>
+        <div style="padding:${bp==='m'?'8px 16px 24px':'8px 32px 40px'};background:${t.bg};"><div style="display:grid;grid-template-columns:repeat(${bp==='m'?2:4},1fr);gap:12px;">${[['12.4K','Reviews'],['1.2K','Businesses'],['68K','Monthly visits'],['4','Languages']].map(s=>`<div style="background:${t.surf};border:1px solid ${t.bd};border-radius:14px;padding:18px;text-align:center;"><div style="${F_DISP}font-weight:700;font-size:26px;color:${t.ac};">${s[0]}</div><div style="font-size:11px;color:${t.mut};margin-top:3px;">${s[1]}</div></div>`).join('')}</div></div>${footer(t,bp)}`,
+
+      contact:(t,bp,theme)=>`${navbar(t,bp)}
+        <div style="padding:${bp==='m'?'20px 16px':'34px 32px'};background:${t.bg};${bp==='d'?'display:grid;grid-template-columns:1fr 320px;gap:30px;align-items:start;':''}">
+          <div style="background:${t.surf};border:1px solid ${t.bd};border-radius:16px;padding:${bp==='m'?'20px':'26px'};${bp!=='d'?'margin-bottom:16px;':''}"><h1 style="${F_DISP}font-weight:700;font-size:${bp==='m'?'22':'26'}px;color:${t.ink};margin:0 0 16px;letter-spacing:-.02em;">Get in touch</h1>${field(t,'Name','Aline Uwase','ok')}${field(t,'Email','aline@email.com')}<div style="margin-bottom:11px;"><div style="font-size:11px;font-weight:600;color:${t.ink2};margin-bottom:5px;">Message</div><div style="border:1.5px solid ${t.bd};border-radius:10px;padding:11px 13px;min-height:70px;font-size:12.5px;color:${t.mut};">How can we help?</div></div>${btn(t,'Send message')}</div>
+          <div style="display:flex;flex-direction:column;gap:12px;">${[['mail','Email','hello@irema.rw'],['phone','Phone','+250 788 000 000'],['pin','Office','KG 7 Ave, Kigali']].map(c=>`<div style="background:${t.surf};border:1px solid ${t.bd};border-radius:14px;padding:16px;display:flex;gap:11px;align-items:center;"><span style="width:38px;height:38px;border-radius:10px;background:${t.acSoft};color:${t.ac};display:flex;align-items:center;justify-content:center;">${icon(c[0],18,t.ac,2)}</span><div><div style="font-size:11px;color:${t.mut};">${c[1]}</div><div style="font-size:13px;font-weight:700;color:${t.ink};">${c[2]}</div></div></div>`).join('')}</div></div>`,
+
+      tos:(t,bp,theme)=>`${navbar(t,bp)}${legalDoc(t,bp,'Terms of Service','LEGAL')}`,
+      privacy:(t,bp,theme)=>`${navbar(t,bp)}${legalDoc(t,bp,'Privacy Policy','LEGAL · GDPR + RWANDA')}`,
+
+      auth:(t,bp,theme)=>`${navbar(t,bp)}
+        <div style="padding:${bp==='m'?'30px 16px':'56px 32px'};background:${t.bg};display:flex;justify-content:center;gap:${bp==='d'?'20px':'0'};flex-wrap:wrap;">
+          <div style="width:340px;background:${t.surf};border:1px solid ${t.bd};border-radius:16px;padding:28px;text-align:center;"><span style="width:54px;height:54px;border-radius:14px;background:${t.okSoft};color:${t.ok};display:inline-flex;align-items:center;justify-content:center;margin-bottom:14px;">${icon('check',26,t.ok,2.5)}</span><h1 style="${F_DISP}font-weight:700;font-size:20px;color:${t.ink};margin:0 0 8px;">Email verified</h1><p style="font-size:12.5px;color:${t.ink2};line-height:1.55;margin:0 0 16px;">Your account is confirmed. You can now write reviews and manage your profile.</p>${btn(t,'Continue to Irema')}</div>
+          ${bp==='d'?`<div style="width:340px;background:${t.surf};border:1px solid ${t.bd};border-radius:16px;padding:28px;text-align:center;"><span style="width:54px;height:54px;border-radius:14px;background:${t.errSoft};color:${t.err};display:inline-flex;align-items:center;justify-content:center;margin-bottom:14px;">${icon('alert',26,t.err,2.2)}</span><h1 style="${F_DISP}font-weight:700;font-size:20px;color:${t.ink};margin:0 0 8px;">Link expired</h1><p style="font-size:12.5px;color:${t.ink2};line-height:1.55;margin:0 0 16px;">This verification link is no longer valid. Request a fresh one and we'll email it right away.</p>${btn(t,'Resend link','ghost')}</div>`:''}</div>`,
+
+      notfound:(t,bp,theme)=>`${navbar(t,bp)}
+        <div style="padding:${bp==='m'?'50px 16px':'90px 32px'};background:${t.bg};text-align:center;"><div style="${F_DISP}font-weight:700;font-size:${bp==='m'?'72':'110'}px;color:${t.ac};line-height:1;letter-spacing:-.04em;">404</div><h1 style="${F_DISP}font-weight:700;font-size:${bp==='m'?'20':'26'}px;color:${t.ink};margin:8px 0 8px;">This page took a wrong turn</h1><p style="font-size:13px;color:${t.ink2};margin:0 auto 20px;max-width:380px;">We couldn't find what you were looking for. Let's get you back on track.</p><div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">${btn(t,'← Back home')}${btn(t,'Search businesses','ghost')}</div></div>${footer(t,bp)}`
+    };
+
+    // device frames
+    const phone=(page,theme)=>{const t=T[theme];return `<div style="width:375px;background:#0A1714;border-radius:40px;padding:8px;box-shadow:0 24px 60px rgba(12,44,38,.28);flex-shrink:0;"><div style="background:${t.bg};border-radius:32px;overflow:hidden;height:760px;display:flex;flex-direction:column;color:${t.ink};"><div style="height:26px;display:flex;align-items:center;justify-content:center;"><span style="width:90px;height:6px;border-radius:3px;background:${t.bd};"></span></div><div style="flex:1;overflow:hidden;">${PAGES[page](t,'m',theme)}</div></div></div>`;};
+    const tablet=(page,theme)=>{const t=T[theme];return `<div style="width:768px;background:#0A1714;border-radius:26px;padding:12px;box-shadow:0 24px 60px rgba(12,44,38,.28);flex-shrink:0;"><div style="background:${t.bg};border-radius:16px;overflow:hidden;height:740px;display:flex;flex-direction:column;color:${t.ink};"><div style="flex:1;overflow:hidden;">${PAGES[page](t,'t',theme)}</div></div></div>`;};
+    const browser=(page,theme)=>{const t=T[theme];return `<div style="width:1280px;border-radius:14px;overflow:hidden;border:1px solid ${t.bd};box-shadow:0 24px 60px rgba(12,44,38,.14);flex-shrink:0;"><div style="height:36px;background:${theme==='dark'?'#0A1714':'#E9EEEC'};display:flex;align-items:center;gap:7px;padding:0 14px;">${['#ff5f57','#febc2e','#28c840'].map(c=>`<span style="width:10px;height:10px;border-radius:50%;background:${c};"></span>`).join('')}<span style="margin:0 auto;${F_MONO}font-size:10px;color:${theme==='dark'?t.mut:'#8A9B96'};">irema.rw · 1920</span></div><div style="background:${t.bg};color:${t.ink};">${PAGES[page](t,'d',theme)}</div></div>`;};
+
+    const mk=(tag,fn)=>{if(customElements.get(tag))return;customElements.define(tag,class extends HTMLElement{connectedCallback(){if(!this._d){this._d=true;this.innerHTML=fn(this);}}});};
+
+    mk('p1-row',el=>{const page=el.getAttribute('page'),no=el.getAttribute('no'),name=el.getAttribute('name'),note=el.getAttribute('note');
+      const tag=(txt,c,bgc)=>`<span style="${F_MONO}font-size:10px;font-weight:600;color:${c};background:${bgc};padding:4px 10px;border-radius:7px;">${txt}</span>`;
+      return `<div data-drags-parent="1" data-screen-label="${name}" style="margin-bottom:16px;">
+        <div style="display:flex;align-items:center;gap:10px;"><span style="${F_DISP}font-weight:700;font-size:15px;color:#0E8C73;">${no}</span><span style="${F_DISP}font-weight:700;font-size:20px;color:#0C2C26;letter-spacing:-.01em;">${name}</span></div>
+        <div style="font-size:12.5px;color:#54655F;margin-top:3px;">${note}</div></div>
+      <div style="display:flex;gap:30px;align-items:flex-start;">
+        <div style="display:flex;flex-direction:column;gap:9px;">${tag('LIGHT · 375 / 768 / 1920','#0A5E4D','#E3F3ED')}<div style="display:flex;gap:24px;align-items:flex-start;">${phone(page,'light')}${tablet(page,'light')}${browser(page,'light')}</div></div>
+        <div style="display:flex;flex-direction:column;gap:9px;">${tag('DARK · 375 / 1920','#8FCBBC','#0C2C26')}<div style="display:flex;gap:24px;align-items:flex-start;">${phone(page,'dark')}${browser(page,'dark')}</div></div>
+      </div>`;});
+
+    mk('p1-legend',el=>{const t=T.light;
+      const states=[['Default','neutral'],['Hover','ok'],['Active','ok'],['Loading','neutral'],['Empty','neutral'],['Error','err'],['Success','ok'],['Disabled','neutral']];
+      return `<div data-drags-parent="1" style="background:#fff;border:1px solid #E4EBE8;border-radius:16px;padding:22px;">
+        <div style="display:flex;flex-wrap:wrap;gap:30px;">
+          <div style="min-width:280px;"><div style="${F_MONO}font-size:10px;letter-spacing:.1em;color:#8A9B96;margin-bottom:12px;">INTERACTIVE STATES</div>
+            <div style="display:flex;flex-direction:column;gap:9px;">
+              <div style="display:flex;gap:8px;align-items:center;">${btn(t,'Default')}${btn(t,'Hover','soft')}${btn(t,'Disabled','disabled')}</div>
+              <div style="display:flex;gap:8px;align-items:center;">${badge(t,'SUCCESS','ok')}${badge(t,'ERROR','err')}${badge(t,'PENDING','warn')}${badge(t,'NEUTRAL','neutral')}</div>
+              <div style="display:flex;gap:8px;align-items:flex-start;"><div style="flex:1;">${field(t,'Focus',' ','focus')}</div><div style="flex:1;">${field(t,'Error','bad','err')}</div></div>
+            </div></div>
+          <div style="min-width:240px;"><div style="${F_MONO}font-size:10px;letter-spacing:.1em;color:#8A9B96;margin-bottom:12px;">LOADING / SKELETON</div>
+            <div style="background:#FAFBFB;border:1px solid #E4EBE8;border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:9px;">${skel(t,'60%',12)}${skel(t,'100%',10)}${skel(t,'90%',10)}${skel(t,'40%',10)}</div></div>
+          <div style="min-width:260px;"><div style="${F_MONO}font-size:10px;letter-spacing:.1em;color:#8A9B96;margin-bottom:12px;">RESPONSIVE · NAV TRANSFORM</div>
+            <div style="font-size:11.5px;color:#54655F;line-height:1.7;">
+              <div><strong style="color:#0C2C26;">375 Mobile</strong> — hamburger + bottom actions, single column, full-screen forms.</div>
+              <div><strong style="color:#0C2C26;">768 Tablet</strong> — condensed top nav, 2-col grids, filters inline.</div>
+              <div><strong style="color:#0C2C26;">1920 Desktop</strong> — full nav, sidebars, multi-column, high density.</div>
+              <div style="margin-top:8px;">${langbar(t)} <span style="font-size:10.5px;color:#8A9B96;">EN · FR · RW · SW · WCAG-AA contrast · visible focus rings</span></div>
+            </div></div>
+        </div></div>`;});
+  }
+}
+</script>
+</body>
+</html>

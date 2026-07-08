@@ -117,7 +117,7 @@ export default function AuthActionPage() {
   }
 
   return (
-    <main className="auth-action-page">
+    <main className="auth-action-page ir2">
       <section className={`auth-action-card auth-action-card-${copy.tone}`} aria-live="polite">
         <div className="auth-action-brand" aria-hidden="true">
           <span className="auth-action-star">★</span>

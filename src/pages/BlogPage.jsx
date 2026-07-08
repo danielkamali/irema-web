@@ -64,7 +64,7 @@ export default function BlogPage() {
   };
 
   return (
-    <div data-theme={theme} style={{ background: 'var(--bg)', minHeight: '100vh' }}>
+    <div data-theme={theme} className="ir2" style={{ background: 'var(--bg)', minHeight: '100vh' }}>
       <Navbar />
       <div className="container" style={{ maxWidth: 960, padding: '60px 24px 80px' }}>
         {selectedBlog ? (
@@ -277,22 +277,23 @@ export default function BlogPage() {
             )}
 
             <div style={{
-              background: 'linear-gradient(135deg, #1a5c3e, #0f3d2e)',
+              background: 'var(--hero)',
               borderRadius: 16,
               padding: '32px 28px',
-              color: 'white',
+              color: 'var(--hero-tx)',
               marginTop: 48
             }}>
               <h2 style={{
                 fontFamily: 'var(--font-display)',
                 fontSize: '1.2rem',
                 fontWeight: 700,
-                marginBottom: 12
+                marginBottom: 12,
+                color: 'var(--hero-tx)'
               }}>Subscribe to Updates</h2>
-              <p style={{ opacity: 0.85, lineHeight: 1.7, marginBottom: 16 }}>Get the latest news and tips from Irema delivered to your inbox.</p>
+              <p style={{ color: 'var(--hero-mut)', lineHeight: 1.7, marginBottom: 16 }}>Get the latest news and tips from Irema delivered to your inbox.</p>
               <Link to="/newsletter" style={{
-                background: 'white',
-                color: '#1a5c3e',
+                background: 'var(--btn)',
+                color: 'var(--btn-tx)',
                 padding: '8px 20px',
                 borderRadius: 99,
                 fontSize: '0.88rem',

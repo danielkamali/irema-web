@@ -90,7 +90,7 @@ export default function SearchResults() {
   const clearFilters = () => { setCategoryFilter(''); setRatingFilter(''); };
 
   return (
-    <div className="search-results-page">
+    <div className="search-results-page ir2">
       <div className="container">
         <div className="sr-header">
           <h1 className="sr-title">

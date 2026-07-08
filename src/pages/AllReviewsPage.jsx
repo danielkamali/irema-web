@@ -1,55 +1,30 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { db, collection, query, orderBy, getDocs, doc, getDoc } from '../firebase/config';
-import StarRating from '../components/StarRating';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ReviewDetailModal from '../components/ReviewDetailModal';
-import { formatRelativeTime } from '../utils/helpers';
 import './HomePage.css';
 
-/* ── Review card — same design as homepage ── */
+/* ── Review card — compact row, same format as homepage ── */
 function ReviewCard({ review, onOpen }) {
   const name      = review.companyName || 'Unknown Service';
   const userName  = review.userName   || 'Anonymous';
   const comment   = review.comment    || '';
   const rating    = review.rating     || 0;
-  const timeAgo   = formatRelativeTime(review.createdAt);
-  const initial   = userName[0]?.toUpperCase() || 'A';
-  const COLORS    = ['#2d8f6f','#0ea5e9','#8b5cf6','#f59e0b','#ef4444','#14b8a6'];
-  const color     = COLORS[userName.charCodeAt(0) % COLORS.length];
-  const firstImage = review.images?.[0];
 
   return (
     <button
       type="button"
       onClick={onOpen}
-      className="review-card-tp"
+      className="ir2-review-mini"
       style={{ textAlign:'left', font:'inherit', cursor:'pointer' }}
       aria-label={`View review by ${userName}`}
     >
-      <div className="rct-header">
-        {review.userPhotoURL
-          ? <img src={review.userPhotoURL} alt={userName} className="rct-avatar rct-avatar-photo" />
-          : <div className="rct-avatar" style={{ background: color }}>{initial}</div>
-        }
-        <div className="rct-user-info">
-          <div className="rct-username">{userName}</div>
-          <div className="rct-time">{timeAgo}</div>
-        </div>
-      </div>
-      <div className="rct-stars">
-        <StarRating rating={rating} size={16} />
-      </div>
-      <p className="rct-comment">{comment.length > 130 ? comment.slice(0, 130) + '…' : comment}</p>
-      {firstImage && <img src={firstImage} alt="review photo" className="rct-review-img" />}
-      <div className="rct-company-row">
-        {review.companyLogoUrl
-          ? <img src={review.companyLogoUrl} alt={name} className="rct-company-logo" />
-          : <div className="rct-company-avatar">{name[0]?.toUpperCase()}</div>
-        }
-        <div>
-          <div className="rct-company-name">{name}</div>
-        </div>
+      <div className="ir2-rm-score">{rating > 0 ? rating.toFixed(1) : '—'}</div>
+      <div className="ir2-rm-body">
+        <div className="ir2-rm-name">{userName}</div>
+        <p className="ir2-rm-comment">{comment.length > 90 ? comment.slice(0, 90) + '…' : comment}</p>
+        <div className="ir2-rm-meta">{name.toUpperCase()}</div>
       </div>
     </button>
   );
@@ -57,14 +32,14 @@ function ReviewCard({ review, onOpen }) {
 
 /* ── Grid with load-more ── */
 function ReviewGrid({ reviews }) {
-  const [shown, setShown] = useState(16);
+  const [shown, setShown] = useState(12);
   const [active, setActive] = useState(null);
   const visible = reviews.slice(0, shown);
   const hasMore = shown < reviews.length;
 
   return (
     <div className="review-grid-wrap">
-      <div className="review-grid">
+      <div className="ir2-review-mini-grid">
         {visible.map((rev, i) => (
           <ReviewCard key={rev.id || i} review={rev} onOpen={() => setActive(rev)} />
         ))}
@@ -74,7 +49,7 @@ function ReviewGrid({ reviews }) {
           <button
             className="btn btn-outline"
             style={{ padding:'10px 32px', fontSize:'0.9rem', fontWeight:600 }}
-            onClick={() => setShown(s => s + 16)}
+            onClick={() => setShown(s => s + 12)}
           >
             Load More Reviews
           </button>
@@ -123,7 +98,7 @@ export default function AllReviewsPage() {
   }, []);
 
   return (
-    <section className="section recent-reviews-section" style={{ paddingTop: 40 }}>
+    <section className="section recent-reviews-section ir2" style={{ paddingTop: 40 }}>
       <div className="container">
         <div className="section-header" style={{ marginBottom: 'var(--sp-7)' }}>
           <div>

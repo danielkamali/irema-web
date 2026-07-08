@@ -520,7 +520,7 @@ export default function BusinessesPage() {
 
   return (
     <>
-    <div className="bp-root">
+    <div className="bp-root ir2">
       {/* Navbar */}
       <header className="bp-navbar">
         <div className="bp-navbar-inner">
@@ -528,8 +528,7 @@ export default function BusinessesPage() {
               users aren't confused into thinking the tagline is the return-home link. */}
           <div className="bp-logo-wrap">
             <a href="/" className="bp-logo" aria-label="Irema home">
-              <BizLogo />
-              <span className="bp-logo-text">Irema</span>
+              <img src="/irema_logo.svg" alt="Irema Logo" className="bp-logo-img" />
             </a>
             <span className="bp-logo-for" aria-hidden="true">for Business</span>
           </div>
@@ -796,9 +795,9 @@ export default function BusinessesPage() {
             </div>
             <div style={{display:'flex',gap:28,marginTop:32,flexWrap:'wrap',justifyContent:'center'}}>
               {[['✓ Free forever plan','No credit card required'],['✓ Setup in 5 minutes','Start collecting reviews today'],['✓ Rwanda-first support','Local team, local knowledge']].map(([bold,sub])=>(
-                <div key={bold} style={{fontSize:'0.82rem',color:'rgba(255,255,255,0.75)'}}>
+                <div key={bold} style={{fontSize:'0.82rem',color:'rgba(255,255,255,0.85)'}}>
                   <span style={{fontWeight:700,color:'white'}}>{bold}</span>
-                  <span style={{display:'block',opacity:0.65,fontSize:'0.75rem',marginTop:2}}>{sub}</span>
+                  <span style={{display:'block',color:'#bfe6da',fontSize:'0.75rem',marginTop:2}}>{sub}</span>
                 </div>
               ))}
             </div>

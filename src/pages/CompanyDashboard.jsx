@@ -1008,8 +1008,7 @@ export default function CompanyDashboard() {
       <header className="biz-navbar">
         <div className="biz-navbar-inner">
           <a href="/" className="biz-nav-brand">
-            <BizLogo />
-            <span className="biz-nav-brandname">Irema</span>
+            <img src="/irema_logo.svg" alt="Irema Logo" className="biz-logo-img" />
           </a>
           <div className="biz-nav-right">
             {/* Language switcher */}

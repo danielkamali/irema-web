@@ -63,7 +63,7 @@ export default function NewsletterPage() {
   };
 
   return (
-    <div data-theme={theme} style={{ background: 'var(--bg)', minHeight: '100vh' }}>
+    <div data-theme={theme} className="ir2" style={{ background: 'var(--bg)', minHeight: '100vh' }}>
       <Navbar />
       <div className="container" style={{ maxWidth: 600, padding: '60px 24px 80px' }}>
         <div style={{ textAlign: 'center', marginBottom: 48 }}>
@@ -87,7 +87,7 @@ export default function NewsletterPage() {
                 Join thousands of Rwandan business owners and consumers who stay informed with Irema.
               </p>
               {error && (
-                <div style={{ background: '#fee', border: '1px solid #fcc', color: '#c00', padding: '10px 12px', borderRadius: 6, marginBottom: 16, fontSize: '0.85rem' }}>
+                <div style={{ background: 'var(--err-soft, #fee)', border: '1px solid var(--err, #fcc)', color: 'var(--err, #c00)', padding: '10px 12px', borderRadius: 6, marginBottom: 16, fontSize: '0.85rem' }}>
                   {error}
                 </div>
               )}

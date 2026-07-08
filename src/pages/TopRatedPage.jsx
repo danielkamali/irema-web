@@ -58,7 +58,7 @@ export default function TopRatedPage() {
   const filtered = activeCategory ? companies.filter(c => c.category === activeCategory) : companies;
 
   return (
-    <div data-theme={theme} style={{ padding: 'var(--sp-10) 0 var(--sp-20)', background: 'var(--bg)', minHeight: '100vh' }}>
+    <div data-theme={theme} className="ir2" style={{ padding: 'var(--sp-10) 0 var(--sp-20)', background: 'var(--bg)', minHeight: '100vh' }}>
       <div className="container">
         {/* Header */}
         <div style={{ marginBottom: 'var(--sp-8)' }} className="animate-up">
