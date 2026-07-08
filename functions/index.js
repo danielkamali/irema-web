@@ -107,3 +107,8 @@ exports.checkMoMoPaymentStatus  = momoPayments.checkMoMoPaymentStatus;
 const adminModeration = require('./adminModeration');
 exports.deleteUserData = adminModeration.deleteUserData;
 exports.deleteBusinessData = adminModeration.deleteBusinessData;
+
+// Import and export scheduled trial/subscription expiry functions
+const trialExpiry = require('./trialExpiry');
+exports.expireLapsedSubscriptions = trialExpiry.expireLapsedSubscriptions;
+exports.expireLapsedSubscriptionsManual = trialExpiry.expireLapsedSubscriptionsManual;

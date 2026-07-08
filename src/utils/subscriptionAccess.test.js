@@ -1,8 +1,16 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { getSubscriptionAccess, canStartPlanTrial, selectBestSubscription } from './subscriptionAccess.js';
+import { getSubscriptionAccess, canStartPlanTrial, selectBestSubscription, computeTrialEnd, TRIAL_DURATION_MONTHS } from './subscriptionAccess.js';
 
 const now = new Date('2026-05-02T10:00:00Z');
+
+test('computeTrialEnd adds TRIAL_DURATION_MONTHS calendar months', () => {
+  const end = computeTrialEnd(new Date('2026-05-02T10:00:00Z'));
+  assert.equal(TRIAL_DURATION_MONTHS, 6);
+  assert.equal(end.getUTCFullYear(), 2026);
+  assert.equal(end.getUTCMonth(), 10); // November (0-indexed) — May + 6
+  assert.equal(end.getUTCDate(), 2);
+});
 
 test('expired professional trials immediately downgrade to starter access', () => {
   const access = getSubscriptionAccess({

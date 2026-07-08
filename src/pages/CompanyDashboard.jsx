@@ -14,10 +14,9 @@ import MiddleMetricsPanel from '../components/MiddleMetricsPanel';
 import PremiumMetricsPanel from '../components/PremiumMetricsPanel';
 // AnalyticsTrialCountdown, AnalyticsUpgradePrompt, TierComparison removed — analytics tier is plan-derived
 import { useSubscriptionStatus } from '../hooks/useSubscriptionStatus';
-import { canStartPlanTrial } from '../utils/subscriptionAccess';
+import { canStartPlanTrial, computeTrialEnd, TRIAL_DURATION_MONTHS } from '../utils/subscriptionAccess';
 import { validateReplyText } from '../utils/reviewLimits';
 import { isArchivedRecord } from '../utils/adminModeration';
-import { canStartProfessionalTrial } from '../utils/subscriptionAccess';
 import PaymentModal from '../components/PaymentModal';
 import BizBottomNav from '../components/BizBottomNav';
 
@@ -104,7 +103,7 @@ const PLANS = [
       'Respond to up to 50 reviews',
       'Email notifications',
       'Community badge',
-      '14-day free trial on signup',
+      '6-month free trial on signup',
     ],
     analyticsFeatures: [
       'Avg Rating',
@@ -398,14 +397,13 @@ export default function CompanyDashboard() {
 
     const selectedPlan = PLANS.find(plan => plan.id === planId);
     const planName = selectedPlan?.name || 'Professional';
-    const trialEnd = new Date();
-    trialEnd.setDate(trialEnd.getDate() + 14);
+    const trialEnd = computeTrialEnd();
+    const trialDays = Math.ceil((trialEnd - new Date()) / (1000 * 60 * 60 * 24));
     const trialCoreData = {
       plan: planId,
       status: 'trial',
       trialEndsAt: trialEnd,
       trialStartedAt: serverTimestamp(),
-      trialStarted: new Date().toISOString(),
       locked: false,
       updatedAt: serverTimestamp(),
     };
@@ -437,13 +435,13 @@ export default function CompanyDashboard() {
       }
 
       setSubscription(nextSubscription);
-      setTrialDaysLeft(14);
+      setTrialDaysLeft(trialDays);
       await addDoc(collection(db,'notifications'), {
         type:'trial_started', userId:'admin',
-        message:`${company.companyName||company.name} started a 14-day ${planName} trial.`,
+        message:`${company.companyName||company.name} started a ${TRIAL_DURATION_MONTHS}-month ${planName} trial.`,
         companyId: company.id, createdAt: serverTimestamp(), read: false,
       }).catch(()=>{});
-      showToast(`✓ 14-day ${planName} trial started! Enjoy full features.`, 'success');
+      showToast(`✓ ${TRIAL_DURATION_MONTHS}-month ${planName} trial started! Enjoy full features.`, 'success');
     } catch (e) {
       console.error(`Failed to start ${planName} trial:`, e);
       showToast(e.message || 'Failed to start trial', 'error');
@@ -1679,14 +1677,14 @@ export default function CompanyDashboard() {
               {/* ── Plans Tab ── */}
               {paymentsTab === 'plans' && (
                 <div>
-                  {/* 14-day trial banner */}
+                  {/* 6-month trial banner */}
                   {canStartTrial && (
                     <div className="biz-card" style={{marginBottom:20,display:'flex',alignItems:'center',justifyContent:'space-between',gap:16,flexWrap:'wrap',borderColor:'var(--biz-brand)',background:'linear-gradient(90deg,rgba(45,143,111,0.10),rgba(232,184,0,0.10))'}}>
                       <div>
-                        <div style={{fontWeight:800,color:'var(--biz-text-1)',marginBottom:4}}>Start your 14-day Professional trial</div>
-                        <div style={{fontSize:'0.88rem',color:'var(--biz-text-2)'}}>Unlock unlimited replies, advanced analytics, competitor benchmarking, QR codes, and more — free for 14 days.</div>
+                        <div style={{fontWeight:800,color:'var(--biz-text-1)',marginBottom:4}}>Start your {TRIAL_DURATION_MONTHS}-month Professional trial</div>
+                        <div style={{fontSize:'0.88rem',color:'var(--biz-text-2)'}}>Unlock unlimited replies, advanced analytics, competitor benchmarking, QR codes, and more — free for {TRIAL_DURATION_MONTHS} months.</div>
                       </div>
-                      <button className="biz-btn biz-btn-primary" onClick={startProfessionalTrial} disabled={trialStarting}>
+                      <button className="biz-btn biz-btn-primary" onClick={() => startPlanTrial('professional')} disabled={trialStarting}>
                         {trialStarting ? 'Starting…' : 'Start Free Trial'}
                       </button>
                     </div>
@@ -1724,7 +1722,7 @@ export default function CompanyDashboard() {
                             className={`biz-btn biz-plan-btn${plan.highlight?' biz-btn-primary':' biz-btn-outline'}`}
                             onClick={async () => {
                               if (plan.id === 'professional' && canStartTrial) {
-                                await startProfessionalTrial();
+                                await startPlanTrial('professional');
                               } else {
                                 setPaymentModal({ plan });
                               }

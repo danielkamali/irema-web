@@ -165,10 +165,18 @@ export default function AdminSubscriptions() {
       const nextBillingDate = new Date();
       nextBillingDate.setMonth(nextBillingDate.getMonth() + 1);
 
-      let analyticsTrialEndsAt = null;
-      if (assignForm.status === 'trial' && assignForm.trialDays > 0) {
-        analyticsTrialEndsAt = new Date();
-        analyticsTrialEndsAt.setDate(analyticsTrialEndsAt.getDate() + parseInt(assignForm.trialDays));
+      // Professional/enterprise trials use trialEndsAt/trialStartedAt (these
+      // count as "used their plan trial" in canStartPlanTrial()). A starter
+      // trial is just the analytics-level signup bonus and must use the
+      // separate analyticsTrialEndsAt field so it doesn't block a later
+      // real plan trial.
+      const isPlanTrial = assignForm.status === 'trial' && ['professional', 'enterprise'].includes(assignForm.plan);
+      const isStarterTrial = assignForm.status === 'trial' && assignForm.plan === 'starter';
+
+      let trialEndsAt = null;
+      if ((isPlanTrial || isStarterTrial) && assignForm.trialDays > 0) {
+        trialEndsAt = new Date();
+        trialEndsAt.setDate(trialEndsAt.getDate() + parseInt(assignForm.trialDays));
       }
 
       // Prefer the subscription currently linked from the company. Older
@@ -186,7 +194,8 @@ export default function AdminSubscriptions() {
         amount: plan?.price || 0,
         status: assignForm.status,
         locked: false,
-        ...(assignForm.status === 'trial' && analyticsTrialEndsAt && { analyticsTrialEndsAt }),
+        ...(isPlanTrial && trialEndsAt && { trialEndsAt, trialStartedAt: serverTimestamp() }),
+        ...(isStarterTrial && trialEndsAt && { analyticsTrialEndsAt: trialEndsAt, analyticsTrialStartedAt: serverTimestamp() }),
         nextBillingDate,
         updatedAt: serverTimestamp(),
         updatedBy: adminUser?.email,
@@ -270,7 +279,7 @@ export default function AdminSubscriptions() {
       await updateDoc(doc(db, 'subscriptions', existingSub.id), {
         analyticsAccessLevel: analyticsTierForm.tier,
         analyticsCategoryTier: categoryTier,
-        analyticsTrialEndsAt: null, // Clear trial date when admin assigns tier
+        analyticsTrialEndsAt: null, // Clear analytics-tier trial date when admin assigns tier
         updatedAt: serverTimestamp(),
         updatedBy: adminUser?.email,
       });
@@ -945,7 +954,7 @@ export default function AdminSubscriptions() {
                       width: '100%', padding: '8px 12px', border: '1px solid var(--border)',
                       borderRadius: 6, fontSize: '0.9rem', boxSizing: 'border-box'
                     }}
-                    placeholder="14"
+                    placeholder="182 (~6 months)"
                   />
                 </div>
               )}
