@@ -42,7 +42,7 @@
   border-top: 1px solid var(--border);
   color: var(--text-2);
 }
-[data-theme="dark"] .footer-logo-img { filter: invert(1); }
+[data-theme="dark"] .footer-logo-img { filter: brightness(0) invert(1); }
 .ir2 .footer-tagline,
 [data-theme="dark"] .ir2 .footer-tagline { color: var(--text-3); }
 .ir2 .footer-col-title,

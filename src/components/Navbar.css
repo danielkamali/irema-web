@@ -189,7 +189,7 @@
 
 /* ── Dark mode ── */
 [data-theme="dark"] .navbar { background: rgba(10,26,16,0.98) !important; border-color: var(--border) !important; -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); }
-[data-theme="dark"] .navbar-logo-img { filter: invert(1); }
+[data-theme="dark"] .navbar-logo-img { filter: brightness(0) invert(1); }
 [data-theme="dark"] .navbar-search-input { background: var(--bg-2); color: var(--text-1); border-color: var(--border); }
 [data-theme="dark"] .navbar-search-input:focus { background: var(--bg-3); }
 [data-theme="dark"] .navbar-link { color: var(--text-3); }

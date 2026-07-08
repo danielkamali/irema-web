@@ -345,7 +345,7 @@
   background: rgba(10,26,16,0.97) !important;
   border-color: #1E2F2A !important;
 }
-[data-theme="dark"] .bp-logo-img { filter: invert(1); }
+[data-theme="dark"] .bp-logo-img { filter: brightness(0) invert(1); }
 [data-theme="dark"] .bp-logo-for { color: #27B996; border-color: #1E2F2A; }
 [data-theme="dark"] .bp-nav-link { color: #6A7F79; }
 [data-theme="dark"] .bp-nav-link:hover { color: #ECF4F1; }
