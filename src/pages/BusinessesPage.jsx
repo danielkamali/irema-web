@@ -14,6 +14,7 @@ import { getEmailVerificationActionCodeSettings } from '../utils/emailVerificati
 import { getAuthErrorMessage } from '../utils/authErrors';
 import { resolveAuthFlow } from '../components/AuthRedirectHandler';
 import { isArchivedRecord } from '../utils/adminModeration';
+import { computeTrialEnd } from '../utils/subscriptionAccess';
 import './BusinessesPage.css';
 
 const CATS = [
@@ -346,9 +347,11 @@ export default function BusinessesPage() {
         status: 'pending', createdAt: serverTimestamp()
       });
 
-      // Initialize 14-day free trial for analytics
-      const trialEndsDate = new Date();
-      trialEndsDate.setDate(trialEndsDate.getDate() + 14);
+      // Initialize free trial on signup (starter plan, analytics-level access).
+      // NOTE: intentionally uses the analyticsTrial* fields, NOT trialEndsAt/
+      // trialStarted*, so this starter-tier signup bonus doesn't count as
+      // "already used their Professional trial" in canStartPlanTrial().
+      const trialEndsDate = computeTrialEnd();
 
       const starterSubRef = await addDoc(collection(db,'subscriptions'), {
         companyId: compRef.id,
@@ -674,7 +677,7 @@ export default function BusinessesPage() {
                   'Respond to up to 50 reviews',
                   'Email notifications',
                   'Community badge',
-                  '14-day free trial on signup',
+                  '6-month free trial on signup',
                 ],
                 analyticsFeatures:[
                   'Avg Rating',
@@ -1057,11 +1060,11 @@ export default function BusinessesPage() {
             ['3. Review Policy','Business owners may not solicit, purchase, or incentivize reviews. You may respond to reviews professionally. Attempts to manipulate, fake, or suppress reviews will result in immediate account termination and may be reported to relevant authorities.'],
             ['4. Content Ownership','You retain ownership of content you upload (logos, photos, descriptions). By uploading content you grant Irema a non-exclusive license to display it on the platform. You must have the right to use all content you upload.'],
             ['5. Subscription & Payments','Free plan features are provided as-is. Paid plans (Professional/Enterprise) are billed as described at time of purchase. Payments via MTN MoMo, Airtel Money, or bank transfer are final unless otherwise stated. Irema reserves the right to change pricing with 30 days notice.'],
-            ['6. Trial Period','14-day free trials are available once per business. Upon trial expiration, features revert to the free plan unless a paid subscription is activated. Irema may terminate trials for abuse or policy violations.'],
+            ['6. Trial Period','6-month free trials are available once per business. Upon trial expiration, features revert to the free plan unless a paid subscription is activated. Irema may terminate trials for abuse or policy violations.'],
             ['7. Data & Privacy','We collect and process business data as described in our Privacy Policy. You agree not to use Irema to collect or process personal customer data in violation of Rwandan law or GDPR where applicable.'],
             ['8. Limitation of Liability','Irema is not liable for losses arising from customer reviews, service disruptions, or actions of third parties. Our maximum liability is limited to fees paid in the preceding 3 months.'],
             ['9. Governing Law','These terms are governed by the laws of Rwanda. Disputes shall be resolved in Kigali courts unless otherwise agreed in writing.'],
-            ['10. Changes','Irema may update these terms with 14 days notice via email or platform notification. Continued use after notice constitutes acceptance.'],
+            ['10. Changes','Irema may update these terms with  notice via email or platform notification. Continued use after notice constitutes acceptance.'],
           ].map(([title, text]) => (
             <div key={title} style={{marginBottom:18}}>
               <h4 style={{fontFamily:'Sora,sans-serif',fontSize:'0.88rem',fontWeight:700,color:'#2d8f6f',margin:'0 0 6px'}}>{title}</h4>

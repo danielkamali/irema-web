@@ -6,6 +6,7 @@ import { useThemeStore } from '../store/themeStore';
 import { useTranslation } from 'react-i18next';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import { computeTrialEnd, TRIAL_DURATION_MONTHS } from '../utils/subscriptionAccess';
 import './PaymentsPage.css';
 
 const PLANS = [
@@ -14,7 +15,7 @@ const PLANS = [
     cta:'Get Started Free', highlight:false },
   { id:'professional', name:'Professional', price:25000, currency:'RWF', period:'month',
     features:['1 business listing','Unlimited reviews','Unlimited responses to reviews','Advanced analytics + charts','Priority support','Verified badge','QR code downloads','Competitor insights'],
-    cta:'Start 14-day Trial', highlight:true },
+    cta:`Start ${TRIAL_DURATION_MONTHS}-month Trial`, highlight:true },
   { id:'enterprise', name:'Enterprise', price:75000, currency:'RWF', period:'month',
     features:['Up to 5 listings','Unlimited everything','Unlimited responses','AI sentiment analysis','Dedicated account manager','Custom integrations','White-label widgets','API access','SLA support','Product listings on your page'],
     cta:'Get Enterprise', highlight:false },
@@ -69,11 +70,16 @@ export default function PaymentsPage() {
 
     setSelectedPlan(plan.id);
     try {
+      const isTrial = plan.id === 'professional';
       const subData = {
         companyId: company.id,
         plan: plan.id,
-        status: plan.id === 'professional' ? 'trial' : 'pending',
-        trialStarted: plan.id === 'professional' ? new Date().toISOString() : null,
+        status: isTrial ? 'trial' : 'pending',
+        ...(isTrial && {
+          trialEndsAt: computeTrialEnd(),
+          trialStartedAt: serverTimestamp(),
+          locked: false,
+        }),
         amount: plan.price,
         billingCycle: 'monthly',
         createdAt: serverTimestamp(),
@@ -122,7 +128,7 @@ export default function PaymentsPage() {
               Current Plan: <strong style={{ color: 'var(--brand)', textTransform: 'capitalize' }}>{subscription.plan}</strong>
             </p>
             {subscription.status === 'trial' && (
-              <p style={{ fontSize: '0.85rem', color: 'var(--text-3)' }}>Trial active. Upgrade anytime to continue after 14 days.</p>
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-3)' }}>Trial active. Upgrade anytime to continue after {TRIAL_DURATION_MONTHS} months.</p>
             )}
           </div>
         )}

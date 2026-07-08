@@ -19,7 +19,7 @@ export default function TierComparison({
       price: pricing.free,
       period: 'month',
       description: 'Get started with basic analytics',
-      highlights: ['Perfect for new businesses', 'No credit card required', '14-day free trial on signup'],
+      highlights: ['Perfect for new businesses', 'No credit card required', '6-month free trial on signup'],
       features: getEnabledMetrics(category, 'free'),
       cta: 'Current Plan',
       ctaDisabled: currentTier === 'free',
@@ -147,7 +147,7 @@ export default function TierComparison({
               )}
             </div>
             {tier.price === 0 && (
-              <div style={{ fontSize: '12px', color: '#999' }}>14-day free trial on signup</div>
+              <div style={{ fontSize: '12px', color: '#999' }}>6-month free trial on signup</div>
             )}
           </div>
 

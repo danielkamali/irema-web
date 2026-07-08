@@ -1,5 +1,15 @@
 const PLAN_RANK = { starter: 0, professional: 1, enterprise: 2 };
 
+// Free trial length for the Professional plan. Bumping this only affects
+// trials started after the change — existing trialEndsAt dates are untouched.
+export const TRIAL_DURATION_MONTHS = 6;
+
+export function computeTrialEnd(from = new Date()) {
+  const end = new Date(from);
+  end.setMonth(end.getMonth() + TRIAL_DURATION_MONTHS);
+  return end;
+}
+
 function toDate(value) {
   if (!value) return null;
   if (value instanceof Date) return value;

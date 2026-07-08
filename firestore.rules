@@ -6,6 +6,14 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    // Trial length ceiling enforced server-side. Client trial creation uses
+    // computeTrialEnd() (src/utils/subscriptionAccess.js) for 6 calendar
+    // months; 186 days gives a small buffer over the longest possible
+    // 6-month span so legitimate trial writes never get rejected.
+    function maxTrialDuration() {
+      return duration.value(186, 'd');
+    }
+
     function isOwner(uid) {
       return isSignedIn() && request.auth.uid == uid;
     }
@@ -62,7 +70,7 @@ service cloud.firestore {
             request.resource.data.status == 'trial' &&
             (!('locked' in request.resource.data) || request.resource.data.locked == false) &&
             request.resource.data.trialEndsAt is timestamp &&
-            request.resource.data.trialEndsAt <= request.time + duration.value(15, 'd')
+            request.resource.data.trialEndsAt <= request.time + maxTrialDuration()
           ) ||
           (
             request.resource.data.plan in ['professional', 'enterprise'] &&
@@ -88,6 +96,26 @@ service cloud.firestore {
         );
     }
 
+    // Mirrors canStartPlanTrial() in src/utils/subscriptionAccess.js: a
+    // business can self-serve a Professional trial as long as it hasn't
+    // already used one (no trial fields present) AND isn't currently
+    // active/pending/trial on a paid plan. A previously lapsed
+    // (expired/cancelled) professional or enterprise subscription is fine —
+    // it must NOT be required to have been on 'starter'/'free' specifically,
+    // or legitimate re-trials get rejected here even though the client UI
+    // shows the button as enabled.
+    function hasNoPriorTrial() {
+      return !('trialEndsAt' in resource.data) &&
+        !('trialStarted' in resource.data) &&
+        !('trialStartedAt' in resource.data);
+    }
+
+    function isCurrentlyOnPaidPlan() {
+      return ('status' in resource.data) && ('plan' in resource.data) &&
+        resource.data.status in ['active', 'pending', 'trial'] &&
+        resource.data.plan in ['professional', 'enterprise'];
+    }
+
     function isOwnerStartingProfessionalTrial() {
       return isSubscriptionOwner() &&
         request.resource.data.companyId == resource.data.companyId &&
@@ -97,15 +125,13 @@ service cloud.firestore {
             'plan', 'status', 'trialEndsAt', 'trialStartedAt', 'trialStarted',
             'locked', 'amount', 'billingCycle', 'updatedAt'
           ]) &&
-        (!('trialEndsAt' in resource.data)) &&
-        (!('trialStarted' in resource.data)) &&
-        (!('trialStartedAt' in resource.data)) &&
-        (!('plan' in resource.data) || resource.data.plan in ['starter', 'free']) &&
+        hasNoPriorTrial() &&
+        !isCurrentlyOnPaidPlan() &&
         request.resource.data.plan == 'professional' &&
         request.resource.data.status == 'trial' &&
         request.resource.data.locked == false &&
         request.resource.data.trialEndsAt is timestamp &&
-        request.resource.data.trialEndsAt <= request.time + duration.value(15, 'd');
+        request.resource.data.trialEndsAt <= request.time + maxTrialDuration();
     }
 
     function isValidReviewComment(data) {
