@@ -8,13 +8,20 @@
     <meta property="og:title" content="Irema — Trusted Business Reviews" />
     <meta property="og:description" content="Read and share honest reviews about businesses across Rwanda and East Africa." />
     <title>Irema — Trusted Business Reviews</title>
-    <!-- Favicon SVG inline as data URI -->
-    
+
+    <!-- PWA -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Irema" />
+    <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+
     <!-- Preconnect for performance -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-  <link rel="icon" type="image/png" href="/favicon.svg" />
+    <link rel="icon" type="image/png" href="/favicon.svg" />
     <script>
       // Apply saved theme BEFORE React mounts so there's no flash of the
       // wrong colour scheme. Defaults to 'light' when nothing is saved.
